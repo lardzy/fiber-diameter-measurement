@@ -646,6 +646,18 @@ class AreaDerivedGeometryService:
             source=AREA_GEOMETRY_RAW,
         )
 
+    def cached_screen_path(self, measurement: Measurement, zoom: float) -> QPainterPath | None:
+        """Return a validated path for this physical scale without building one on input."""
+        if os.environ.get("FDM_DISABLE_AREA_SCREEN_PROXY", "").strip() == "1":
+            return None
+        key = (*_measurement_key(measurement), self._zoom_bucket(zoom))
+        entry = self._proxies.get(key)
+        if entry is None or entry.owner is not measurement:
+            return None
+        self._proxies.move_to_end(key)
+        entry.last_used = self._next_path_clock()
+        return QPainterPath(entry.path)
+
     def screen_geometry(
         self,
         measurement: Measurement,
@@ -754,7 +766,7 @@ class AreaDerivedGeometryService:
     def _bucket_upper_zoom(bucket: int) -> float:
         # round(log_base_sqrt(2)) buckets extend one half-step above their
         # representative zoom.  Use that edge to keep the entire bucket at or
-        # below the advertised 0.5 logical-pixel error.
+        # below the advertised 0.5 physical-pixel error at the supplied scale.
         return (_SQRT_TWO**bucket) * (2.0**0.25)
 
     @classmethod
@@ -1292,9 +1304,14 @@ def _simplify_ring(points: list[Point], epsilon: float) -> list[Point]:
     cleaned = clean_ring(points, collinear_epsilon=1e-6)
     if len(cleaned) < 3:
         return cleaned
-    contour = np.asarray([[[point.x, point.y]] for point in cleaned], dtype=np.float32)
+    # OpenCV requires float32. Work relative to the first vertex so global
+    # slide coordinates do not consume the precision needed by a small hole.
+    origin = cleaned[0]
+    contour = np.asarray([(p.x - origin.x, p.y - origin.y) for p in cleaned], dtype=np.float32)
+    if np.spacing(np.abs(contour).max()) > epsilon / 8:
+        return cleaned
     approximation = cv2.approxPolyDP(contour, max(float(epsilon), 1e-9), True)
-    reduced = [Point(float(item[0][0]), float(item[0][1])) for item in approximation]
+    reduced = [Point(origin.x + float(x), origin.y + float(y)) for x, y in approximation[:, 0]]
     reduced = clean_ring(reduced, collinear_epsilon=1e-6)
     if len(reduced) < 3:
         return cleaned

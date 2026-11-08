@@ -1001,6 +1001,7 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
                 "composition_probe_rgba",
                 "known_empty",
                 "area_commands",
+                "viewport",
             },
         )
         self.assertFalse(

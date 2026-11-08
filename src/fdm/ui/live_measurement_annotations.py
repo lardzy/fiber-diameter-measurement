@@ -10,6 +10,8 @@ import math
 
 from PySide6.QtCore import QPointF, QRectF
 
+from fdm.ui.spatial_buckets import SpatialBucketIndex
+
 
 @dataclass(frozen=True)
 class Annotation:
@@ -55,35 +57,6 @@ def segment_intersects_rect(start, end, rect):
     return True
 
 
-class _SpatialIndex:
-    """Small screen-space buckets keep dense label placement off the hot path."""
-    def __init__(self, cell_size=64.):
-        self.cells = {}
-        self.cell_size = cell_size
-        self.broad = set()
-
-    def _cells(self, left, top, right, bottom):
-        x1, x2 = math.floor(left / self.cell_size), math.floor(right / self.cell_size)
-        y1, y2 = math.floor(top / self.cell_size), math.floor(bottom / self.cell_size)
-        if (x2 - x1 + 1) * (y2 - y1 + 1) > 4096:
-            return None
-        return ((x, y) for x in range(x1, x2 + 1) for y in range(y1, y2 + 1))
-
-    def add(self, identity, bounds):
-        cells = self._cells(*bounds)
-        if cells is None:
-            self.broad.add(identity)
-        else:
-            for cell in cells:
-                self.cells.setdefault(cell, []).append(identity)
-
-    def near(self, rect):
-        cells = self._cells(rect.left(), rect.top(), rect.right(), rect.bottom())
-        if cells is None:
-            return set(value for values in self.cells.values() for value in values) | self.broad
-        return self.broad | {value for cell in cells for value in self.cells.get(cell, ())}
-
-
 def layout_annotations(annotations, viewport, *, protected_segments=(), gap=15.,
                        previous_annotations=(), previous_placements=None,
                        previous_protected_segments=()):
@@ -111,7 +84,7 @@ def layout_annotations(annotations, viewport, *, protected_segments=(), gap=15.,
     if not incremental:
         previous, previous_placements = {}, {}
     segments = [(item.start, item.end) for item in annotations] + list(protected_segments)
-    line_index, label_index = _SpatialIndex(), _SpatialIndex()
+    line_index, label_index = SpatialBucketIndex(), SpatialBucketIndex()
     for index, (start, end) in enumerate(segments):
         line_index.add(index, (min(start[0], end[0]), min(start[1], end[1]),
                                max(start[0], end[0]), max(start[1], end[1])))

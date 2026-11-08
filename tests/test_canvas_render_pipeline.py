@@ -24,6 +24,7 @@ from fdm.area_display import (
     area_derived_geometry_service,
 )
 from fdm.models import ImageDocument, Measurement, ObjectAppearanceOverride
+from fdm.measurement_annotation import MeasurementAnnotationLayout
 from fdm.services.digital_slide_store import DigitalSlideManifest
 from fdm.settings import (
     AppSettings,
@@ -103,6 +104,40 @@ class CanvasRenderPipelineTests(unittest.TestCase):
             [measurement.id for measurement in index.query_point(Point(45.0, 15.0), tolerance=10.0)],
             ["last"],
         )
+
+    def test_areas_with_holes_or_a_subpixel_gap_keep_their_exact_contours(self):
+        def square(identity, x):
+            points = [Point(x, 0), Point(x + 5, 0), Point(x + 5, 5), Point(x, 5)]
+            return Measurement(identity, "doc", None, "polygon_area", measurement_kind="area",
+                               polygon_px=points, area_rings_px=[points])
+        first, second, hole = square("a", 0), square("b", 5.25), square("hole", 500)
+        hole.area_rings_px.append([Point(501, 1), Point(502, 2), Point(501, 2)])
+        objects = [first, second, hole]
+        self.assertEqual(DocumentCanvas._area_proxy_exclusions(objects, 2), {"a", "b", "hole"})
+        self.assertEqual(DocumentCanvas._area_proxy_exclusions(objects, 8), {"hole"})
+
+    def test_zoom_queries_detached_labels_and_skip_unrelated_geometry(self) -> None:
+        target = self._line("label", 1000)
+        target.annotation_layout = MeasurementAnnotationLayout().with_manual_offset(Point(-900, 100))
+        far = [self._line(str(i), 5000.0 + i * 20) for i in range(80)]
+        document = ImageDocument(id="doc", path="synthetic", image_size=(8000, 200),
+                                 measurements=[target, *far])
+        canvas = DocumentCanvas()
+        try:
+            canvas.set_document(document, QImage(8000, 200, QImage.Format.Format_RGB32))
+            canvas._measurement_display_scene_index(zoom=1.0)
+            with patch.object(canvas_module, "measurement_display_reach",
+                              side_effect=AssertionError("reindexed the document during zoom")), patch.object(
+                canvas_module, "measurement_display_image_bounds",
+                wraps=canvas_module.measurement_display_image_bounds,
+            ) as bounds:
+                for zoom in (2.0, 8.0, 16.0, 4.0):
+                    view = canvas._measurement_display_scene_index(zoom=zoom)
+                    self.assertEqual(view.query_rect(QRectF(90, 107, 50, 20)), [target])
+            self.assertEqual([call.args[0].id for call in bounds.call_args_list], [target.id] * 4)
+        finally:
+            canvas.clear_document()
+            canvas.close()
 
     def test_high_vertex_magic_area_enables_cache_below_object_threshold(
         self,

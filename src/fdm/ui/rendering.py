@@ -15,6 +15,7 @@ from PySide6.QtGui import (
     QImage,
     QPainter,
     QPainterPath,
+    QPainterPathStroker,
     QPen,
     QPolygonF,
     QStaticText,
@@ -30,6 +31,8 @@ from fdm.area_display import (
     area_geometry_raw,
 )
 from fdm.ui.overlay_geometry_snapshot import overlay_geometry_snapshots
+from fdm.construction_document import clip_line_to_rect
+from fdm.construction_geometry import LineExtent, ResolvedLine
 from fdm.geometry import Line, Point, direction, distance, normal, point_to_segment_distance, polyline_length
 from fdm.models import (
     ImageDocument,
@@ -178,7 +181,7 @@ def measurement_display_text_with_settings(
         metric = {"area": "面积", "polyline": "长度"}.get(measurement.measurement_kind, "直径")
         parts = []
         if annotation.show_identifier:
-            number = next((i + 1 for i, item in enumerate(document.measurements) if item.id == measurement.id), 1)
+            number = document.measurement_display_number(measurement.id)
             parts.append(f"M{number} ·")
         if annotation.show_metric_name:
             parts.append(metric)
@@ -300,12 +303,59 @@ def resolve_measurement_annotation(
     )
 
 
-def draw_measurement_annotation_lines(painter, resolved, color, *, width=1.0):
+def _draw_dashed_leader(painter, points, pen):
+    # The raster engine restarts a dashed pen at its device clip. Tile and
+    # viewport edges therefore shift its pattern when an endpoint is outside.
+    # Fill the same geometric dash outlines on all paint devices.
+    path = QPainterPath(points[0])
+    for point in points[1:]:
+        path.lineTo(point)
+    stroker = QPainterPathStroker(pen)
+    stroker.setDashPattern(pen.dashPattern())
+    if path.length() <= 4096 * pen.widthF():
+        painter.fillPath(stroker.createStroke(path), pen.color())
+        return
+
+    # A label can be dragged across a whole virtual slide. Only generate
+    # visible dashes, retaining their phase relative to the original anchor.
+    visible = _painter_visible_rect(painter)
+    if visible is None:
+        # An external recorder without a declared viewport can retain the pen
+        # as one compact vector command until its output extent is known.
+        painter.setPen(pen)
+        painter.drawPolyline(QPolygonF(points))
+        return
+    margin = 2 * pen.widthF() + 2
+    clip = visible.adjusted(-margin, -margin, margin, margin).getCoords()
+    traveled = 0.0
+    period = sum(pen.dashPattern())
+    for start, end in zip(points, points[1:]):
+        a, b = Point(start.x(), start.y()), Point(end.x(), end.y())
+        length = distance(a, b)
+        if length <= 1e-8:
+            continue
+        line = ResolvedLine(a, b, LineExtent.SEGMENT)
+        segment = clip_line_to_rect(line, clip)
+        if segment is not None:
+            a, b = segment
+            offset = (traveled + distance(line.start, a)) / pen.widthF()
+            stroker.setDashOffset(offset % period)
+            subpath = QPainterPath(QPointF(a.x, a.y))
+            subpath.lineTo(b.x, b.y)
+            painter.fillPath(stroker.createStroke(subpath), pen.color())
+        traveled += length
+
+
+def draw_measurement_annotation_lines(painter, resolved, color, *, width=1.0, screen_dashes=False):
     """Draw the common witness geometry used by canvas and image export."""
     if resolved.leader:
         style = Qt.PenStyle.SolidLine if resolved.witness_lines else Qt.PenStyle.DashLine
-        painter.setPen(QPen(color, width, style))
-        painter.drawPolyline(QPolygonF(resolved.leader))
+        pen = QPen(color, width, style)
+        if screen_dashes and style == Qt.PenStyle.DashLine:
+            _draw_dashed_leader(painter, resolved.leader, pen)
+        else:
+            painter.setPen(pen)
+            painter.drawPolyline(QPolygonF(resolved.leader))
     painter.setPen(QPen(color, width, Qt.PenStyle.SolidLine))
     for segment in (*resolved.witness_lines, *resolved.dimension_lines, *resolved.ticks):
         painter.drawLine(*segment)
@@ -328,7 +378,10 @@ def draw_linked_measurement_label(
     color = measurement_text_color(measurement, _measurement_label_color(settings, measurement))
     painter.save()
     try:
-        draw_measurement_annotation_lines(painter, resolved, color, width=max(1.0, scale))
+        draw_measurement_annotation_lines(
+            painter, resolved, color, width=max(1.0, scale),
+            screen_dashes=use_sprite_cache if use_sprite_cache is not None else _painter_targets_screen_widget(painter),
+        )
         resolved.rotate_painter(painter)
         with _measurement_text_coordinates(painter, scale, sprite_device_pixel_ratio) as ratio:
             rect = QRectF(resolved.paint_rect.topLeft() / scale, resolved.paint_rect.size() / scale)
@@ -515,6 +568,7 @@ def _area_geometry_and_output_path(
     *,
     selected: bool,
     geometry_mode: str,
+    device_pixel_ratio: float = 1.0,
     proxy_build_budget: AreaProxyBuildBudget | None = None,
 ):
     transform = _image_to_output_transform(image_to_output)
@@ -523,7 +577,7 @@ def _area_geometry_and_output_path(
     else:
         geometry = area_derived_geometry_service.screen_geometry(
             measurement,
-            zoom=_image_to_output_scale(transform),
+            zoom=_image_to_output_scale(transform) * device_pixel_ratio,
             selected=selected,
             build_budget=proxy_build_budget,
         )
@@ -937,7 +991,7 @@ def _draw_screen_label_sprite(
     # The sprite already carries its device-pixel ratio. Drawing at a point
     # preserves its native pixels; fitting it into a QRectF would resample the
     # ceil-rounded backing image on every frame.
-    painter.drawImage(rect.topLeft(), sprite.image)
+    painter.drawImage(rect.topLeft() + sprite.image_offset, sprite.image)
 
 
 def overlay_annotation_bounds(annotation: OverlayAnnotation) -> tuple[float, float, float, float]:
@@ -1737,6 +1791,26 @@ def _measurement_decoration_screen_padding(
     return max(padding, endpoint_extent)
 
 
+def measurement_display_reach(measurement, document, settings, count_number):
+    """Bound the screen-sized marks and the label relative to its anchor at unit zoom."""
+    stroke = _measurement_decoration_screen_padding(
+        measurement, settings, suggested_line_width=2.0, endpoint_radius=4.0, selected=False,
+    )
+    if measurement.measurement_kind == "count":
+        if not settings.show_count_numbers or count_number is None:
+            return stroke, 0.0
+        font, text = _count_number_font(settings, measurement), str(count_number)
+    else:
+        if not _measurement_label_enabled(settings, measurement):
+            return stroke, 0.0
+        font = measurement_label_font(settings, measurement)
+        text = measurement_display_text_with_settings(measurement, document, settings)
+    layout = _cached_text_layout(font, text, render_mode="display-query")
+    # Include the offset from the centerline, rotated boxes, dimension landing
+    # and outside arrow placement. A count's text also clears its point marker.
+    return stroke, 2.0 * (layout.width + layout.height + 24.0) + stroke * 2.0
+
+
 def measurement_display_image_bounds(
     measurement: Measurement,
     document: ImageDocument,
@@ -2086,7 +2160,7 @@ def _draw_count_number_labels_unscaled(
                 QPointF(
                     anchor.x() - horizontal_padding,
                     anchor.y() - vertical_padding,
-                ),
+                ) + sprite.image_offset,
                 sprite.image,
             )
             continue
@@ -2148,6 +2222,7 @@ def draw_area_measurement(
         image_to_output,
         selected=selected,
         geometry_mode=geometry_mode,
+        device_pixel_ratio=sprite_device_pixel_ratio or painter.device().devicePixelRatioF(),
         proxy_build_budget=proxy_build_budget,
     )
     outline_points = geometry.outline_points
@@ -2296,6 +2371,7 @@ def build_passive_area_overlay_command(
     line_width: float,
     show_fill: bool,
     sprite_device_pixel_ratio: float,
+    screen_path: QPainterPath | None = None,
 ) -> AreaOverlayDrawCommand | None:
     """Capture one unselected RAW area without recording its path to QPicture.
 
@@ -2306,8 +2382,12 @@ def build_passive_area_overlay_command(
 
     if measurement.measurement_kind != "area":
         return None
-    coordinates = overlay_geometry_snapshots.capture(measurement, document_token=id(document))
-    if not coordinates:
+    if screen_path is not None and _measurement_label_enabled(settings, measurement):
+        if area_derived_geometry_service.cached_centroid(measurement) is None:
+            screen_path = None  # A label's centroid must come from the original rings.
+    coordinates = (() if screen_path is not None else
+                   overlay_geometry_snapshots.capture(measurement, document_token=id(document)))
+    if screen_path is None and not coordinates:
         return None
 
     color = measurement_color(document, measurement, settings)
@@ -2353,13 +2433,15 @@ def build_passive_area_overlay_command(
             device_pixel_ratio=sprite_device_pixel_ratio * label_scale,
             arrangement_mode="measurement-area",
         )
+        if sprite is None:
+            return None  # Use the ordinary vector label at this resolution.
         center_offset = QPointF(
             -(sprite.content_width / 2.0) - 6.0,
             -max(14.0, sprite.content_height * 0.9)
             - (sprite.content_height / 2.0)
             - 3.0,
         )
-        center_offset *= label_scale
+        center_offset = (center_offset + sprite.image_offset) * label_scale
         label_image = QImage(sprite.image)
         label_image.setDevicePixelRatio(sprite.image.devicePixelRatioF() / label_scale)
         top_left = (
@@ -2383,7 +2465,7 @@ def build_passive_area_overlay_command(
         )
 
     return AreaOverlayDrawCommand(
-        path=None,
+        path=screen_path,
         raw_coordinates=coordinates,
         geometry_key=(id(document), id(measurement), measurement.id, measurement.geometry_revision),
         image_to_overlay=QTransform.fromScale(float(zoom), float(zoom)),

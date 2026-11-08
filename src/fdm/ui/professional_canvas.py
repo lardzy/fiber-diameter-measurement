@@ -17,7 +17,7 @@ from fdm.services.metrology_service import (calibration_scale, control_points_px
 from fdm.services.object_snap_service import SnapCandidate, SnapKind, professional_snap_primitives
 from fdm.models import new_id
 from fdm.ui.professional_measurement import SOURCE_TITLES, TOOLS
-from fdm.ui.professional_rendering import dimension_endpoints, draw_professional_measurements, presentation_result
+from fdm.ui.professional_rendering import ProfessionalDisplayIndex, dimension_endpoints, draw_professional_measurements, presentation_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +76,8 @@ class ProfessionalCanvasController:
         self.preview_features = {}
         self._results_key = None
         self._results = {}
+        self._display_index_key = None
+        self._display_index = None
         self._drag_layer = None
         self._drag_layer_key = None
         self._drag_layer_hits = {}
@@ -690,6 +692,19 @@ class ProfessionalCanvasController:
         arguments = dict(results=results, focus_index=self.focus(), label_decimals=label_decimals, settings=self.canvas._settings,
                          selected_id=document.selected_professional_id, hovered_id=self.hovered_id,
                          show_labels=mode != "hidden", selected_labels_only=mode == "selected")
+        if len(document.professional_measurements) >= 64 and not self.preview_features and not self.drag:
+            index_key = (self._results_key, self.canvas._canvas_visual_settings_signature)
+            if (self._display_index_key != index_key or self._display_index is None
+                    or self._display_index.definitions is not document.professional_measurements):
+                self._display_index = ProfessionalDisplayIndex(document, results, self.canvas._settings)
+                self._display_index_key = index_key
+            context = self.canvas._paint_context()
+            # Users can drag a caption into the margin outside the source image.
+            arguments["visible_definitions"] = self._display_index.visible(
+                context.widget_to_image_transform.mapRect(context.widget_rect), context.zoom, self.canvas._settings,
+            )
+        elif len(document.professional_measurements) < 64:
+            self._display_index = None
         dpr = self.canvas.devicePixelRatioF()
         width, height = math.ceil(self.canvas.width()*dpr), math.ceil(self.canvas.height()*dpr)
         if self.drag and width * height * 4 <= 64 * 1024 * 1024:

@@ -14,7 +14,7 @@ from fdm.metrology import MeasurementDefinition, MeasurementFeature
 from fdm.models import Calibration, ImageDocument
 from fdm.services.metrology_service import evaluate_measurement
 from fdm.ui.measurement_export_preview import clipped_manual_labels
-from fdm.ui.professional_rendering import presentation_result, result_caption
+from fdm.ui.professional_rendering import ProfessionalDisplayIndex, presentation_result, result_caption
 
 from test_metrology_workspace import (mounted_window, professional_slide, _begin,
                                       _click, _distance, _paint, _wait_until)
@@ -88,6 +88,77 @@ def test_real_professional_canvas_clicks_snap_to_auxiliary_endpoints(mounted_win
     _click(canvas, (180.1, 110.1))
     definition = document.professional_measurements[-1]
     assert document.get_professional_feature(definition.feature_ids[0]).points_px == (Point(40, 50), Point(180, 110))
+
+
+def test_distant_professional_labels_keep_document_numbers_in_a_zoomed_view(mounted_window):
+    from fdm.services.metrology_service import evaluate_document
+
+    _window, document, workspace, _plane = mounted_window()
+    features, dimensions = [], []
+    for i in range(70):
+        x = 10000 + i * 200
+        feature = MeasurementFeature(f"f{i}", document.id, "line", (Point(x, 100), Point(x + 20, 100)))
+        offset = Point(100 - x - 10, 20) if i == 35 else Point(20, -15)
+        layout = MeasurementAnnotationLayout(show_leader=False).with_manual_offset(offset)
+        dimensions.append(MeasurementDefinition(f"dim{i}", document.id, "distance", (feature.id,), annotation_layout=layout))
+        features.append(feature)
+    document.apply_professional_state(features, dimensions, mark_dirty=False)
+    settings = workspace.controller().canvas._settings
+    index = ProfessionalDisplayIndex(document, evaluate_document(document), settings)
+    for zoom in (1.0, 4.0, 16.0):
+        assert [(n, dim.id) for n, dim in index.visible(QRectF(80, 100, 40, 40), zoom, settings)] == [(36, "dim35")]
+
+
+def test_mixed_canvas_zoom_preserves_dimension_witnesses_original_and_export(mounted_window, tmp_path, monkeypatch):
+    from PySide6.QtGui import QImage
+    from fdm.geometry import Line
+    from fdm.models import Measurement
+    from fdm.services.export_service import ExportImageRenderMode
+    from test_canvas_progressive_overlay import frame
+
+    window, document, workspace, source = mounted_window()
+    definition = _distance(workspace, (75, 80), (125, 100))
+    controller = workspace.controller()
+    canvas = controller.canvas
+    document.measurements.extend(
+        Measurement(str(i), document.id, None, "manual", line_px=Line(Point(30, i + 40), Point(100, i + 40)))
+        for i in range(64)
+    )
+    document.mark_measurement_geometry_changed()
+    canvas.notify_document_visual_changed()
+    document.mark_session_saved()
+    monkeypatch.setenv("FDM_ENABLE_CANVAS_OVERLAY_CACHE", "1")
+    original = document.to_dict()
+    original.pop("view_state")
+    def export(name):
+        path = tmp_path / name
+        window._render_overlay_image(document, path, include_measurements=True, include_scale=False,
+                                     render_mode=ExportImageRenderMode.FULL_RESOLUTION)
+        image = QImage(str(path))
+        assert not image.isNull()
+        return image
+
+    before = export("before.png")
+    menu = window._zoom_status_button.menu()
+    next(action for action in menu.actions() if action.text() == "400%").trigger()
+    frame(canvas)
+    assert canvas.view_zoom() == 4.0 and "400%" in window._zoom_status_button.text()
+    next(action for action in menu.actions() if action.text() == "适合窗口").trigger()
+    frame(canvas)
+    assert "适合窗口" in window._zoom_status_button.text()
+    for zoom in (1.0, 4.0, 8.0, 16.0, 4.0):
+        canvas.set_view_zoom(zoom)
+        canvas.center_on_image_point(Point(100, 90))
+        frame(canvas)
+        assert controller.label_hits[definition.id].source_points == tuple(
+            canvas.image_to_widget(p) for p in (Point(75, 80), Point(125, 100))
+        )
+    assert export("after.png") == before
+    assert window._rasters[document.id].sha256() == source.sha256()
+    saved = document.to_dict()
+    saved.pop("view_state")
+    assert saved == original
+    assert not document.dirty_flags.session_dirty
 
 
 def test_screen_labels_all_selected_hidden_keep_geometry_and_values(mounted_window):

@@ -1,12 +1,16 @@
 from unittest.mock import patch
 from contextlib import contextmanager
+from dataclasses import replace
 import math
+import cv2
+import numpy as np
 import pytest
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtGui import QColor, QImage, QPainter, QPainterPathStroker, QPen
 from fdm.geometry import Line, Point
 from fdm.history import DocumentHistory
-from fdm.models import ImageDocument, Measurement
+from fdm.measurement_annotation import MeasurementAnnotationLayout
+from fdm.models import ImageDocument, Measurement, OverlayTextSizeSpace
 from fdm.settings import AppSettings, MeasurementLabelStyleSettings
 from fdm.ui import canvas as canvas_module
 from fdm.ui.canvas import CanvasZoomMode, DocumentCanvas, MeasurementSceneIndex
@@ -62,10 +66,19 @@ def document():
 
 
 def frame(canvas):
-    image = QImage(canvas.size(), QImage.Format.Format_ARGB32_Premultiplied)
+    dpr = canvas.devicePixelRatioF()
+    image = QImage(math.ceil(canvas.width() * dpr), math.ceil(canvas.height() * dpr),
+                   QImage.Format.Format_ARGB32_Premultiplied)
+    image.setDevicePixelRatio(dpr)
     image.fill(0)
     canvas.render(image)
     return image
+
+
+def frame_pixels(image):
+    return np.frombuffer(image.constBits(), np.uint8).reshape(
+        image.height(), image.bytesPerLine()
+    )[:, :image.width() * 4].reshape(image.height(), image.width(), 4).copy()
 
 
 @pytest.fixture
@@ -255,9 +268,8 @@ def test_small_point_and_line_documents_keep_immediate_direct_rendering(
         assert len(direct) == 1
 
 
-def test_zoomed_line_preview_returns_to_exact_screen_width(scene, monkeypatch):
-    import numpy as np
-
+@pytest.mark.parametrize("zoom", [4.0, 8.0, 16.0])
+def test_zoomed_line_has_exact_screen_width_from_first_frame(scene, monkeypatch, zoom):
     canvas, doc, exact, preview, exact_pool, preview_pool = scene
     use_default_cache_policy(
         scene, monkeypatch,
@@ -277,28 +289,69 @@ def test_zoomed_line_preview_returns_to_exact_screen_width(scene, monkeypatch):
     prepare_preview(canvas)
     preview_pool.complete(preview)
     canvas._set_zoom_at_widget_position(
-        4.0, QPointF(60, 60), mode=CanvasZoomMode.CUSTOM
+        zoom, QPointF(60, 60), mode=CanvasZoomMode.CUSTOM
     )
-    # Target-scale tiles are deliberately deferred. The complete raster may
-    # temporarily scale its strokes too, but the first line must remain visible.
-    assert frame(canvas).pixelColor(60, 60).red() < 250
+    # Hold every target-scale tile. The first paint, partial arrivals and the
+    # settled frame must all keep the same physical stroke and endpoint.
+    frames = [frame(canvas)]
+    assert frames[0].pixelColor(60, 60).red() < 250
     for key in canvas._visible_overlay_tile_keys(canvas._paint_context()):
         assert exact.request(canvas._build_overlay_tile_snapshot(key))
-    exact_pool.complete(exact)
-    precise = frame(canvas)
+        exact_pool.complete(exact)
+        frames.append(frame(canvas))
     with patch.object(canvas, "_overlay_cache_enabled", return_value=False):
         reference = frame(canvas)
 
-    def line_pixels(image):
-        pixels = np.frombuffer(image.constBits(), np.uint8).reshape(
-            image.height(), image.bytesPerLine()
-        )
-        return pixels[20:90, :image.width() * 4].reshape(70, image.width(), 4)[:, 30:90]
-
-    # Compare the full stroke envelope, not only its center pixel, so a stale
-    # magnified preview cannot pass as the settled result.
-    assert np.array_equal(line_pixels(precise), line_pixels(reference))
+    reference_region = frame_pixels(reference)[20:90, 30:90]
+    for presented in frames:
+        assert np.array_equal(frame_pixels(presented)[20:90, 30:90], reference_region)
+        assert sum(presented.pixelColor(60, y).red() < 250 for y in range(52, 68)) == 4
     assert [item.to_dict() for item in doc.measurements] == original
+
+
+@pytest.mark.parametrize("dpr", [1.0, 1.1, 1.25, 1.5, 2.0])
+@pytest.mark.parametrize("space", [OverlayTextSizeSpace.IMAGE_PX, OverlayTextSizeSpace.SCREEN_PX])
+def test_high_zoom_mixed_overlay_cold_and_partial_frames(scene, monkeypatch, dpr, space):
+    canvas, doc, exact, preview, exact_pool, preview_pool = scene
+    monkeypatch.setattr(canvas, "devicePixelRatioF", lambda: dpr)
+    # The clip crosses the physical edge of an exact tile. The line body is
+    # offscreen; its manually placed label and leader still reach the viewport.
+    shape = compact_area("outer")
+    hole = [Point(55, 55), Point(55, 65), Point(65, 65), Point(65, 55)]
+    shape.area_rings_px.append(hole)
+    line = Measurement("line", doc.id, None, "manual", line_px=Line(Point(170, 60), Point(190, 60)),
+                       annotation_layout=MeasurementAnnotationLayout().with_manual_offset(Point(-110, -8)))
+    count = Measurement("count", doc.id, None, "count", measurement_kind="count", point_px=Point(59, 58))
+    use_default_cache_policy(scene, monkeypatch, [shape, line, compact_area("overlap"), count])
+    canvas.set_settings(replace(canvas._settings, measurement_text_size_space=space))
+    prepare_preview(canvas)
+    preview_pool.complete(preview)
+    canvas._zoom = 8.0
+    canvas._pan = Point(-282.75, -280.5)
+    frames = [frame_pixels(frame(canvas))]
+    keys = canvas._visible_overlay_tile_keys(canvas._paint_context())
+    for key in reversed(keys):
+        assert exact.request(canvas._build_overlay_tile_snapshot(key))
+        exact_pool.complete(exact)
+        frames.append(frame_pixels(frame(canvas)))
+    with patch.object(canvas, "_overlay_cache_enabled", return_value=False):
+        reference = frame_pixels(frame(canvas))
+    np.testing.assert_array_equal(frames[0], reference)
+    # Qt uses different antialias coverage for glyphs/curves drawn through a
+    # partial clip or a recorded command stream. Compare each physical pixel:
+    # interiors (including tile seams, translucent overlaps and the hole)
+    # retain their colour; boundary transitions stay within one pixel.
+    kernel = np.ones((3, 3), np.uint8)
+    lower = cv2.erode(reference, kernel).astype(np.int16)
+    upper = cv2.dilate(reference, kernel).astype(np.int16)
+    interior = np.all(lower == upper, axis=2)
+    for displayed in frames[1:]:
+        actual = displayed.astype(np.int16)
+        assert np.abs(actual[interior] - lower[interior]).max() <= 1
+        # Allow small coverage differences between subpixel glyph rasterizers
+        # at a corner, even when a thin stroke has no solid interior sample.
+        assert (lower - actual).max() <= 8
+        assert (actual - upper).max() <= 8
 
 
 def test_visible_cold_frame_never_draws_entire_uncached_scene(scene):
@@ -324,13 +377,57 @@ def test_visible_cold_frame_never_draws_entire_uncached_scene(scene):
     before = [measurement.to_dict() for measurement in doc.measurements]
     canvas._zoom = 1.5
     canvas._pan = Point(-20, -20)
-    calls.clear()
-    with patch.object(canvas, "_draw_measurements_direct", new=track):
+    # A scale transition queries and draws visible candidates. It cannot use
+    # the same whole-document bitmap that covered the cold opening frame.
+    with patch.object(canvas, "_draw_scene_preview", side_effect=AssertionError("scaled overview")):
         scaled = frame(canvas)
-    assert not calls
     assert scaled.pixelColor(70, 70).red() < 250
     assert before == [measurement.to_dict() for measurement in doc.measurements]
     assert canvas._measurement_index().query_point(Point(60, 60), tolerance=1)[0].id == "0"
+
+
+def test_returning_to_native_zoom_keeps_visible_measurements_when_overview_is_cold(scene):
+    canvas, _, _, preview, _, _ = scene
+    canvas._zoom = 2.0
+    canvas._pan = Point(-60, -60)
+    assert frame(canvas).pixelColor(60, 60).red() < 250
+    canvas._zoom = 1.0
+    canvas._pan = Point(0, 0)
+    assert not preview.contains(canvas._scene_preview_key())
+    with patch.object(canvas, "_draw_scene_preview", side_effect=AssertionError("loading frame")):
+        assert frame(canvas).pixelColor(60, 60).red() < 250
+
+
+def test_long_slide_leader_preserves_dash_phase_across_device_clips(desktop_application, monkeypatch):
+    from fdm.ui.rendering import _draw_dashed_leader
+
+    lengths = []
+    original = QPainterPathStroker.createStroke
+
+    def capture(stroker, path):
+        lengths.append(path.length())
+        return original(stroker, path)
+
+    monkeypatch.setattr(QPainterPathStroker, "createStroke", capture)
+    points = (QPointF(10_000_000, 37.5), QPointF(3, 40), QPointF(3, 40))
+    pen = QPen(QColor("red"), 1., Qt.PenStyle.DashLine)
+
+    def render(x, width):
+        image = QImage(width, 80, QImage.Format.Format_RGB32)
+        image.fill(QColor("white"))
+        painter = QPainter(image)
+        try:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.translate(-x, 0)
+            _draw_dashed_leader(painter, points, pen)
+        finally:
+            painter.end()
+        return frame_pixels(image)
+
+    expected = render(0, 512)
+    assert np.any(expected[:, :, 1] < 250)
+    np.testing.assert_array_equal(np.concatenate([render(0, 211), render(211, 301)], axis=1), expected)
+    assert max(lengths) < 525
 
 
 def test_late_preview_after_edit_or_document_switch_cannot_be_published(scene):

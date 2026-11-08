@@ -1288,6 +1288,8 @@ class ImageDocument:
     )
     _next_state_id: int = field(default=1, init=False, repr=False, compare=False)
     _measurement_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
+    _measurement_order_stamp: tuple | None = field(default=None, init=False, repr=False, compare=False)
+    _measurement_numbers: dict[str, int] = field(default_factory=dict, init=False, repr=False, compare=False)
     _construction_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
     _construction_metadata_revision: int = field(default=0, init=False, repr=False, compare=False)
     _professional_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
@@ -1468,6 +1470,15 @@ class ImageDocument:
             if measurement.id == measurement_id:
                 return measurement
         return None
+
+    def measurement_display_number(self, measurement_id: str) -> int:
+        """One-based document order for numbered captions, shared by screen and export."""
+        stamp = (id(self.measurements), self.state_stamp.session_state_id,
+                 self._measurement_geometry_revision, len(self.measurements))
+        if stamp != self._measurement_order_stamp:
+            self._measurement_numbers = {item.id: n for n, item in enumerate(self.measurements, 1)}
+            self._measurement_order_stamp = stamp
+        return self._measurement_numbers.get(measurement_id, 1)
 
     @property
     def measurement_geometry_revision(self) -> int:

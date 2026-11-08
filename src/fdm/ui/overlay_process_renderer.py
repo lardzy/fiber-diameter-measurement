@@ -164,6 +164,7 @@ def _encode(snapshot):
         adaptive_composition=snapshot.adaptive_composition,
         composition_probe_rgba=snapshot.composition_probe_rgba,
         known_empty=snapshot.known_empty,
+        viewport=snapshot.viewport,
     )
 
 

@@ -136,6 +136,9 @@ class CanvasOverlayRenderSnapshot:
     adaptive_composition: bool = False
     composition_probe_rgba: int = 0xFFFFFFFF
     known_empty: bool = False
+    # A zoom transition renders just the target viewport, at its real DPR.
+    # Tile snapshots keep their integer grid and subpixel phase.
+    viewport: tuple[int, int, float, float] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -404,10 +407,13 @@ class _TileRenderRunnable(QRunnable):
         dpr = max(1.0, float(key.device_pixel_ratio))
         core_physical = max(1, int(math.ceil(snapshot.logical_tile_size * dpr)))
         bleed_physical = max(0, int(snapshot.bleed_device_pixels))
-        physical_size = core_physical + (bleed_physical * 2)
+        core_width = core_height = core_physical
+        if snapshot.viewport is not None:
+            width, height, _, _ = snapshot.viewport
+            core_width, core_height = math.ceil(width * dpr), math.ceil(height * dpr)
         image = QImage(
-            physical_size,
-            physical_size,
+            core_width + 2 * bleed_physical,
+            core_height + 2 * bleed_physical,
             QImage.Format.Format_ARGB32_Premultiplied,
         )
         image.fill(int(fill_rgba))
@@ -420,23 +426,17 @@ class _TileRenderRunnable(QRunnable):
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
             painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
-            painter.translate(
-                logical_bleed
-                + phase_x
-                - (key.tile_x * snapshot.logical_tile_size),
-                logical_bleed
-                + phase_y
-                - (key.tile_y * snapshot.logical_tile_size),
-            )
+            origin_x = phase_x - key.tile_x * snapshot.logical_tile_size
+            origin_y = phase_y - key.tile_y * snapshot.logical_tile_size
+            if snapshot.viewport is not None:
+                _, _, origin_x, origin_y = snapshot.viewport
+            painter.translate(logical_bleed + origin_x, logical_bleed + origin_y)
             self._play_snapshot(snapshot, painter)
         finally:
             painter.end()
-        core = image.copy(
-            bleed_physical,
-            bleed_physical,
-            core_physical,
-            core_physical,
-        )
+        if not bleed_physical:
+            return image
+        core = image.copy(bleed_physical, bleed_physical, core_width, core_height)
         core.setDevicePixelRatio(dpr)
         return core
 
@@ -553,17 +553,14 @@ class _TileRenderRunnable(QRunnable):
         painter = QPainter(picture)
         if not painter.isActive():  # pragma: no cover - defensive Qt backend
             raise RuntimeError("failed to create exact area command picture")
-        bleed = float(snapshot.bleed_device_pixels) / max(
-            float(snapshot.key.device_pixel_ratio),
-            1.0,
-        )
+        dpr = max(1.0, float(snapshot.key.device_pixel_ratio))
         tile_size = float(snapshot.logical_tile_size)
         painter.setClipRect(
             QRectF(
-                snapshot.key.tile_x * tile_size,
-                snapshot.key.tile_y * tile_size,
-                tile_size,
-                tile_size,
+                snapshot.key.tile_x * tile_size - snapshot.key.device_phase_x / dpr,
+                snapshot.key.tile_y * tile_size - snapshot.key.device_phase_y / dpr,
+                math.floor(snapshot.key.device_phase_x + tile_size * dpr) / dpr,
+                math.floor(snapshot.key.device_phase_y + tile_size * dpr) / dpr,
             )
         )
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
@@ -760,6 +757,7 @@ class CanvasOverlayTileCache(QObject):
             adaptive_composition=snapshot.adaptive_composition,
             composition_probe_rgba=snapshot.composition_probe_rgba,
             known_empty=snapshot.known_empty,
+            viewport=snapshot.viewport,
         )
         cancellation = _CancellationFlag()
         self._request_sequence += 1
@@ -1138,6 +1136,13 @@ class CanvasOverlayTileCache(QObject):
             raise ValueError("overlay tile logical size must be positive")
         if int(snapshot.bleed_device_pixels) < 0:
             raise ValueError("overlay tile bleed must not be negative")
+        if snapshot.viewport is not None:
+            width, height, pan_x, pan_y = snapshot.viewport
+            if (width <= 0 or height <= 0 or not math.isfinite(pan_x)
+                    or not math.isfinite(pan_y)):
+                raise ValueError("overlay viewport must have a positive size and finite origin")
+            if snapshot.exact_composition or snapshot.adaptive_composition:
+                raise ValueError("overlay viewport must be a raster")
         if snapshot.known_empty:
             if (
                 snapshot.picture is not None
@@ -1177,6 +1182,10 @@ class CanvasOverlayTileCache(QObject):
         """
 
         estimated = _PENDING_SNAPSHOT_OVERHEAD_BYTES
+        if snapshot.viewport is not None and not snapshot.known_empty:
+            width, height, _, _ = snapshot.viewport
+            dpr = max(1.0, snapshot.key.device_pixel_ratio)
+            estimated += 4 * math.ceil(width * dpr) * math.ceil(height * dpr)
         if snapshot.picture is not None:
             return estimated + max(1, int(snapshot.picture.size()))
         for command in snapshot.area_commands:

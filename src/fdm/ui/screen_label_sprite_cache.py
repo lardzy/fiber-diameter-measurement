@@ -17,6 +17,7 @@ from PySide6.QtGui import (
 
 
 DEFAULT_SCREEN_LABEL_SPRITE_CACHE_BYTES = 32 * 1024 * 1024
+MAX_SINGLE_LABEL_BYTES = 8 * 1024 * 1024
 _HORIZONTAL_PADDING = 6.0
 _VERTICAL_PADDING = 3.0
 
@@ -33,7 +34,7 @@ def _normalized_dpr(device_pixel_ratio: float) -> float:
         return 1.0
     if not math.isfinite(value) or value <= 0.0:
         return 1.0
-    return min(8.0, max(0.25, value))
+    return max(0.25, value)
 
 
 def _color_key(color: QColor | None) -> int | None:
@@ -113,6 +114,13 @@ class ScreenLabelSprite:
     def logical_rect(self) -> QRectF:
         return QRectF(0.0, 0.0, self.logical_width, self.logical_height)
 
+    @property
+    def image_offset(self) -> QPointF:
+        # One transparent physical pixel separates the visible background
+        # edge from Qt's antialiased QPicture/drawImage clipping boundary.
+        pad = 1.0 / self.image.devicePixelRatioF()
+        return QPointF(-pad, -pad)
+
 
 @dataclass(frozen=True, slots=True)
 class ScreenLabelSpriteCacheStats:
@@ -174,7 +182,7 @@ class ScreenLabelSpriteCache:
         background_color: QColor | None,
         device_pixel_ratio: float,
         arrangement_mode: str,
-    ) -> ScreenLabelSprite:
+    ) -> ScreenLabelSprite | None:
         key = ScreenLabelSpriteKey.from_values(
             text=text,
             font=font,
@@ -198,7 +206,7 @@ class ScreenLabelSpriteCache:
             outline_color=outline_color,
             background_color=background_color,
         )
-        if sprite.byte_size > self._max_bytes:
+        if sprite is None or sprite.byte_size > self._max_bytes:
             return sprite
 
         while self._entries and self._bytes + sprite.byte_size > self._max_bytes:
@@ -217,7 +225,7 @@ class ScreenLabelSpriteCache:
         text_color: QColor,
         outline_color: QColor | None,
         background_color: QColor | None,
-    ) -> ScreenLabelSprite:
+    ) -> ScreenLabelSprite | None:
         metrics = QFontMetricsF(font)
         source_lines = key.text.splitlines() or [""]
         line_spacing = max(1.0, metrics.lineSpacing())
@@ -230,8 +238,10 @@ class ScreenLabelSpriteCache:
         logical_width = max(1.0, content_width + (_HORIZONTAL_PADDING * 2.0))
         logical_height = max(1.0, content_height + (_VERTICAL_PADDING * 2.0))
         dpr = key.device_pixel_ratio
-        physical_width = max(1, int(math.ceil(logical_width * dpr)))
-        physical_height = max(1, int(math.ceil(logical_height * dpr)))
+        physical_width = math.ceil(logical_width * dpr) + 2
+        physical_height = math.ceil(logical_height * dpr) + 2
+        if 4 * physical_width * physical_height > MAX_SINGLE_LABEL_BYTES:
+            return None
 
         image = QImage(
             physical_width,
@@ -245,6 +255,7 @@ class ScreenLabelSpriteCache:
         if not painter.isActive():
             raise RuntimeError("Unable to create a painter for a label sprite.")
         try:
+            painter.translate(1.0 / dpr, 1.0 / dpr)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
             painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
             if background_color is not None:

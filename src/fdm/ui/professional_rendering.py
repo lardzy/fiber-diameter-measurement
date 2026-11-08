@@ -15,6 +15,7 @@ from fdm.measurement_annotation import MeasurementAnnotationLayout
 from fdm.metrology import MeasurementPrimitive
 from fdm.models import format_measurement_label_value
 from fdm.ui.measurement_annotation_layout import choose_automatic_offset, readable_angle, resolve_dual_dimension, resolve_linked_label
+from fdm.ui.spatial_buckets import SpatialBucketIndex
 from fdm.ui.rendering import (draw_measurement_annotation_lines, measurement_text_scale,
     _image_to_output_scale, _image_to_output_transform, measurement_label_font)
 
@@ -124,11 +125,53 @@ def place_new_professional_annotation(document, definition, result, settings, in
     return definition
 
 
+class ProfessionalDisplayIndex:
+    """Index dimensions and their remote captions in persistent image coordinates."""
+
+    def __init__(self, document, results, settings):
+        self.definitions = document.professional_measurements
+        self.buckets = SpatialBucketIndex(256)
+        self.bounds = {}
+        self.decoration_reach = 0.0
+        metrics = QFontMetricsF(measurement_label_font(settings))
+        transform = lambda point: QPointF(point.x, point.y)
+        for order, definition in enumerate(self.definitions):
+            result = results.get(definition.id)
+            if result is None:
+                continue
+            result = presentation_result(document, definition, result)
+            # Keep geometry and caption/leader as separate entries so a detached
+            # caption remains visible even when the measured shape is outside.
+            layout = definition.annotation_layout or MeasurementAnnotationLayout.legacy_professional()
+            _, label = professional_label_layout(
+                definition, result, order + 1, transform, layout,
+                decimals=settings.professional_measurement_label_decimals, metrics=metrics,
+                scale=1.0, parallel=settings.length_measurement_label_style.parallel_to_line,
+            )
+            rects = [label.bounds]
+            for primitive in result.geometry:
+                if primitive.points_px:
+                    rects.append(QPolygonF([transform(p) for p in primitive.points_px]).boundingRect())
+            self.bounds[order] = rects
+            for rect in rects:
+                self.buckets.add(order, rect.getCoords())
+            self.decoration_reach = max(self.decoration_reach, label.paint_rect.width() + label.paint_rect.height() + 32)
+
+    def visible(self, rect, zoom, settings):
+        # The dual rail can shift away from a short span when the text box grows.
+        zoom = max(zoom, 1e-9)
+        pad = self.decoration_reach * (1 + measurement_text_scale(settings, zoom) / zoom) + 16 / zoom
+        search = rect.adjusted(-pad, -pad, pad, pad)
+        return [(i + 1, self.definitions[i]) for i in sorted(self.buckets.near(search))
+                if any(b.adjusted(-1, -1, 1, 1).intersects(search) for b in self.bounds[i])]
+
+
 def draw_professional_measurements(painter: QPainter, document, transform,
                                   *, label_decimals: int, settings=None, results: Mapping | None = None,
                                   focus_index=None, layouts=None, selected_id=None,
                                   hovered_id=None, show_labels=True, selected_labels_only=False,
-                                  exclude_label_ids=(), only_measurement_id=None, draw_geometry=True):
+                                  exclude_label_ids=(), only_measurement_id=None, draw_geometry=True,
+                                  visible_definitions=None):
     """Return painted label bounds for identical hit testing and clipping."""
     if results is None:
         from fdm.services.metrology_service import evaluate_document
@@ -142,11 +185,12 @@ def draw_professional_measurements(painter: QPainter, document, transform,
     if settings is not None:
         painter.setFont(measurement_label_font(settings))
     metrics = QFontMetricsF(painter.font())
-    ordered = list(enumerate(document.professional_measurements, 1))
+    ordered = (list(enumerate(document.professional_measurements, 1))
+               if visible_definitions is None else visible_definitions)
     # Keep an actively edited dimension above the other overlays in both the
     # direct path and the transient drag layer, without changing its identifier.
     if selected_id is not None:
-        ordered.sort(key=lambda item: item[1].id == selected_id)
+        ordered = sorted(ordered, key=lambda item: item[1].id == selected_id)
     for index, definition in ordered:
         if only_measurement_id is not None and definition.id != only_measurement_id:
             continue

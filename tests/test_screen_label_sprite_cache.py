@@ -171,7 +171,8 @@ class ScreenLabelSpriteCacheTests(unittest.TestCase):
         self.assertGreater(sprite.content_height, single_line.content_height)
         self.assertGreater(sprite.logical_width, 12.0)
         self.assertGreater(sprite.logical_height, 100.0)
-        self.assertEqual(sprite.image.pixelColor(0, 0).alpha(), 168)
+        self.assertEqual(sprite.image.pixelColor(0, 0).alpha(), 0)
+        self.assertEqual(sprite.image.pixelColor(1, 1).alpha(), 168)
         alpha_pixels = sum(
             1
             for y in range(sprite.image.height())
@@ -221,6 +222,15 @@ class ScreenLabelSpriteCacheTests(unittest.TestCase):
         self._sprite(oversized, "too large")
         self.assertEqual(len(oversized), 0)
         self.assertEqual(oversized.byte_size, 0)
+
+    def test_high_zoom_text_uses_requested_device_resolution_with_vector_fallback(self) -> None:
+        cache = ScreenLabelSpriteCache()
+        sprite = self._sprite(cache, "12", font=self._font(size=12), device_pixel_ratio=32.0)
+        self.assertEqual(sprite.image.devicePixelRatioF(), 32.0)
+        size = cache.byte_size
+        self.assertIsNone(self._sprite(cache, "超大标注" * 10, font=self._font(size=96),
+                                       device_pixel_ratio=32.0))
+        self.assertEqual(cache.byte_size, size)
 
     def test_screen_length_label_uses_one_draw_image_and_reuses_sprite(self) -> None:
         widget = QWidget()

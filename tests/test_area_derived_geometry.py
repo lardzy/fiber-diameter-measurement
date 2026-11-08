@@ -73,6 +73,14 @@ def test_screen_proxy_never_changes_raw_area_or_serialized_geometry() -> None:
     assert measurement.area_px == before["area_px"]
 
 
+def test_small_ring_precision_at_a_remote_slide_origin() -> None:
+    offset = 20_000_000.0
+    local = [Point(0.25, 0.375), Point(2.25, 0.375), Point(2.25, 0.625), Point(0.25, 0.625)]
+    points = [Point(offset + p.x, offset + p.y) for p in local]
+    reduced = area_display._simplify_ring(points, epsilon=0.01)
+    assert [Point(p.x - offset, p.y - offset) for p in reduced] == local
+
+
 def test_replace_area_geometry_copies_input_and_invalidates_only_its_cache() -> None:
     area_derived_geometry_service.clear()
     first = _dense_area("first")

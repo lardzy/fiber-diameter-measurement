@@ -171,6 +171,8 @@ from fdm.ui.canvas_overlay_cache import (
     canvas_overlay_preview_cache,
     PictureOverlayDrawCommand,
 )
+from fdm.ui.canvas_zoom_transition import CanvasZoomTransition, ZoomView
+from fdm.ui.spatial_buckets import SpatialBucketIndex
 from fdm.ui.overlay_presentation import OverlayGestureSnapshot, OverlayPresentation
 from fdm.ui.area_handle_cache import area_handle_display_cache
 from fdm.ui.draft_preview_cache import draft_preview_cache
@@ -192,6 +194,8 @@ from fdm.ui.rendering import (
     draw_measurement_label_only,
     draw_preview_scale_anchor,
     measurement_display_intersects_rect,
+    measurement_display_reach,
+    measurement_text_scale,
     measurement_display_image_bounds,
     measurement_label_image_bounds,
     measurement_annotation_anchor,
@@ -779,6 +783,127 @@ class MeasurementSceneIndex:
         return None
 
 
+class MeasurementDisplayQuery:
+    """Filter image-space body and detached-label indexes at one output scale."""
+
+    def __init__(self, geometry: MeasurementSceneIndex, labels: MeasurementSceneIndex | None,
+                 document: ImageDocument, settings: AppSettings, zoom: float,
+                 stroke_reach: float, label_reach: float, reference_zoom: float):
+        self.geometry = geometry
+        self.labels = labels
+        self.document = document
+        self.settings = settings
+        self.zoom = zoom
+        text_to_image = measurement_text_scale(settings, zoom) / zoom
+        self.body_padding = max(stroke_reach / zoom, label_reach * text_to_image) + 2.0 / zoom
+        # The detached index includes witnesses and labels at the reference scale.
+        # At another scale a short dimension can move its rail outside the text.
+        self.label_padding = 0.0 if zoom == reference_zoom else (
+            label_reach * (text_to_image + measurement_text_scale(settings, reference_zoom) / reference_zoom)
+            + 12.0 / min(zoom, reference_zoom)
+        )
+        self.exact_bounds: dict[str, QRectF | None] = {}
+
+    def to_output(self, point: Point) -> QPointF:
+        return QPointF(point.x * self.zoom, point.y * self.zoom)
+
+    def document_order(self, measurement_id):
+        return self.geometry.document_order(measurement_id)
+
+    def count_number(self, measurement_id):
+        return self.geometry.count_number(measurement_id)
+
+    def query_rect(self, rect: QRectF) -> list[Measurement]:
+        pad = self.body_padding
+        candidates = self.geometry.query_rect(rect.adjusted(-pad, -pad, pad, pad))
+        if self.labels is not None:
+            pad = self.label_padding
+            detached = self.labels.query_rect(rect.adjusted(-pad, -pad, pad, pad))
+            if detached:
+                merged = {m.id: m for m in candidates}
+                merged.update((m.id, m) for m in detached)
+                candidates = sorted(merged.values(), key=lambda m: self.document_order(m.id))
+        visible = []
+        for measurement in candidates:
+            if measurement.id not in self.exact_bounds:
+                self.exact_bounds[measurement.id] = measurement_display_image_bounds(
+                    measurement, self.document, self.settings, self.to_output,
+                    count_number=self.count_number(measurement.id),
+                )
+            bounds = self.exact_bounds[measurement.id]
+            if bounds is not None and (
+                bounds.left() <= rect.right() and bounds.right() >= rect.left()
+                and bounds.top() <= rect.bottom() and bounds.bottom() >= rect.top()
+            ):
+                visible.append(measurement)
+        return visible
+
+
+class MeasurementDisplayIndex:
+    """Image-space indexes survive zoom changes; only visible bounds depend on zoom."""
+
+    def __init__(self):
+        self.reference_zoom = None
+        self.labels = None
+        self.style = None
+        self.reaches = {}
+        self.views = {}
+
+    def sync(self, canvas, geometry, zoom):
+        document = canvas._document
+        settings = canvas._settings
+        reference = self.reference_zoom if self.reference_zoom is not None else zoom
+        self.reference_zoom = reference
+        to_output = lambda point: QPointF(point.x * reference, point.y * reference)
+        group_style = tuple((g.id, g.label, g.color, g.number) for g in document.fiber_groups)
+        style = (document.state_stamp.calibration_state_id, canvas._canvas_visual_settings_signature, group_style)
+        previous = self.reaches if self.style == style else {}
+        self.style = style
+        reaches = {}
+        detached, label_bounds = [], {}
+        self.stroke_reach = self.label_reach = 0.0
+        for measurement in document.measurements:
+            number = geometry.count_number(measurement.id)
+            fingerprint = canvas._measurement_visual_fingerprint(measurement, count_number=number)
+            entry = previous.get(measurement.id)
+            if entry is None or entry[0] != fingerprint:
+                stroke, label = measurement_display_reach(measurement, document, settings, number)
+                annotation = measurement.annotation_layout
+                remote = None
+                if annotation and (annotation.offset_px is not None or annotation.label_position == "external"):
+                    remote = measurement_label_image_bounds(
+                        measurement, document, settings, to_output, count_number=number,
+                    )
+                entry = (fingerprint, stroke, label, remote)
+            reaches[measurement.id] = entry
+            _, stroke, label, remote = entry
+            self.stroke_reach = max(self.stroke_reach, stroke)
+            self.label_reach = max(self.label_reach, label)
+            if remote is not None and remote.isValid():
+                detached.append(measurement)
+                label_bounds[measurement.id] = remote.getCoords()
+        self.reaches = reaches
+        self.geometry = geometry
+        self.views.clear()
+        if not detached:
+            self.labels = None
+        elif self.labels is None:
+            self.labels = MeasurementSceneIndex(detached, bounds_by_id=label_bounds)
+        else:
+            self.labels.sync(detached, bounds_by_id=label_bounds)
+
+    def at_zoom(self, document, settings, zoom):
+        if zoom not in self.views:
+            # Only the presented and requested views need cached exact bounds.
+            if len(self.views) >= 2:
+                del self.views[next(iter(self.views))]
+            self.views[zoom] = MeasurementDisplayQuery(
+                self.geometry, self.labels, document, settings, zoom,
+                self.stroke_reach, self.label_reach, self.reference_zoom,
+            )
+        return self.views[zoom]
+
+
 # Kept for downstream imports while the shared painting/hit-test index migrates
 # to the more descriptive name.
 MeasurementSpatialIndex = MeasurementSceneIndex
@@ -1137,7 +1262,7 @@ class DocumentCanvas(QWidget):
         self._acquisition_alignment = None
         self._measurement_hit_index: MeasurementSceneIndex | None = None
         self._measurement_hit_index_revision = -1
-        self._measurement_display_index: MeasurementSceneIndex | None = None
+        self._measurement_display_index: MeasurementDisplayIndex | None = None
         self._measurement_display_index_signature: tuple[object, ...] | None = (
             None
         )
@@ -1184,6 +1309,7 @@ class DocumentCanvas(QWidget):
         self._overlay_selected_measurement_id: str | None = None
         self._overlay_preview_requested = None
         self._overlay_preview_last = None
+        self._overlay_has_drawn_measurements = False
         self._overlay_preview_commands = []
         self._overlay_preview_measurements = ()
         self._overlay_preview_counts = []
@@ -1207,6 +1333,7 @@ class DocumentCanvas(QWidget):
         self._overlay_preview_refresh_timer.timeout.connect(
             self._refresh_scene_preview_after_edits
         )
+        self._zoom_transition = CanvasZoomTransition(self, canvas_overlay_preview_cache)
         canvas_overlay_preview_cache.tileReady.connect(self._on_scene_preview_ready)
         canvas_overlay_tile_cache.tileReady.connect(self._on_overlay_tile_ready)
         canvas_overlay_tile_cache.tileFailed.connect(self._on_overlay_tile_failed)
@@ -1365,6 +1492,7 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def set_document(self, document: ImageDocument, image: QImage) -> None:
+        self._zoom_transition.reset()
         professional = getattr(self, "_professional_controller", None)
         if professional is not None:
             if professional.workspace.active is professional:
@@ -1416,6 +1544,7 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def set_image(self, image: QImage) -> None:
+        self._zoom_transition.reset()
         self._image = image
         if self._document is not None:
             self._document.image_size = (image.width(), image.height())
@@ -1423,6 +1552,7 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def clear_document(self) -> None:
+        self._zoom_transition.reset()
         professional = getattr(self, "_professional_controller", None)
         if professional is not None:
             if professional.workspace.active is professional:
@@ -1540,6 +1670,7 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def set_acquisition_alignment(self, alignment: str | None) -> None:
+        self._zoom_transition.cancel()
         from fdm.ui.acquisition_alignment import validate_alignment
         if alignment is not None:
             validate_alignment(alignment)
@@ -1567,6 +1698,7 @@ class DocumentCanvas(QWidget):
         construction_kind: str | None = None,
     ) -> None:
         if mode != self._tool_mode:
+            self._zoom_transition.cancel()
             self._cancel_measurement_annotation_drag()
         if self._roi_capture is not None:
             self._clear_roi_capture(restore_tool=False)
@@ -1631,6 +1763,7 @@ class DocumentCanvas(QWidget):
             self._overlay_style_generation += 1
             self._invalidate_all_overlay_tiles()
         if canvas_visual_changed:
+            self._zoom_transition.reset()
             self._measurement_display_index = None
             self._measurement_display_index_signature = None
             professional = getattr(self, "_professional_controller", None)
@@ -1642,6 +1775,7 @@ class DocumentCanvas(QWidget):
         """Change canvas labels only; application/export settings stay intact."""
         if mode not in {"all", "selected", "hidden"} or mode == self._screen_label_mode:
             return
+        self._zoom_transition.reset()
         self._screen_label_mode = mode
         self._refresh_screen_passive_settings()
         self._overlay_style_generation += 1
@@ -4362,6 +4496,7 @@ class DocumentCanvas(QWidget):
         self._hovered_construction_handle = None
         self._set_active_snap_candidate(None)
         self._update_cursor()
+        self._zoom_transition.cancel()
         self._center_image_point_in_widget(point)
         if self._zoom_mode is CanvasZoomMode.FIT:
             self._zoom_mode = CanvasZoomMode.CUSTOM
@@ -4395,53 +4530,29 @@ class DocumentCanvas(QWidget):
     def fit_to_view(self) -> None:
         if self._image is None:
             return
-        self._hovered_line_endpoint = None
-        self._hovered_construction_id = None
-        self._hovered_construction_handle = None
-        self._set_active_snap_candidate(None)
-        self._update_cursor()
         image_width = max(1.0, float(self._image.width()))
         image_height = max(1.0, float(self._image.height()))
         viewport_width = max(1.0, float(self.width() - 40))
         viewport_height = max(1.0, float(self.height() - 40))
         zoom_x = viewport_width / image_width
         zoom_y = viewport_height / image_height
-        self._zoom = _bounded_view_zoom(min(zoom_x, zoom_y))
-        self._zoom_mode = CanvasZoomMode.FIT
-        self._reset_proxy_warming()
-        self._cancel_overlay_requests()
-        target_width = image_width * self._zoom
-        target_height = image_height * self._zoom
+        zoom = _bounded_view_zoom(min(zoom_x, zoom_y))
+        target_width = image_width * zoom
+        target_height = image_height * zoom
         if self._fit_alignment == "top_left":
-            self._pan = Point(20.0, 20.0)
+            pan = Point(20.0, 20.0)
         else:
-            self._pan = Point(
+            pan = Point(
                 (self.width() - target_width) / 2.0,
                 (self.height() - target_height) / 2.0,
             )
-        self._position_acquisition_alignment()
-        self._persist_view_state()
-        self._publish_view_transform(zoom_changed=True)
-        self.update()
+        self._request_zoom_view(ZoomView(zoom, pan, CanvasZoomMode.FIT))
 
     def actual_size(self) -> None:
         if self._image is None:
             return
-        self._hovered_line_endpoint = None
-        self._hovered_construction_id = None
-        self._hovered_construction_handle = None
-        self._set_active_snap_candidate(None)
-        self._update_cursor()
         center = QPointF(self.width() / 2.0, self.height() / 2.0)
-        center_image_point = self.widget_to_image(center)
-        self._zoom = 1.0
-        self._zoom_mode = CanvasZoomMode.ACTUAL
-        self._reset_proxy_warming()
-        self._cancel_overlay_requests()
-        self._center_image_point_in_widget(center_image_point)
-        self._persist_view_state()
-        self._publish_view_transform(zoom_changed=True)
-        self.update()
+        self._set_zoom_at_widget_position(1.0, center, mode=CanvasZoomMode.ACTUAL)
 
     def set_temporary_grab_pressed(self, pressed: bool) -> None:
         self._space_pressed = pressed
@@ -4731,7 +4842,7 @@ class DocumentCanvas(QWidget):
             painter.drawRoundedRect(resolved.paint_rect.adjusted(-2, -2, 2, 2), 3, 3)
             painter.restore()
             if self._hovered_measurement_annotation_id == identity:
-                draw_measurement_annotation_lines(painter, resolved, QColor("#ffbf47"), width=1.6)
+                draw_measurement_annotation_lines(painter, resolved, QColor("#ffbf47"), width=1.6, screen_dashes=True)
                 painter.setPen(QPen(QColor("#ffbf47"), 2.4))
                 if measurement.measurement_kind == "line":
                     line = measurement.effective_line()
@@ -4836,6 +4947,8 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def paintEvent(self, event) -> None:
+        if self._zoom_transition.ready:
+            self._zoom_transition.publish((self.visibleRegion() - event.region()).isEmpty())
         painter = QPainter(self)
         painter.fillRect(self.rect(), canvas_workspace_background(self.palette()))
         if self._image is None or self._document is None:
@@ -4897,6 +5010,7 @@ class DocumentCanvas(QWidget):
         return target
 
     def resizeEvent(self, event) -> None:
+        self._zoom_transition.reset()
         old_size = event.oldSize()
         old_center: Point | None = None
         if (
@@ -4928,6 +5042,7 @@ class DocumentCanvas(QWidget):
 
     def hideEvent(self, event) -> None:
         """Stop producers owned by a canvas that is no longer visible."""
+        self._zoom_transition.reset()
         self._cancel_measurement_annotation_drag()
         self._annotation_handoff_id = None
         screen_layer_cache.discard_group((id(self), "annotation-drag-static"))
@@ -4968,8 +5083,10 @@ class DocumentCanvas(QWidget):
             return
         cursor_position = event.position()
         zoom_factor = 1.15 if effective_delta > 0 else 1 / 1.15
+        requested = self._zoom_transition.requested
+        previous_zoom = requested.zoom if requested is not None else self._zoom
         self._set_zoom_at_widget_position(
-            _bounded_view_zoom(self._zoom * zoom_factor),
+            _bounded_view_zoom(previous_zoom * zoom_factor),
             cursor_position,
             mode=CanvasZoomMode.CUSTOM,
         )
@@ -5072,6 +5189,7 @@ class DocumentCanvas(QWidget):
         return self._panning or self._preview_motion_timer.isActive()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        self._zoom_transition.cancel()
         if self._image is None or self._document is None:
             return
         self.setFocus(Qt.FocusReason.MouseFocusReason)
@@ -6170,22 +6288,34 @@ class DocumentCanvas(QWidget):
     ) -> None:
         if self._image is None:
             return
+        image_before = self.widget_to_image(position)
+        zoom = _bounded_view_zoom(zoom)
+        pan = Point(position.x() - image_before.x * zoom, position.y() - image_before.y * zoom)
+        self._request_zoom_view(ZoomView(zoom, pan, mode))
+
+    def _request_zoom_view(self, target: ZoomView) -> None:
+        if target.zoom == self._zoom and target.pan == self._pan:
+            self._zoom_transition.cancel()
+        elif self._zoom_transition.schedule(target):
+            return
+        self._apply_zoom_view(target)
+
+    def _draw_prepared_zoom_overlay(self, painter: QPainter) -> bool:
+        return self._zoom_transition.paint(painter)
+
+    def _apply_zoom_view(self, target: ZoomView) -> None:
         self._hovered_line_endpoint = None
         self._hovered_construction_id = None
         self._hovered_construction_handle = None
         self._set_active_snap_candidate(None)
         self._update_cursor()
-        image_before = self.widget_to_image(position)
-        self._zoom = _bounded_view_zoom(zoom)
-        self._zoom_mode = mode
+        self._zoom = target.zoom
+        self._zoom_mode = target.mode
         self._reset_proxy_warming()
         self._cancel_overlay_requests()
-        current = self.image_to_widget(image_before)
-        self._pan = Point(
-            self._pan.x + position.x() - current.x(),
-            self._pan.y + position.y() - current.y(),
-        )
-        self._position_acquisition_alignment()
+        self._pan = target.pan
+        if target.mode is not CanvasZoomMode.ACTUAL:
+            self._position_acquisition_alignment()
         self._persist_view_state()
         self._publish_view_transform(zoom_changed=True)
         self.update()
@@ -6342,102 +6472,22 @@ class DocumentCanvas(QWidget):
             return []
         return index.query_point(image_point, tolerance=tolerance)
 
-    def _measurement_display_scene_index(
-        self,
-        *,
-        zoom: float,
-    ) -> MeasurementSceneIndex | None:
+    def _measurement_display_scene_index(self, *, zoom: float) -> MeasurementDisplayQuery | None:
         if self._document is None:
             return None
         stamp = self._document.state_stamp
-        normalized_zoom = max(float(zoom), 0.001)
         signature = (
-            id(self._document),
-            stamp.session_state_id,
-            stamp.calibration_state_id,
-            self._document.measurement_geometry_revision,
-            len(self._document.measurements),
-            self._annotation_preview_revision,
-            round(normalized_zoom, 8),
-            self._canvas_visual_settings_signature,
+            id(self._document), stamp.session_state_id, stamp.calibration_state_id,
+            self._document.measurement_geometry_revision, len(self._document.measurements),
+            self._annotation_preview_revision, self._canvas_visual_settings_signature,
         )
-        if (
-            self._measurement_display_index is not None
-            and self._measurement_display_index_signature == signature
-        ):
-            return self._measurement_display_index
-
-        raw_index = self._measurement_index()
-        presentation = (
-            stamp.calibration_state_id,
-            normalized_zoom,
-            self._canvas_visual_settings_signature,
-            tuple(
-                (group.id, group.label, group.color, group.number)
-                for group in self._document.fiber_groups
-            ),
-        )
-        previous = (
-            getattr(self, "_display_bound_fingerprints", {})
-            if getattr(self, "_display_bound_presentation", None) == presentation
-            else {}
-        )
-        current_fingerprints = {}
-        image_to_scaled_output = lambda point: QPointF(
-            float(point.x) * normalized_zoom,
-            float(point.y) * normalized_zoom,
-        )
-        bounds_by_id: dict[
-            str,
-            tuple[float, float, float, float],
-        ] = {}
-        for measurement in self._document.measurements:
-            count_number = (
-                raw_index.count_number(measurement.id)
-                if raw_index is not None
-                else None
-            )
-            fingerprint = self._measurement_visual_fingerprint(
-                measurement, count_number=count_number
-            )
-            current_fingerprints[measurement.id] = fingerprint
-            entry = (
-                self._measurement_display_index._entries.get(measurement.id)
-                if self._measurement_display_index is not None
-                else None
-            )
-            if previous.get(measurement.id) == fingerprint and entry is not None:
-                bounds_by_id[measurement.id] = entry.bounds
-                continue
-            bounds = measurement_display_image_bounds(
-                measurement,
-                self._document,
-                self._settings,
-                image_to_scaled_output,
-                suggested_line_width=2.0,
-                endpoint_radius=4.0,
-                count_number=count_number,
-            )
-            if bounds is None or not bounds.isValid():
-                continue
-            bounds_by_id[measurement.id] = (
-                bounds.left(),
-                bounds.top(),
-                bounds.right(),
-                bounds.bottom(),
-            )
+        zoom = max(float(zoom), 0.001)
         if self._measurement_display_index is None:
-            self._measurement_display_index = MeasurementSceneIndex(
-                self._document.measurements, bounds_by_id=bounds_by_id
-            )
-        else:
-            self._measurement_display_index.sync(
-                self._document.measurements, bounds_by_id=bounds_by_id
-            )
-        self._display_bound_fingerprints = current_fingerprints
-        self._display_bound_presentation = presentation
-        self._measurement_display_index_signature = signature
-        return self._measurement_display_index
+            self._measurement_display_index = MeasurementDisplayIndex()
+        if signature != self._measurement_display_index_signature:
+            self._measurement_display_index.sync(self, self._measurement_index(), zoom)
+            self._measurement_display_index_signature = signature
+        return self._measurement_display_index.at_zoom(self._document, self._settings, zoom)
 
     def _draw_annotations(
         self,
@@ -6457,6 +6507,8 @@ class DocumentCanvas(QWidget):
                 return  # The transfer frame includes text, selection and overlays.
         else:
             self._annotation_handoff_id = None
+            if self.isVisible() and self._document.measurements:
+                self._overlay_has_drawn_measurements = True
             canvas_overlay_tile_cache.protect(id(self), ())
             if self._overlay_presentation.namespace is not None:
                 # Removing the last area can return a small line/point scene
@@ -6645,6 +6697,31 @@ class DocumentCanvas(QWidget):
         )
         return max(64.0, ((maximum * 8.0) + 32.0) * label_scale)
 
+    @staticmethod
+    def _area_proxy_exclusions(measurements, physical_zoom):
+        """Use original rings wherever independent simplification could close a gap."""
+        areas = [m for m in measurements if m.measurement_kind == "area"]
+        excluded = {m.id for m in areas if len(m.area_rings_px) > 1}
+        if len(areas) < 2:
+            return excluded
+        margin = 1.0 / max(physical_zoom, 1e-9)
+        bounds = {}
+        grid = SpatialBucketIndex(256)
+        for area in areas:
+            coords = area_derived_geometry_service.raw_bounds(area)
+            if coords is None:
+                continue
+            left, top, right, bottom = coords
+            bounds[area.id] = QRectF(left, top, right - left, bottom - top)
+            grid.add(area.id, coords)
+        for identity, rect in bounds.items():
+            if identity in excluded:
+                continue
+            nearby = rect.adjusted(-margin, -margin, margin, margin)
+            if any(other != identity and nearby.intersects(bounds[other]) for other in grid.near(nearby)):
+                excluded.add(identity)
+        return excluded
+
     def _draw_measurements_direct(
         self,
         painter: QPainter,
@@ -6661,6 +6738,9 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return False
         measurements, count_numbers = self._measurement_render_inputs(image_rect)
+        if area_geometry_mode == AREA_GEOMETRY_SCREEN:
+            physical_zoom = self._zoom * (sprite_device_pixel_ratio or painter.device().devicePixelRatioF())
+            raw_area_measurement_ids = raw_area_measurement_ids | self._area_proxy_exclusions(measurements, physical_zoom)
         with area_derived_geometry_service.path_render_pass():
             return draw_measurements(
                 painter,
@@ -6747,11 +6827,13 @@ class DocumentCanvas(QWidget):
         # "visible" set to one tile and cancels the next asynchronous build.
         paint_keys = self._visible_overlay_tile_keys(context)
         viewport_keys = self._visible_overlay_tile_keys(self._paint_context())
+        preview_key = self._scene_preview_key()
+        overview_matches = self._scene_preview_matches_view(preview_key)
+        overview_ready = overview_matches and canvas_overlay_preview_cache.contains(preview_key)
         preview_is_ready = (
-            canvas_overlay_preview_cache.contains(self._scene_preview_key())
+            not self.isVisible()
             or bool(self._overlay_presentation.front)
-            if self.isVisible()
-            else True
+            or overview_ready
         )
         working_keys = (
             self._overlay_prefetch_tile_keys(viewport_keys) if preview_is_ready else viewport_keys
@@ -6835,7 +6917,8 @@ class DocumentCanvas(QWidget):
         ] = {}
         missing: list[CanvasOverlayTileKey] = []
         display_keys = {}
-        waiting_region = QRegion()
+        waiting_keys = []
+        fallback_includes_additions = False
         for key in paint_keys:
             display_key = (
                 self._overlay_presentation.key_for(key) if progressive else key
@@ -6845,17 +6928,15 @@ class DocumentCanvas(QWidget):
                 if display_key is not None
                 else None
             )
-            if display_key != key:
-                waiting_region |= QRegion(
-                    self._overlay_tile_raw_widget_rect(key).toAlignedRect()
-                )
+            if self._overlay_accepted_ids and display_key != key:
+                waiting_keys.append(key)
             if payload is None:
                 missing.append(key)
             else:
                 cached[key] = payload
                 display_keys[key] = display_key
         proxies_deferred = False
-        if progressive:
+        if progressive and overview_matches:
             if not self._overlay_presentation.front:
                 self._request_scene_preview()
             elif (
@@ -6866,18 +6947,44 @@ class DocumentCanvas(QWidget):
                 self._overlay_preview_refresh_timer.start(100)
         if progressive and missing:
             # A local edit keeps its previous exact front until the entire
-            # affected region is ready. Only genuinely uncovered navigation
-            # regions (or evicted fronts) may use the complete scene preview.
-            uncovered = QRegion()
-            for key in missing:
-                uncovered |= QRegion(
-                    self._overlay_tile_raw_widget_rect(key).toAlignedRect()
-                )
+            # affected region is ready. Use current-scale geometry for the
+            # uncovered region when a matching raster is unavailable.
             painter.save()
-            painter.setClipRegion(uncovered, Qt.ClipOperation.IntersectClip)
-            self._draw_scene_preview(painter, context)
-            painter.restore()
-        elif missing:
+            try:
+                # Clip at physical pixel boundaries. Rounding these rects to
+                # whole widget pixels can double-paint a translucent edge at
+                # fractional DPR when the adjacent exact tile arrives.
+                uncovered = QPainterPath()
+                for key in missing:
+                    uncovered.addRect(self._overlay_tile_widget_rect(key))
+                painter.setClipPath(uncovered, Qt.ClipOperation.IntersectClip)
+                prepared = self._draw_prepared_zoom_overlay(painter)
+                use_overview = overview_ready or (
+                    overview_matches and not self._overlay_has_drawn_measurements
+                )
+                if not prepared and use_overview:
+                    self._draw_scene_preview(painter, context)
+                elif not prepared:
+                    # A scaled overview changes both stroke widths and glyphs.
+                    # Query the complete display envelope (a label can be
+                    # visible in the margin even when its geometry is not).
+                    visible = uncovered.boundingRect().intersected(context.widget_rect)
+                    proxies_deferred = self._draw_measurements_direct(
+                        painter,
+                        image_rect=context.widget_to_image_transform.mapRect(visible),
+                        image_to_output=self.image_to_widget,
+                        use_sprite_cache=True,
+                        render_selected_state=False,
+                        raw_area_measurement_ids=selected_area_ids,
+                    )
+                fallback_includes_additions = prepared or overview_ready or not use_overview
+                if fallback_includes_additions:
+                    self._overlay_has_drawn_measurements = True
+            finally:
+                painter.restore()
+        if progressive and (cached or overview_ready):
+            self._overlay_has_drawn_measurements = True
+        if not progressive and missing:
             self._overlay_sync_fallbacks += 1
         if not progressive and len(missing) == len(paint_keys):
             proxies_deferred = self._draw_measurements_direct(
@@ -6914,10 +7021,16 @@ class DocumentCanvas(QWidget):
             ):
                 # The raster already has this exact DPR and subpixel phase;
                 # point placement avoids a second scaling/filtering pass.
-                painter.drawImage(
-                    self._overlay_tile_widget_rect(key).topLeft(),
-                    image,
-                )
+                target = self._overlay_tile_widget_rect(key)
+                if not (OVERLAY_TILE_LOGICAL_SIZE * key.device_pixel_ratio).is_integer():
+                    # Workers allocate ceil(size * DPR). Adjacent tiles can
+                    # alternate between floor and ceil physical pixels.
+                    painter.save()
+                    painter.setClipRect(target, Qt.ClipOperation.IntersectClip)
+                    painter.drawImage(target.topLeft(), image)
+                    painter.restore()
+                else:
+                    painter.drawImage(target.topLeft(), image)
                 continue
             if picture is None:  # pragma: no cover - cache envelope guard
                 continue
@@ -6925,7 +7038,7 @@ class DocumentCanvas(QWidget):
                 continue
             if self._draw_precise_overlay_front(painter, display_keys[key], picture):
                 continue
-            target = self._overlay_tile_raw_widget_rect(key)
+            target = self._overlay_tile_widget_rect(key)
             painter.save()
             painter.setClipRect(target)
             origin = self._overlay_widget_origin()
@@ -6934,11 +7047,18 @@ class DocumentCanvas(QWidget):
                 picture.play(painter)
             finally:
                 painter.restore()
-        if progressive and not waiting_region.isEmpty() and self._overlay_accepted_ids:
-            painter.save()
-            painter.setClipRegion(waiting_region, Qt.ClipOperation.IntersectClip)
-            self._draw_pending_overlay_additions(painter, context)
-            painter.restore()
+        if progressive and waiting_keys:
+            # Supplement only an older front (or a cold opening frame). A
+            # current fallback already shows the additions, including alpha.
+            waiting = QPainterPath()
+            for key in waiting_keys:
+                if key in cached or not fallback_includes_additions:
+                    waiting.addRect(self._overlay_tile_widget_rect(key))
+            if not waiting.isEmpty():
+                painter.save()
+                painter.setClipPath(waiting, Qt.ClipOperation.IntersectClip)
+                self._draw_pending_overlay_additions(painter, context)
+                painter.restore()
         self._redraw_selected_measurement_background(painter, context)
         self._draw_selected_measurement_active_layer(painter, context)
         # Queue the complete visible set plus a byte-bounded one-tile guard
@@ -6949,7 +7069,8 @@ class DocumentCanvas(QWidget):
         # Local precise work must not wait behind a replacement whole-document
         # overview. The overview remains a separate navigation fallback.
         if (
-            self._overlay_presentation.front
+            not overview_matches
+            or self._overlay_presentation.front
             or not self._overlay_preview_timer.isActive()
         ):
             self._enqueue_overlay_tiles(working_keys)
@@ -6991,9 +7112,7 @@ class DocumentCanvas(QWidget):
             picture.play(target)
 
         painter.save()
-        painter.setClipRect(
-            self._overlay_tile_raw_widget_rect(key), Qt.ClipOperation.IntersectClip
-        )
+        painter.setClipRect(tile_rect, Qt.ClipOperation.IntersectClip)
         try:
             return screen_layer_cache.draw(
                 painter,
@@ -7024,12 +7143,15 @@ class DocumentCanvas(QWidget):
         canvas_overlay_tile_cache.discard_display_fronts(released)
 
     def _resolve_overlay_presentation(self, keys, *, publish=False, paintable=None):
+        preview_key = self._scene_preview_key()
         changed = self._overlay_presentation.resolve(
             keys,
             canvas_overlay_tile_cache.contains,
             failed=self._overlay_tile_failed,
-            fallback_ready=canvas_overlay_preview_cache.contains(
-                self._scene_preview_key()
+            fallback_ready=(
+                self._overlay_has_drawn_measurements
+                or not self._scene_preview_matches_view(preview_key)
+                or canvas_overlay_preview_cache.contains(preview_key)
             ),
             publish=publish,
             paintable=paintable,
@@ -7582,21 +7704,12 @@ class DocumentCanvas(QWidget):
         dpr = max(float(key.device_pixel_ratio), 1e-9)
         raw_x = float(overlay_origin.x()) + (key.tile_x * size)
         raw_y = float(overlay_origin.y()) + (key.tile_y * size)
+        x = math.floor(raw_x * dpr)
+        y = math.floor(raw_y * dpr)
         return QRectF(
-            math.floor(raw_x * dpr) / dpr,
-            math.floor(raw_y * dpr) / dpr,
-            size,
-            size,
-        )
-
-    def _overlay_tile_raw_widget_rect(self, key: CanvasOverlayTileKey) -> QRectF:
-        size = float(OVERLAY_TILE_LOGICAL_SIZE)
-        overlay_origin = self._overlay_widget_origin()
-        return QRectF(
-            float(overlay_origin.x()) + (key.tile_x * size),
-            float(overlay_origin.y()) + (key.tile_y * size),
-            size,
-            size,
+            x / dpr, y / dpr,
+            (math.floor((raw_x + size) * dpr) - x) / dpr,
+            (math.floor((raw_y + size) * dpr) - y) / dpr,
         )
 
     @staticmethod
@@ -7611,7 +7724,7 @@ class DocumentCanvas(QWidget):
         )
 
     def _enqueue_overlay_tiles(self, keys: list[CanvasOverlayTileKey]) -> None:
-        if self._document is None:
+        if self._document is None or self._zoom_transition.requested is not None:
             return
         self._reconcile_overlay_visible_keys(keys)
         reordered_queue: list[CanvasOverlayTileKey] = []
@@ -7696,7 +7809,8 @@ class DocumentCanvas(QWidget):
             # repeated snapshot construction for the same epoch.
             self._overlay_tile_failed.add(key)
 
-    def _capture_overlay_commands(self, measurements, *, zoom, dpr, count_numbers=None, settings=None):
+    def _capture_overlay_commands(self, measurements, *, zoom, dpr, count_numbers=None, settings=None,
+                                  viewport_raw_ids=None, clip_rect=None):
         settings = self._screen_passive_settings if settings is None else settings
         commands = []
         primitives = []
@@ -7710,6 +7824,10 @@ class DocumentCanvas(QWidget):
             try:
                 recorder.setRenderHint(QPainter.RenderHint.Antialiasing, True)
                 recorder.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+                if clip_rect is not None:
+                    # The recorder has no native device extent. Include bleed
+                    # so long leaders can limit dash generation to this view.
+                    recorder.setClipRect(clip_rect.adjusted(-8, -8, 8, 8))
                 draw_measurements(
                     recorder,
                     self._document,
@@ -7722,6 +7840,9 @@ class DocumentCanvas(QWidget):
                     show_area_handles=False,
                     measurement_sequence=tuple(items),
                     count_numbers=count_numbers,
+                    raw_area_measurement_ids=viewport_raw_ids,
+                    proxy_build_budget=(AreaProxyBuildBudget(max_builds=0, max_build_ms=0.0)
+                                        if viewport_raw_ids is not None else None),
                     use_sprite_cache=True,
                     sprite_device_pixel_ratio=dpr,
                     cull_by_geometry=False,
@@ -7744,9 +7865,15 @@ class DocumentCanvas(QWidget):
                     line_width=2.0,
                     show_fill=self._show_area_fill,
                     sprite_device_pixel_ratio=dpr,
+                    screen_path=(area_derived_geometry_service.cached_screen_path(measurement, zoom * dpr)
+                                 if viewport_raw_ids is not None and measurement.id not in viewport_raw_ids else None),
                 )
                 if command is not None:
                     commands.append(command)
+                elif measurement.area_rings_px or measurement.polygon_px:
+                    # A label too large for a single screen sprite is recorded
+                    # as vectors, including its contour, at the target scale.
+                    record((measurement,))
             else:
                 primitives.append(measurement)
         record(primitives)
@@ -7767,6 +7894,9 @@ class DocumentCanvas(QWidget):
             zoom=key.zoom,
             dpr=key.device_pixel_ratio,
             count_numbers=numbers,
+            clip_rect=QRectF(key.tile_x * OVERLAY_TILE_LOGICAL_SIZE,
+                             key.tile_y * OVERLAY_TILE_LOGICAL_SIZE,
+                             OVERLAY_TILE_LOGICAL_SIZE, OVERLAY_TILE_LOGICAL_SIZE),
         )
         self._overlay_tile_request_serial += 1
         return CanvasOverlayRenderSnapshot(
@@ -7804,10 +7934,22 @@ class DocumentCanvas(QWidget):
             ),
         )
 
+    def _scene_preview_matches_view(self, key) -> bool:
+        if key is None or not math.isclose(key.zoom, self._zoom, rel_tol=1e-8):
+            return False
+        dpr = round(max(1.0, self.devicePixelRatioF()), 4)
+        if key.device_pixel_ratio != dpr:
+            return False
+        # A whole-scene raster is generated with zero subpixel offset. Only
+        # integer device-pixel translations can preserve it without filtering.
+        origin = self._overlay_widget_origin()
+        return all(abs(pixel - round(pixel)) < 1e-6
+                   for pixel in (origin.x() * dpr, origin.y() * dpr))
+
     def _request_scene_preview(self):
         self._overlay_preview_refresh_timer.stop()
         key = self._scene_preview_key()
-        if key is None or canvas_overlay_preview_cache.contains(key):
+        if key is None or self._zoom_transition.requested is not None or canvas_overlay_preview_cache.contains(key):
             return key
         if key == self._overlay_preview_requested and (
             self._overlay_preview_timer.isActive()
@@ -7834,7 +7976,7 @@ class DocumentCanvas(QWidget):
         return self._screen_passive_settings
 
     def _refresh_scene_preview_after_edits(self):
-        if self._document is not None and self.isVisible():
+        if self.isVisible() and self._scene_preview_matches_view(self._scene_preview_key()):
             self._request_scene_preview()
 
     def _prepare_scene_preview(self):
@@ -7845,6 +7987,8 @@ class DocumentCanvas(QWidget):
             self._overlay_preview_counts = []
             return
         preview_settings = self._scene_preview_settings()
+        width, height = self._document.image_size
+        extent = QRectF(0, 0, width * key.zoom, height * key.zoom)
         deadline = time.perf_counter() + 0.004
         while self._overlay_preview_position < len(self._overlay_preview_measurements):
             measurement = self._overlay_preview_measurements[self._overlay_preview_position]
@@ -7853,7 +7997,8 @@ class DocumentCanvas(QWidget):
             else:
                 self._overlay_preview_commands.extend(
                     self._capture_overlay_commands(
-                        (measurement,), zoom=key.zoom, dpr=1.0, settings=preview_settings
+                        (measurement,), zoom=key.zoom, dpr=1.0, settings=preview_settings,
+                        clip_rect=extent,
                     )
                 )
             self._overlay_preview_position += 1
@@ -7865,7 +8010,7 @@ class DocumentCanvas(QWidget):
         self._overlay_preview_commands.extend(self._capture_overlay_commands(
             self._overlay_preview_counts, zoom=key.zoom, dpr=1.0,
             count_numbers={item.id:index+1 for index,item in enumerate(self._overlay_preview_counts)},
-            settings=preview_settings,
+            settings=preview_settings, clip_rect=extent,
         ))
         commands = tuple(self._overlay_preview_commands)
         self._overlay_preview_commands = []
@@ -7925,6 +8070,13 @@ class DocumentCanvas(QWidget):
             sprite_device_pixel_ratio=max(1.0, self.devicePixelRatioF()),
         )
         if command is None:
+            if measurement.area_rings_px or measurement.polygon_px:
+                draw_area_measurement(
+                    painter, self._document, measurement, self.image_to_widget, self._screen_passive_settings,
+                    line_width=2.0, endpoint_radius=4.0, selected=selected,
+                    show_fill=self._show_area_fill and not selected, show_handles=False,
+                    use_sprite_cache=True, show_label=not selected,
+                )
             return True
         if selected:
             from fdm.ui.rendering import measurement_line_width
@@ -8153,7 +8305,8 @@ class DocumentCanvas(QWidget):
             # failure on every paint for the same tile epoch.
             self._overlay_tile_failed.add(key)
             if self.isVisible():
-                self._request_scene_preview()
+                if self._scene_preview_matches_view(self._scene_preview_key()):
+                    self._request_scene_preview()
                 self._update_overlay_keys(
                     self._resolve_overlay_presentation(
                         self._visible_overlay_tile_keys(self._paint_context())
@@ -8169,8 +8322,22 @@ class DocumentCanvas(QWidget):
         self._overlay_tile_queued.clear()
         self._overlay_tile_build_scheduled = False
 
+    def _pause_overlay_jobs_for_zoom(self) -> None:
+        # The displayed view can still repaint from its fronts and visible
+        # geometry. Leave the shared raster worker free for the new viewport.
+        self._cancel_overlay_requests()
+        self._overlay_preview_refresh_timer.stop()
+        self._overlay_preview_timer.stop()
+        if self._overlay_preview_requested is not None:
+            canvas_overlay_preview_cache.cancel(self._overlay_preview_requested)
+        self._overlay_preview_requested = None
+        self._overlay_preview_measurements = ()
+        self._overlay_preview_commands = []
+        self._overlay_preview_counts = []
+
     def _reset_overlay_tracking(self, *, invalidate_document: bool) -> None:
         self._reset_overlay_presentation()
+        self._overlay_has_drawn_measurements = False
         if invalidate_document and self._document is not None:
             canvas_overlay_tile_cache.invalidate_document(id(self._document))
         self._cancel_overlay_requests()
@@ -8477,12 +8644,7 @@ class DocumentCanvas(QWidget):
         annotation = getattr(measurement, "annotation_layout", None)
         annotation_number = None
         if annotation is not None and annotation.show_identifier and self._document is not None:
-            stamp = (id(self._document), self._document.state_stamp.session_state_id,
-                     self._document.measurement_geometry_revision, len(self._document.measurements))
-            if getattr(self, "_annotation_number_stamp", None) != stamp:
-                self._annotation_numbers = {item.id: index + 1 for index, item in enumerate(self._document.measurements)}
-                self._annotation_number_stamp = stamp
-            annotation_number = self._annotation_numbers.get(measurement.id)
+            annotation_number = self._document.measurement_display_number(measurement.id)
         return (
             id(measurement),
             measurement.geometry_revision,
@@ -8558,7 +8720,7 @@ class DocumentCanvas(QWidget):
             id(self._document),
             self._document.id,
             self._document.measurement_geometry_revision,
-            round(float(self._zoom), 8),
+            round(float(self._zoom) * self.devicePixelRatioF(), 8),
             self._document.view_state.selected_measurement_id,
         )
 
@@ -8646,7 +8808,7 @@ class DocumentCanvas(QWidget):
             for measurement in ordered:
                 area_derived_geometry_service.screen_geometry(
                     measurement,
-                    zoom=self._zoom,
+                    zoom=self._zoom * self.devicePixelRatioF(),
                     selected=False,
                     build_budget=pin_budget,
                 )
@@ -8654,7 +8816,7 @@ class DocumentCanvas(QWidget):
                 visited += 1
                 area_derived_geometry_service.screen_geometry(
                     measurement,
-                    zoom=self._zoom,
+                    zoom=self._zoom * self.devicePixelRatioF(),
                     selected=False,
                     build_budget=warm_budget,
                 )
