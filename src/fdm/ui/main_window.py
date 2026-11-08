@@ -3509,6 +3509,9 @@ class MainWindow(QMainWindow):
         tool_menu.addSeparator()
         tool_menu.addAction(self.settings_action)
 
+        experiment_menu = self.menuBar().addMenu("试验")
+        experiment_menu.addAction(self.live_experiment_action)
+
         view_menu = self.menuBar().addMenu("视图")
         view_menu.addAction(self.scale_preview_action)
         view_menu.addAction(self.scale_edit_action)
@@ -3537,8 +3540,6 @@ class MainWindow(QMainWindow):
         self._screen_label_menu.addActions(list(self._screen_label_actions.values()))
 
         help_menu = self.menuBar().addMenu("帮助")
-        experiment_menu = self.menuBar().addMenu("试验")
-        experiment_menu.addAction(self.live_experiment_action)
         help_menu.addAction(self.command_search_action)
         help_menu.addAction(self.shortcuts_help_action)
 
