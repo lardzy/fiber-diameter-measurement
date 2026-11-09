@@ -21,6 +21,7 @@ from fdm.scale_overlay import ScaleOverlaySpec
 
 
 DEFAULT_MEASUREMENT_LABEL_COLOR = "#FF0000"
+DEFAULT_MEASUREMENT_TOOL_SPLIT_RATIO = 0.62
 
 
 class MeasurementEndpointStyle:
@@ -670,6 +671,15 @@ class WorkspaceLayoutSettings:
     records_expanded: bool = True
     area_recognition_expanded: bool = False
     object_properties_expanded: bool = False
+    measurement_tool_split_ratio: float = DEFAULT_MEASUREMENT_TOOL_SPLIT_RATIO
+
+    @staticmethod
+    def _split_ratio(value: object) -> float:
+        try:
+            ratio = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return DEFAULT_MEASUREMENT_TOOL_SPLIT_RATIO
+        return ratio if 0 < ratio < 1 else DEFAULT_MEASUREMENT_TOOL_SPLIT_RATIO
 
     @staticmethod
     def _extent(value: object, default: int) -> int:
@@ -691,6 +701,7 @@ class WorkspaceLayoutSettings:
             records_expanded=bool(self.records_expanded),
             area_recognition_expanded=bool(self.area_recognition_expanded),
             object_properties_expanded=bool(self.object_properties_expanded),
+            measurement_tool_split_ratio=self._split_ratio(self.measurement_tool_split_ratio),
         )
 
     def to_dict(self) -> dict[str, object]:
@@ -706,6 +717,7 @@ class WorkspaceLayoutSettings:
             "records_expanded": normalized.records_expanded,
             "area_recognition_expanded": normalized.area_recognition_expanded,
             "object_properties_expanded": normalized.object_properties_expanded,
+            "measurement_tool_split_ratio": normalized.measurement_tool_split_ratio,
         }
 
     @classmethod
@@ -736,6 +748,7 @@ class WorkspaceLayoutSettings:
             object_properties_expanded=bool(
                 payload.get("object_properties_expanded", defaults.object_properties_expanded)
             ),
+            measurement_tool_split_ratio=cls._split_ratio(payload.get("measurement_tool_split_ratio")),
         )
 
 

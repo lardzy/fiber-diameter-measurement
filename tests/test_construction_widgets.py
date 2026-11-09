@@ -419,18 +419,13 @@ def test_completed_construction_prompt_stays_inline_after_layout_refresh(
                 "source_count": 0,
             },
         )
-        available_width = (
-            strip._expanded_primary_width()
-            + strip._top_row_layout.spacing()
-            + context.sizeHint().width()
-            + 80
-        )
-        strip.resize(available_width, strip.sizeHint().height())
+        strip.resize(1200, strip.sizeHint().height())
         strip.show()
         strip.refreshContextLayout()
         app.processEvents()
 
         assert strip.isContextInline()
+        original_height = strip.height()
 
         MainWindow._on_canvas_construction_command_changed(
             host,
@@ -461,11 +456,8 @@ def test_completed_construction_prompt_stays_inline_after_layout_refresh(
         assert "Shift 正交" in context.promptLabel.text()
         assert "Ctrl 像素中心" in context.promptLabel.text()
         assert strip.isContextInline()
-        assert not strip.isContextStacked()
 
-        # A longer validation message may legitimately need the second row,
-        # but returning to the short command prompt must shrink immediately;
-        # no window resize or other incidental layout event should be needed.
+        # A longer validation message must become scrollable in the same row.
         MainWindow._on_canvas_construction_command_changed(
             host,
             document.id,
@@ -477,7 +469,9 @@ def test_completed_construction_prompt_stays_inline_after_layout_refresh(
             },
         )
         app.processEvents()
-        assert strip.isContextStacked()
+        assert strip.isContextInline()
+        assert strip.height() == original_height
+        assert strip._context_scroll.area.horizontalScrollBar().maximum() > 0
 
         MainWindow._on_canvas_construction_command_changed(
             host,
@@ -491,7 +485,7 @@ def test_completed_construction_prompt_stays_inline_after_layout_refresh(
         app.processEvents()
 
         assert strip.isContextInline()
-        assert not strip.isContextStacked()
+        assert strip.height() == original_height
     finally:
         strip.close()
 

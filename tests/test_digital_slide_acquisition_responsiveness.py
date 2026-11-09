@@ -159,13 +159,13 @@ def test_steady_frames_update_pixels_without_rebuilding_workspace(workspace):
     strip = window._measurement_tool_strip
     with patch.object(window, "_update_action_states") as actions, patch.object(
         window._preview_canvas, "fit_to_view"
-    ) as fit, patch.object(strip._top_row_layout, "insertWidget", wraps=strip._top_row_layout.insertWidget) as insert:
+    ) as fit, patch.object(strip, "refreshContextLayout", wraps=strip.refreshContextLayout) as refresh_strip:
         for _ in range(50):
             camera.send(image("blue"))
             QApplication.processEvents()
         actions.assert_not_called()
         fit.assert_not_called()
-        insert.assert_not_called()
+        refresh_strip.assert_not_called()
     assert window._preview_canvas._image.pixelColor(0, 0) == QColor("blue")
     camera.send(image("green", width=96, height=72))
     QApplication.processEvents()

@@ -1,10 +1,12 @@
 """Regression routes use MainWindow actions and a deterministic fake camera."""
 from pathlib import Path
 import importlib.util
+from unittest.mock import patch
 
+import numpy as np
 import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtGui import QColor, QImage, QPainter, QWheelEvent
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
@@ -224,6 +226,139 @@ def test_digital_slide_entry_probes_no_real_motor_and_returns_to_measurement(har
     assert not harness.window._microview_preview_host.isVisible()
     harness.leave()
     assert not harness.window._digital_slide_mode
+    harness.assert_clean()
+
+
+def _pixel_grid():
+    y, x = np.ogrid[:1080, :1920]
+    values = ((x + y) % 2 * 255).astype(np.uint8)
+    image = QImage(values.data, 1920, 1080, 1920, QImage.Format.Format_Grayscale8).convertToFormat(
+        QImage.Format.Format_RGB32)
+    painter = QPainter(image)
+    for x, y, color in ((0, 0, "red"), (1896, 0, "green"), (0, 1056, "blue"), (1896, 1056, "yellow")):
+        painter.fillRect(x, y, 24, 24, QColor(color))
+    painter.end()
+    return image
+
+
+def test_slide_camera_display_modes_and_nine_anchors_without_another_frame(harness):
+    from fdm.geometry import Point
+    from fdm.live_experiment.calibration_store import save_ruler
+    from fdm.live_experiment.controller import CalibrationSnapshot
+    from fdm.ui.acquisition_alignment import ALIGNMENT_FACTORS
+    from fdm.ui.display_preferences import viewport_key
+    from fdm.ui.live_display import save_screen_ruler
+
+    window = harness.window
+    native = _pixel_grid()
+    size = native.size().toTuple()
+    source_id = "camera:" + harness.backend.device.id
+    save_ruler(viewport_key(source_id, size), CalibrationSnapshot(.5, .5))
+    save_screen_ruler(window.screen(), 125)
+    window._toggle_digital_slide_mode(True)
+    harness.backend.tick(image=native)
+    canvas = window._preview_canvas
+    binding = window._preview_display_binding
+    sequence = window._preview_frame_serial
+    assert binding._source == (source_id, size)
+    with patch.object(window, "_perform_digital_slide_jog_step") as jog:
+        for mode, physical_scale in (("fit", None), ("magnification", .4), ("percent", 1.25), ("pixel", 1)):
+            with patch("fdm.ui.main_window.QInputDialog.getDouble", return_value=(125, True)), \
+                    patch("fdm.ui.live_display.request_magnification", return_value=(200, 125)):
+                choice = window._preview_display_choice
+                choice.activated.emit(choice.findData(mode))
+            workflow.settle()
+            dpr = canvas.devicePixelRatioF()
+            if physical_scale is not None:
+                assert canvas.view_zoom() * dpr == pytest.approx(physical_scale)
+                assert canvas._base_image_raster() == native
+            else:
+                assert canvas._base_image_raster().size().toTuple() == (1280, 720)
+                assert "1280 × 720" in window._preview_status_label.text()
+            assert window._preview_document.image_size == size
+            for alignment, factors in ALIGNMENT_FACTORS.items():
+                window._preview_alignment_button.direction_buttons[alignment].click()
+                workflow.settle()
+                origin = canvas.image_to_widget(Point(0, 0))
+                expected = tuple((v - s * canvas.view_zoom()) * f for v, s, f in
+                                 zip(canvas.size().toTuple(), size, factors))
+                assert origin.toTuple() == pytest.approx(expected, abs=.51 / dpr)
+                if mode == "pixel":
+                    pixels = canvas.grab().toImage()
+                    ox, oy = (round(value * dpr) for value in origin.toTuple())
+                    sx = round((canvas.width() / 2 - origin.x()) * dpr)
+                    sy = round((canvas.height() / 2 - origin.y()) * dpr)
+                    for col in range(sx, sx + 4):
+                        assert pixels.pixelColor(ox + col, oy + sy) == native.pixelColor(col, sy)
+        assert window._preview_frame_serial == sequence
+        assert window._latest_preview_frame == native
+        jog.assert_not_called()
+        position = QPointF(canvas.rect().center())
+        event = QWheelEvent(position, position, QPoint(), QPoint(0, 120),
+                            Qt.MouseButton.NoButton, Qt.KeyboardModifier.NoModifier,
+                            Qt.ScrollPhase.NoScrollPhase, False)
+        QApplication.sendEvent(canvas, event)
+        from fdm.services.motion_control import AXIS_Z, DIR_POS
+        jog.assert_called_once_with(AXIS_Z, DIR_POS)
+        assert binding.store.preferences.mode == "pixel"
+        with patch.object(window, "_slide_acquisition_active", return_value=True):
+            window._last_digital_slide_focus_wheel_at = 0
+            QApplication.sendEvent(canvas, event)
+            assert jog.call_count == 1
+            assert canvas.view_zoom() * dpr == pytest.approx(1)
+    harness.assert_clean()
+
+
+def test_slide_fitted_pan_uses_native_zoom_and_center_between_frames(harness):
+    window = harness.window
+    harness.enter(frame=False)
+    native = _pixel_grid()
+    harness.backend.tick(image=native)
+    binding, canvas = window._preview_display_binding, window._preview_canvas
+    binding.set_mode("fit")
+    binding.set_alignment("bottom_right")
+    workflow.settle()
+    window._toggle_digital_slide_mode(True)
+    workflow.settle()
+    serial = window._preview_frame_serial
+    assert canvas._base_image_raster().size().toTuple() == (1280, 720)
+    window._app_settings.digital_slide_preview_max_width = 0
+    window._activate_app_settings(window._app_settings)
+    assert canvas._base_image_raster() == native
+    window._app_settings.digital_slide_preview_max_width = 960
+    window._activate_app_settings(window._app_settings)
+    workflow.settle()
+    assert canvas._base_image_raster().width() == 960
+    assert window._preview_frame_serial == serial
+    fitted_zoom = canvas.view_zoom()
+    center = canvas.rect().center()
+    delta = QPoint(26, 38)
+    QTest.mousePress(canvas, Qt.MouseButton.MiddleButton, pos=center)
+    QTest.mouseMove(canvas, center + delta)
+    QTest.mouseRelease(canvas, Qt.MouseButton.MiddleButton, pos=center + delta)
+    workflow.settle()
+    assert binding.store.preferences.alignment == "free"
+    assert binding.store.preferences.percent == pytest.approx(fitted_zoom * canvas.devicePixelRatioF() * 100)
+    assert canvas._base_image_raster() == native
+    pan = canvas._pan
+    harness.backend.tick(image=native)
+    assert canvas.view_zoom() == pytest.approx(fitted_zoom)
+    assert canvas._pan == pan
+    window._toggle_digital_slide_mode(False)
+    workflow.settle()
+    assert canvas.view_zoom() == pytest.approx(fitted_zoom)
+    # Change source geometry before the previous mode's queued center restore.
+    binding.set_mode("percent", 275)
+    resized = native.scaled(980, 520)
+    window._on_live_preview_frame_ready(resized)
+    workflow.settle()
+    assert canvas.view_zoom() * canvas.devicePixelRatioF() == pytest.approx(2.75)
+    assert canvas.widget_to_image(QPointF(canvas.width() / 2, canvas.height() / 2)).x == pytest.approx(490)
+    binding.set_mode("magnification", 300)
+    harness.backend.tick(image=resized)
+    assert binding._source[1] == (980, 520)
+    assert canvas.view_zoom() * canvas.devicePixelRatioF() == pytest.approx(1)
+    assert binding.store.preferences.mode == "magnification"
     harness.assert_clean()
 
 

@@ -4995,7 +4995,7 @@ class DocumentCanvas(QWidget):
         target = self._base_image_target_rect()
         if self._image is None or target.isEmpty():
             return target
-        painter.drawImage(target, self._image)
+        painter.drawImage(target, self._base_image_raster())
         from fdm.ui.watermark_rendering import draw_watermark
 
         if self._document is not None:
@@ -5008,6 +5008,9 @@ class DocumentCanvas(QWidget):
         painter.drawRect(target)
         painter.restore()
         return target
+
+    def _base_image_raster(self) -> QImage:
+        return self._image
 
     def resizeEvent(self, event) -> None:
         self._zoom_transition.reset()

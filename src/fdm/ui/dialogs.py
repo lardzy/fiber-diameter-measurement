@@ -3118,7 +3118,10 @@ class SettingsDialog(QDialog):
         self._digital_slide_blend_width_spin.setRange(0, 10000)
         self._digital_slide_blend_width_spin.setSuffix(" px")
         self._digital_slide_blend_width_spin.setValue(settings.digital_slide_blend_width)
-        capture_form.addRow("预览最大宽度", self._digital_slide_preview_width_combo)
+        self._digital_slide_preview_width_combo.setToolTip(
+            "仅限制适应窗口时的预览分辨率。实际像素、指定百分比和物理倍率均使用相机原始帧。"
+        )
+        capture_form.addRow("适应窗口时的预览最大宽度", self._digital_slide_preview_width_combo)
         capture_form.addRow("采集最大宽度", self._digital_slide_capture_width_combo)
         capture_form.addRow("默认存储格式", self._digital_slide_capture_codec_combo)
         capture_form.addRow("JPEG 质量", quality_row)

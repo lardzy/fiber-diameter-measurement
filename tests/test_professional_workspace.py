@@ -460,7 +460,10 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertAlmostEqual(window._inspector_dock.width(), expected[1], delta=12)
 
     def test_restore_default_layout_resets_sizes_and_section_states(self) -> None:
-        window = self._window()
+        settings = AppSettings()
+        settings.workspace_layout.measurement_tool_split_ratio = 0.45
+        window = self._window(settings)
+        self.assertEqual(window._measurement_tool_strip.splitRatio(), 0.45)
         state = window._app_settings.workspace_layout
         state.project_width = 420
         state.inspector_width = 460
@@ -476,6 +479,7 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
 
         defaults = WorkspaceLayoutSettings()
         self.assertEqual(window._app_settings.workspace_layout, defaults)
+        self.assertEqual(window._measurement_tool_strip.splitRatio(), defaults.measurement_tool_split_ratio)
         self.assertFalse(window._statistics_section.isExpanded())
         self.assertFalse(window._calibration_section.isExpanded())
         self.assertTrue(window._records_section.isExpanded())

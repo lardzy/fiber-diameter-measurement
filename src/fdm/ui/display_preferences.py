@@ -272,6 +272,11 @@ class AcquisitionDisplayBinding(QObject):
         if signature == self._signature:
             return
         self._flush_pending_center()
+        if self._restore_timer.isActive():
+            # A new resolution can arrive before the previous frame's queued
+            # center restore. It must never restore using the new dimensions.
+            self._restore_timer.stop()
+            self._applying = False
         self._source, self._signature = source, signature
         self.apply()
 

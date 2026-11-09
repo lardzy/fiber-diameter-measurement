@@ -1127,6 +1127,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                 inspector_width=390,
                 results_height=330,
                 inspector_records_height=280,
+                measurement_tool_split_ratio=0.47,
                 statistics_expanded=True,
                 calibration_expanded=False,
                 records_expanded=False,
@@ -1193,6 +1194,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.workspace_layout.inspector_width, 390)
         self.assertEqual(loaded.workspace_layout.results_height, 330)
         self.assertEqual(loaded.workspace_layout.inspector_records_height, 280)
+        self.assertEqual(loaded.workspace_layout.measurement_tool_split_ratio, 0.47)
         self.assertTrue(loaded.workspace_layout.statistics_expanded)
         self.assertFalse(loaded.workspace_layout.calibration_expanded)
         self.assertFalse(loaded.workspace_layout.records_expanded)
@@ -1391,6 +1393,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                     "inspector_width": "invalid",
                     "results_height": 99_999,
                     "inspector_records_height": float("inf"),
+                    "measurement_tool_split_ratio": float("nan"),
                     "statistics_expanded": True,
                     "calibration_expanded": False,
                 }
@@ -1401,6 +1404,8 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.workspace_layout.inspector_width, 320)
         self.assertEqual(settings.workspace_layout.results_height, 2000)
         self.assertEqual(settings.workspace_layout.inspector_records_height, 260)
+        self.assertEqual(settings.workspace_layout.measurement_tool_split_ratio,
+                         WorkspaceLayoutSettings().measurement_tool_split_ratio)
         self.assertTrue(settings.workspace_layout.statistics_expanded)
         self.assertFalse(settings.workspace_layout.calibration_expanded)
 

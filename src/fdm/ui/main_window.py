@@ -349,6 +349,7 @@ from fdm.services.tubeness_chain import (
 )
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
+from fdm.ui.acquisition_preview_canvas import AcquisitionPreviewCanvas
 from fdm.ui.canvas import (
     AreaEditOperationMode,
     CanvasSelectionRef,
@@ -2091,7 +2092,7 @@ class MainWindow(QMainWindow):
         self._center_stack: QStackedWidget | None = None
         self._preview_page: QWidget | None = None
         self._preview_display_stack: QStackedWidget | None = None
-        self._preview_canvas: DocumentCanvas | None = None
+        self._preview_canvas: AcquisitionPreviewCanvas | None = None
         self._microview_preview_host: MicroviewPreviewHost | None = None
         self._microview_preview_scroll: QScrollArea | None = None
         self._preview_status_label: QLabel | None = None
@@ -2526,6 +2527,8 @@ class MainWindow(QMainWindow):
         self._create_actions()
         self._build_menus()
         self._build_toolbar()
+        self._measurement_tool_strip.setSplitRatio(self._app_settings.workspace_layout.measurement_tool_split_ratio)
+        self._measurement_tool_strip.splitRatioChanged.connect(self._on_measurement_tool_split_changed)
 
         container = QWidget()
         layout = QVBoxLayout(container)
@@ -3801,11 +3804,17 @@ class MainWindow(QMainWindow):
         self._overlay_tool_button = self._build_overlay_tool_button()
         strip.setOverlayButton(self._overlay_tool_button)
         self._magic_controls_widget = self._build_magic_segment_controls()
-        strip.setMagicContextWidget(self._magic_controls_widget)
+        strip.setMagicContextWidget(
+            self._magic_controls_widget,
+            pinned=(self._magic_complete_button, self._magic_cancel_button),
+        )
         self._preview_analysis_widget = self._build_preview_analysis_controls()
         strip.setPreviewContextWidget(self._preview_analysis_widget)
         self._path_controls_widget = self._build_path_drawing_controls()
-        strip.setPathContextWidget(self._path_controls_widget)
+        strip.setPathContextWidget(
+            self._path_controls_widget,
+            pinned=(self._path_complete_button, self._path_cancel_button),
+        )
         self._construction_context_widget = ConstructionContextWidget(self)
         self._construction_context_widget.backRequested.connect(
             self._construction_back_step
@@ -3819,13 +3828,18 @@ class MainWindow(QMainWindow):
         self._construction_context_widget.parameterChanged.connect(
             self._construction_parameter_changed
         )
-        strip.setConstructionContextWidget(self._construction_context_widget)
+        strip.setConstructionContextWidget(
+            self._construction_context_widget,
+            pinned=(self._construction_context_widget.finishButton, self._construction_context_widget.cancelButton),
+        )
         strip.setActiveMode(self._tool_mode)
         return strip
 
     def _build_count_controls(self) -> QWidget:
         container = QWidget(self)
-        layout = FlowLayout(container, h_spacing=6, v_spacing=6)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
 
         self._count_numbers_button = QToolButton(container)
         self._count_numbers_button.setProperty("contextTool", True)
@@ -3839,7 +3853,9 @@ class MainWindow(QMainWindow):
 
     def _build_magic_segment_controls(self) -> QWidget:
         container = QWidget(self)
-        layout = FlowLayout(container, h_spacing=6, v_spacing=6)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
         self._magic_prompt_label = QLabel(container)
         self._magic_prompt_label.setProperty("contextLabel", True)
         layout.addWidget(self._magic_prompt_label)
@@ -3947,7 +3963,9 @@ class MainWindow(QMainWindow):
 
     def _build_preview_analysis_controls(self) -> QWidget:
         container = QWidget(self)
-        layout = FlowLayout(container, h_spacing=6, v_spacing=6)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
 
         header_button = QToolButton(container)
         header_button.setProperty("contextTool", True)
@@ -3976,7 +3994,9 @@ class MainWindow(QMainWindow):
 
     def _build_path_drawing_controls(self) -> QWidget:
         container = QWidget(self)
-        layout = FlowLayout(container, h_spacing=6, v_spacing=6)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
 
         self._area_operation_button = QToolButton(container)
         self._area_operation_button.setProperty("contextTool", True)
@@ -5152,7 +5172,7 @@ class MainWindow(QMainWindow):
                                                    alignment_button=self._preview_alignment_button)
         preview_image_layout.addWidget(self._preview_view_controls)
         self._preview_display_stack = WorkspaceStack()
-        self._preview_canvas = DocumentCanvas()
+        self._preview_canvas = AcquisitionPreviewCanvas()
         self._preview_canvas.set_empty_message("连接采集设备后自动显示实时画面")
         self._preview_canvas.set_read_only(True)
         self._preview_canvas.set_fit_alignment("top_left")
@@ -5543,6 +5563,10 @@ class MainWindow(QMainWindow):
             self._app_settings.inspector_measurement_results_header_state = str(state or "")
         else:
             self._app_settings.measurement_results_header_state = str(state or "")
+        self._schedule_workspace_layout_save()
+
+    def _on_measurement_tool_split_changed(self, ratio: float) -> None:
+        self._app_settings.workspace_layout.measurement_tool_split_ratio = ratio
         self._schedule_workspace_layout_save()
 
     def _set_inspector_section_state(self, field_name: str, expanded: bool) -> None:
@@ -13808,7 +13832,7 @@ class MainWindow(QMainWindow):
         return canvas
 
     def _should_intercept_digital_slide_preview_wheel(self, watched: object) -> bool:
-        if not (self._digital_slide_mode and self._preview_active) or self._slide_acquisition_active():
+        if not (self._digital_slide_mode and self._preview_active):
             return False
         targets: set[object] = set()
         if self._preview_canvas is not None:
@@ -13821,12 +13845,18 @@ class MainWindow(QMainWindow):
         return watched in targets
 
     def _handle_digital_slide_focus_wheel(self, event) -> bool:
+        # While the scan owns Z, keep wheel events off both the motor and the
+        # ordinary canvas zoom path, which would desynchronize the mode picker.
+        if self._slide_acquisition_active():
+            event.accept()
+            return True
         delta = event.angleDelta()
         delta_y = delta.y()
         delta_x = delta.x()
         effective_delta = delta_y if delta_y != 0 else delta_x
         if effective_delta == 0:
-            return False
+            event.accept()
+            return True
         now = perf_counter()
         if now - self._last_digital_slide_focus_wheel_at >= 0.08:
             self._last_digital_slide_focus_wheel_at = now
@@ -13886,6 +13916,7 @@ class MainWindow(QMainWindow):
         self._preview_display_choice.setCurrentIndex(self._preview_display_choice.findData(preferences.mode))
         self._preview_display_choice.setToolTip(
             f"显示方式跨采集页面及重启保留；百分比 {preferences.percent:g}%，物理倍率 {preferences.magnification:g} 倍。")
+        self._sync_preview_frame_labels()
 
     def _active_acquisition_display_binding(self):
         hub = self._acquisition_workbench
@@ -14438,6 +14469,7 @@ class MainWindow(QMainWindow):
         self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
             self._adaptive_layout.reset_defaults()
+        self._measurement_tool_strip.setSplitRatio(self._app_settings.workspace_layout.measurement_tool_split_ratio)
         self._restore_inspector_section_defaults()
         self.statusBar().showMessage("已恢复默认工作区布局", 3000)
 
@@ -15978,58 +16010,50 @@ class MainWindow(QMainWindow):
             # Trial subscribers already own the frame. Do not also repaint the
             # hidden legacy preview/document tree on every camera tick.
             return
-        display_image = self._scaled_digital_slide_preview_image(image)
         selected = self._selected_capture_device()
-        signature = (
-            image.width(), image.height(), display_image.width(), display_image.height(),
-            self._digital_slide_mode, selected.id if selected is not None else "",
-        )
-        presentation_changed = signature != self._preview_display_signature
-        if (
-            self._preview_document is None
-            or self._preview_document.image_size != (display_image.width(), display_image.height())
-        ):
+        source_id = "camera:" + (selected.id if selected is not None else "unknown")
+        frame_size = image.size().toTuple()
+        if self._preview_document is None or self._preview_document.image_size != frame_size:
             self._preview_document = ImageDocument(
                 id="preview_document",
                 path="preview_frame.png",
-                image_size=(display_image.width(), display_image.height()),
+                image_size=frame_size,
                 source_type="project_asset",
             )
             with self._preview_display_binding.mounting_frame():
-                self._preview_canvas.set_document(self._preview_document, display_image)
-                if self._digital_slide_mode:
-                    self._preview_canvas.fit_to_view()
+                self._preview_canvas.set_document(self._preview_document, image)
         else:
-            self._preview_canvas.set_image(display_image)
-            if presentation_changed and self._digital_slide_mode:
-                self._preview_canvas.fit_to_view()
-        if not self._digital_slide_mode:
-            self._preview_display_binding.set_source("camera:" + (selected.id if selected is not None else "unknown"),
-                (image.width(), image.height()))
-            self._sync_preview_display_choice()
-        if not presentation_changed:
+            self._preview_canvas.set_image(image)
+        self._preview_display_binding.set_source(source_id, frame_size)
+        signature = (source_id, frame_size, self._digital_slide_mode)
+        if signature == self._preview_display_signature:
             return
         self._preview_display_signature = signature
-        if self._preview_status_label is not None:
-            selected = self._selected_capture_device()
-            label = selected.name if selected is not None else "采集设备"
-            if self._digital_slide_mode and (display_image.width(), display_image.height()) != (image.width(), image.height()):
-                self._preview_status_label.setText(
-                    f"数字化切片模式: {label}  预览 {display_image.width()} x {display_image.height()}，采集 {image.width()} x {image.height()}"
-                )
-            else:
-                self._preview_status_label.setText(f"正在预览: {label}  ({image.width()} x {image.height()})")
-        if self._image_resolution_label is not None:
-            if self._digital_slide_mode and (display_image.width(), display_image.height()) != (image.width(), image.height()):
-                self._image_resolution_label.setText(
-                    f"实时预览: {display_image.width()} x {display_image.height()} px    |    原始帧: {image.width()} x {image.height()} px"
-                )
-            else:
-                self._image_resolution_label.setText(f"实时预览分辨率: {image.width()} x {image.height()} px")
-            self._preview_resolution_label.setText(f"{image.width()} × {image.height()} px")
-        self._sync_digital_slide_camera_label(frame_size=(image.width(), image.height()))
+        self._sync_preview_width_limit()
+        self._sync_digital_slide_camera_label(frame_size=frame_size)
         self._update_action_states()
         self._sync_digital_slide_task_state()
+
+    def _sync_preview_width_limit(self) -> None:
+        width = self._digital_slide_preview_max_width() if self._digital_slide_mode else None
+        self._preview_canvas.set_fit_preview_width(width)
+        self._sync_preview_frame_labels()
+
+    def _sync_preview_frame_labels(self) -> None:
+        if self._preview_document is None:
+            return
+        frame_size = self._preview_document.image_size
+        source = f"{frame_size[0]} × {frame_size[1]}"
+        shown = self._preview_canvas.display_raster_size()
+        selected = self._selected_capture_device()
+        camera = selected.name if selected is not None else "采集设备"
+        if shown.toTuple() != frame_size:
+            detail = f"预览 {shown.width()} × {shown.height()} px，原始帧 {source} px"
+        else:
+            detail = f"{source} px"
+        self._preview_status_label.setText(f"正在预览: {camera}  ({detail})")
+        self._image_resolution_label.setText(f"实时预览: {detail}")
+        self._preview_resolution_label.setText(f"{source} px")
 
     def _clear_preview_surface_state(self) -> None:
         self._preview_display_binding.clear_source()
@@ -16189,6 +16213,7 @@ class MainWindow(QMainWindow):
             self._cancel_preview_analysis_session()
         self._digital_slide_mode = bool(checked)
         self._sync_digital_slide_mode_ui()
+        self._sync_preview_width_limit()
         if checked:
             self._apply_digital_slide_motion_settings()
             self._reset_digital_slide_motion_zero(axes=(AXIS_X, AXIS_Y, AXIS_Z))
@@ -16198,8 +16223,6 @@ class MainWindow(QMainWindow):
                 if available:
                     self._set_digital_slide_motor_enabled(True)
             self._on_digital_slide_motor_enabled_changed(self._slide_motion.enabled)
-            if self._preview_canvas is not None and self._preview_document is not None:
-                self._preview_canvas.fit_to_view()
             self.statusBar().showMessage("已进入数字化切片模式", 3000)
         else:
             self._cancel_digital_slide_jog()
@@ -16456,20 +16479,6 @@ class MainWindow(QMainWindow):
                 Qt.TransformationMode.SmoothTransformation,
             ),
             scale,
-        )
-
-    def _scaled_digital_slide_preview_image(self, frame: QImage) -> QImage:
-        if frame.isNull() or not self._digital_slide_mode:
-            return frame
-        max_width = self._digital_slide_preview_max_width()
-        if max_width is None or frame.width() <= max_width:
-            return frame
-        target_height = max(1, int(frame.height() * (max_width / max(1, frame.width()))))
-        return frame.scaled(
-            max_width,
-            target_height,
-            Qt.AspectRatioMode.IgnoreAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
         )
 
     def _parse_optional_int_edit(self, edit: QLineEdit | QSpinBox | None) -> int | None:
@@ -19107,15 +19116,7 @@ class MainWindow(QMainWindow):
         self._count_numbers_button.setEnabled(has_document and is_visible)
         self._count_numbers_button.blockSignals(False)
         if is_visible:
-            self._measurement_tool_strip._refresh_context_visibility()  # noqa: SLF001
-            layout = self._count_controls_widget.layout() if self._count_controls_widget is not None else None
-            if layout is not None:
-                layout.invalidate()
-                layout.activate()
-            if self._count_controls_widget is not None:
-                self._count_controls_widget.updateGeometry()
-                self._count_controls_widget.adjustSize()
-            self._measurement_tool_strip.updateGeometry()
+            self._measurement_tool_strip.refreshContextLayout()
 
     def _toggle_count_numbers(self, checked: bool) -> None:
         self._app_settings.show_count_numbers = bool(checked)
@@ -22323,6 +22324,7 @@ class MainWindow(QMainWindow):
         self._apply_theme_mode()
         self._refresh_theme_sensitive_icons()
         if self._measurement_tool_strip is not None:
+            self._measurement_tool_strip.setSplitRatio(settings.workspace_layout.measurement_tool_split_ratio)
             self._measurement_tool_strip._apply_theme_styles()
         self._apply_tool_menu_stylesheets()
         self._magic_standard_add_roi_enabled = bool(settings.magic_segment_standard_add_roi_enabled)
@@ -22397,6 +22399,7 @@ class MainWindow(QMainWindow):
         if self._preview_canvas is not None:
             self._preview_canvas.set_settings(self._app_settings)
             self._preview_canvas.set_show_area_fill(False)
+            self._sync_preview_width_limit()
         self._populate_group_list(self.current_document())
         self._populate_measurement_table(self.current_document())
         self._update_action_states()
@@ -28128,14 +28131,7 @@ class MainWindow(QMainWindow):
                     )
                 )
             )
-        self._measurement_tool_strip._refresh_context_visibility()  # noqa: SLF001
-        layout = self._magic_controls_widget.layout()
-        if layout is not None:
-            layout.invalidate()
-            layout.activate()
-        self._magic_controls_widget.updateGeometry()
-        self._magic_controls_widget.adjustSize()
-        self._measurement_tool_strip.updateGeometry()
+        self._measurement_tool_strip.refreshContextLayout()
 
     def _ensure_small_object_preview_window(self) -> SmallObjectEnhancementPreviewWindow:
         if self._small_object_preview_window is None:
@@ -28295,14 +28291,7 @@ class MainWindow(QMainWindow):
             self._path_complete_button.setEnabled(bool(canvas and canvas.can_commit_pending_path()))
         if self._path_cancel_button is not None:
             self._path_cancel_button.setEnabled(bool(canvas and canvas.has_pending_path_drawing()))
-        self._measurement_tool_strip._refresh_context_visibility()  # noqa: SLF001
-        layout = self._path_controls_widget.layout()
-        if layout is not None:
-            layout.invalidate()
-            layout.activate()
-        self._path_controls_widget.updateGeometry()
-        self._path_controls_widget.adjustSize()
-        self._measurement_tool_strip.updateGeometry()
+        self._measurement_tool_strip.refreshContextLayout()
 
     def _preview_analysis_supported(self, mode: str | None = None) -> bool:
         selected = self._selected_capture_device()

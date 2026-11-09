@@ -15,14 +15,17 @@ from PySide6.QtWidgets import (
     QLayoutItem,
     QListWidget,
     QMenu,
+    QScrollArea,
     QSizePolicy,
     QSpinBox,
+    QSplitter,
     QToolButton,
     QVBoxLayout,
     QWidget,
     QWidgetItem,
 )
 
+from fdm.settings import DEFAULT_MEASUREMENT_TOOL_SPLIT_RATIO
 from fdm.ui.layout_utils import detach_widget_from_layout
 
 
@@ -819,7 +822,103 @@ class OverlayToolSplitButton(QToolButton):
             event.accept()
 
 
+class _ToolScrollArea(QScrollArea):
+    """Use both wheel axes for this row. Child editors handle their own wheel first."""
+
+    def wheelEvent(self, event) -> None:
+        bar = self.horizontalScrollBar()
+        if bar.maximum() == 0:
+            event.accept()
+            return
+        pixels = event.pixelDelta()
+        angles = event.angleDelta()
+        if not pixels.isNull():
+            delta = pixels.x() if abs(pixels.x()) >= abs(pixels.y()) else pixels.y()
+        else:
+            angle = angles.x() if abs(angles.x()) >= abs(angles.y()) else angles.y()
+            delta = round(angle * bar.singleStep() * 3 / 120)
+        bar.setValue(bar.value() - delta)
+        event.accept()
+
+
+class _ToolScrollPane(QWidget):
+    """A single natural-width row with horizontal scrolling inside its own pane."""
+
+    def __init__(self, content: QWidget, label: str, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+        self.setMinimumWidth(86)  # two arrow buttons and room to see the next tool
+        self.area = _ToolScrollArea(self)
+        self.area.setAccessibleName(label)
+        self.area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.area.setFrameShape(QFrame.Shape.NoFrame)
+        self.area.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.area.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+        self.area.setWidget(content)
+        self.area.viewport().setAutoFillBackground(False)
+        content.setAutoFillBackground(False)
+        content.installEventFilter(self)
+        bar = self.area.horizontalScrollBar()
+        bar.setSingleStep(16)
+        self.backButton = QToolButton(self)
+        self.forwardButton = QToolButton(self)
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(0)
+        for button, arrow, name in (
+            (self.backButton, Qt.ArrowType.LeftArrow, f"向左滚动{label}"),
+            (self.forwardButton, Qt.ArrowType.RightArrow, f"向右滚动{label}"),
+        ):
+            button.setArrowType(arrow)
+            button.setToolTip(name)
+            button.setAccessibleName(name)
+            button.setAutoRaise(True)
+            button.setAutoRepeat(True)
+            button.setFixedWidth(18)
+            button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        row.addWidget(self.backButton)
+        row.addWidget(self.area, 1)
+        row.addWidget(self.forwardButton)
+        self.backButton.clicked.connect(lambda: bar.triggerAction(bar.SliderAction.SliderPageStepSub))
+        self.forwardButton.clicked.connect(lambda: bar.triggerAction(bar.SliderAction.SliderPageStepAdd))
+        bar.rangeChanged.connect(self._update_arrows)
+        bar.valueChanged.connect(self._update_arrows)
+        QApplication.instance().focusChanged.connect(self._reveal_focus)
+
+    def _reveal_focus(self, _previous: QWidget | None, target: QWidget | None) -> None:
+        content = self.area.widget()
+        if target is not None and content is not None and content.isAncestorOf(target):
+            self.area.ensureWidgetVisible(target, 3, 0)
+
+    def _update_arrows(self) -> None:
+        bar = self.area.horizontalScrollBar()
+        self.backButton.setEnabled(bar.value() > bar.minimum())
+        self.forwardButton.setEnabled(bar.value() < bar.maximum())
+
+    def refresh(self) -> None:
+        content = self.area.widget()
+        hint = content.sizeHint().expandedTo(QSize(0, 0))
+        content.resize(hint)
+        overflow = hint.width() > self.contentsRect().width()
+        self.backButton.setVisible(overflow)
+        self.forwardButton.setVisible(overflow)
+        self._update_arrows()
+
+    def eventFilter(self, watched, event) -> bool:
+        if event.type() == QEvent.Type.LayoutRequest and watched is self.area.widget():
+            self.refresh()
+        return super().eventFilter(watched, event)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self.refresh()
+
+
 class MeasurementToolStrip(QWidget):
+    splitRatioChanged = Signal(float)
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._mode_buttons: dict[str, ToolStripActionButton] = {}
@@ -828,55 +927,54 @@ class MeasurementToolStrip(QWidget):
         self._primary_order: list[str] = []
         self._magic_tool_button: OverlayToolSplitButton | None = None
         self._overlay_button: OverlayToolSplitButton | None = None
-        self._magic_context_widget: QWidget | None = None
-        self._count_context_widget: QWidget | None = None
-        self._preview_context_widget: QWidget | None = None
-        self._path_context_widget: QWidget | None = None
-        self._construction_context_widget: QWidget | None = None
-        self._compact_mode = False
+        self._contexts: dict[str, QWidget] = {}
+        self._pinned_groups: dict[str, QWidget] = {}
         self._primary_tools_visible = True
-        self._active_mode = "select"
-        self._context_placement = "hidden"
+        self._split_ratio = DEFAULT_MEASUREMENT_TOOL_SPLIT_RATIO
         self._theme_updating = False
         self.setObjectName("measurementToolStrip")
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setMinimumWidth(0)
-        self._apply_theme_styles()
-        root_layout = QVBoxLayout(self)
-        root_layout.setContentsMargins(6, 2, 6, 2)
-        root_layout.setSpacing(6)
-
-        self._top_row = QWidget(self)
-        self._top_row.setMinimumWidth(0)
-        self._top_row_layout = QHBoxLayout(self._top_row)
-        self._top_row_layout.setContentsMargins(0, 0, 0, 0)
-        self._top_row_layout.setSpacing(12)
-
-        self._primary_row = QWidget(self)
+        root = QHBoxLayout(self)
+        root.setContentsMargins(6, 2, 6, 2)
+        self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
+        self._splitter.setObjectName("measurementToolSplitter")
+        self._splitter.setChildrenCollapsible(False)
+        self._splitter.setHandleWidth(8)
+        root.addWidget(self._splitter)
+        self._primary_row = QWidget()
         self._primary_row.setObjectName("measurementPrimaryRow")
-        self._primary_row.setMinimumWidth(0)
-        self._primary_row.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
-        self._primary_row.setFixedHeight(ToolStripActionButton.HEIGHT + 2)
         self._primary_row_layout = QHBoxLayout(self._primary_row)
         self._primary_row_layout.setContentsMargins(0, 0, 0, 0)
         self._primary_row_layout.setSpacing(6)
-        self._top_row_layout.addWidget(self._primary_row, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self._top_row_layout.addStretch(1)
-        root_layout.addWidget(self._top_row)
+        self._primary_scroll = _ToolScrollPane(self._primary_row, "测量工具", self)
+        self._splitter.addWidget(self._primary_scroll)
 
-        self._context_host = QWidget(self)
-        self._context_host.setMinimumWidth(0)
-        self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
-        self._context_layout = QVBoxLayout(self._context_host)
+        self._right_pane = QWidget(self)
+        right = QHBoxLayout(self._right_pane)
+        right.setContentsMargins(0, 0, 0, 0)
+        right.setSpacing(4)
+        self._context_host = QWidget()
+        self._context_layout = QHBoxLayout(self._context_host)
         self._context_layout.setContentsMargins(0, 0, 0, 0)
-        self._context_layout.setSpacing(6)
-        self._context_host.setVisible(False)
-        root_layout.addWidget(self._context_host)
+        self._context_layout.setSpacing(0)
+        self._context_scroll = _ToolScrollPane(self._context_host, "工具选项", self._right_pane)
+        right.addWidget(self._context_scroll, 1)
+        self._pinned_layout = QHBoxLayout()
+        self._pinned_layout.setSpacing(0)
+        right.addLayout(self._pinned_layout)
+        self._splitter.addWidget(self._right_pane)
+        self._right_pane.hide()
+        self._splitter.handle(1).setToolTip("拖动调整测量工具和选项的宽度")
+        self._splitter.splitterMoved.connect(self._split_moved)
+        self._apply_theme_styles()
+        self._update_row_height()
 
     def _build_stylesheet(self) -> str:
         if _application_palette_is_dark(self):
             strip_background = "#34373C"
             strip_border = "rgba(255, 255, 255, 18)"
+            handle_color = "#7F8E9A"
             primary_text = "#F3F4F6"
             primary_disabled_text = "#9AA5B1"
             primary_hover = "rgba(255, 255, 255, 14)"
@@ -908,6 +1006,7 @@ class MeasurementToolStrip(QWidget):
         else:
             strip_background = "#F5F7FA"
             strip_border = "rgba(17, 24, 39, 22)"
+            handle_color = "#748391"
             primary_text = "#1F2933"
             primary_disabled_text = "#51606F"
             primary_hover = "rgba(31, 41, 51, 10)"
@@ -974,6 +1073,14 @@ class MeasurementToolStrip(QWidget):
             QToolButton[primaryTool="true"][splitTool="true"]::menu-button {{
                 width: 28px;
                 border: none;
+            }}
+            QSplitter#measurementToolSplitter::handle:horizontal {{
+                background: {handle_color};
+                margin: 3px 3px;
+                border-radius: 2px;
+            }}
+            QSplitter#measurementToolSplitter::handle:horizontal:hover {{
+                background: {primary_checked_border};
             }}
             QLabel[contextChip="true"] {{
                 padding: 6px 10px;
@@ -1116,7 +1223,6 @@ class MeasurementToolStrip(QWidget):
             self._split_mode_lookup[alias] = button
         self._primary_order.append(mode)
         self._primary_row_layout.addWidget(button)
-        self._sync_auto_compact_mode()
         return button
 
     def buttonForMode(self, mode: str):
@@ -1142,7 +1248,6 @@ class MeasurementToolStrip(QWidget):
         self._magic_tool_button = button
         self._primary_order.append("__magic_tool__")
         self._primary_row_layout.addWidget(button)
-        self._sync_auto_compact_mode()
 
     def setMagicTool(self, kind: str, checked: bool, *, icon: QIcon | None = None, tooltip: str | None = None) -> None:
         if self._magic_tool_button is None:
@@ -1156,45 +1261,42 @@ class MeasurementToolStrip(QWidget):
     def setOverlayButton(self, button: OverlayToolSplitButton) -> None:
         self._overlay_button = button
         self._primary_row_layout.addWidget(button)
-        self._sync_auto_compact_mode()
 
-    def setMagicContextWidget(self, widget: QWidget) -> None:
-        self._magic_context_widget = widget
+    def _install_context(self, name: str, widget: QWidget, pinned=()) -> None:
         detach_widget_from_layout(widget)
+        self._contexts[name] = widget
         self._context_layout.addWidget(widget)
-        widget.setVisible(False)
-        self._refresh_context_visibility()
+        widget.hide()
+        if pinned:
+            group = QWidget(self._right_pane)
+            row = QHBoxLayout(group)
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(6)
+            for button in pinned:
+                detach_widget_from_layout(button)
+                row.addWidget(button)
+            group.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+            self._pinned_layout.addWidget(group)
+            self._pinned_groups[name] = group
+            group.hide()
+        self.refreshContextLayout()
+
+    def setMagicContextWidget(self, widget: QWidget, *, pinned=()) -> None:
+        self._install_context("magic", widget, pinned)
 
     def setCountContextWidget(self, widget: QWidget) -> None:
-        self._count_context_widget = widget
-        detach_widget_from_layout(widget)
-        self._context_layout.addWidget(widget)
-        widget.setVisible(False)
-        self._refresh_context_visibility()
+        self._install_context("count", widget)
 
     def setPreviewContextWidget(self, widget: QWidget) -> None:
-        self._preview_context_widget = widget
-        detach_widget_from_layout(widget)
-        self._context_layout.addWidget(widget)
-        widget.setVisible(False)
-        self._refresh_context_visibility()
+        self._install_context("preview", widget)
 
-    def setPathContextWidget(self, widget: QWidget) -> None:
-        self._path_context_widget = widget
-        detach_widget_from_layout(widget)
-        self._context_layout.addWidget(widget)
-        widget.setVisible(False)
-        self._refresh_context_visibility()
+    def setPathContextWidget(self, widget: QWidget, *, pinned=()) -> None:
+        self._install_context("path", widget, pinned)
 
-    def setConstructionContextWidget(self, widget: QWidget) -> None:
-        self._construction_context_widget = widget
-        detach_widget_from_layout(widget)
-        self._context_layout.addWidget(widget)
-        widget.setVisible(False)
-        self._refresh_context_visibility()
+    def setConstructionContextWidget(self, widget: QWidget, *, pinned=()) -> None:
+        self._install_context("construction", widget, pinned)
 
     def setActiveMode(self, mode: str) -> None:
-        self._active_mode = mode
         for button in set(self._split_mode_lookup.values()):
             button.setChecked(False)
         split_button = self._split_mode_lookup.get(mode)
@@ -1214,333 +1316,102 @@ class MeasurementToolStrip(QWidget):
         if tooltip is not None:
             self._overlay_button.setToolTip(tooltip)
 
-    def isCompactMode(self) -> bool:
-        return self._compact_mode
-
-    def setCompactMode(self, enabled: bool) -> None:
-        enabled = bool(enabled)
-        if self._compact_mode == enabled:
-            return
-        self._compact_mode = enabled
-        for button in self._mode_buttons.values():
-            button.setCompactMode(enabled)
-        for button in set(self._split_mode_lookup.values()):
-            button.setCompactMode(enabled)
-        if self._magic_tool_button is not None:
-            self._magic_tool_button.setCompactMode(enabled)
-        if self._overlay_button is not None:
-            self._overlay_button.setCompactMode(enabled)
-        self.updateGeometry()
-
     def setPrimaryToolsVisible(self, visible: bool) -> None:
-        visible = bool(visible)
         if self._primary_tools_visible == visible:
             return
         self._primary_tools_visible = visible
-        self._primary_row.setVisible(visible)
-        self._sync_auto_compact_mode()
+        self._primary_scroll.setVisible(visible)
+        self._restore_split()
 
     def primaryToolsVisible(self) -> bool:
         return self._primary_tools_visible
 
-    def setMagicContextVisible(self, visible: bool) -> None:
-        if self.isMagicContextVisible() == bool(visible):
+    def _context_visible(self, name: str) -> bool:
+        widget = self._contexts.get(name)
+        return widget is not None and not widget.isHidden()
+
+    def _set_context_visible(self, name: str, visible: bool) -> None:
+        if self._context_visible(name) == visible or name not in self._contexts:
             return
-        if self._magic_context_widget is not None:
-            self._magic_context_widget.setVisible(bool(visible))
-        self._refresh_context_visibility()
+        self._contexts[name].setVisible(visible)
+        if name in self._pinned_groups:
+            self._pinned_groups[name].setVisible(visible)
+        self._context_scroll.area.horizontalScrollBar().setValue(0)
+        self.refreshContextLayout()
+
+    def setMagicContextVisible(self, visible: bool) -> None:
+        self._set_context_visible("magic", visible)
 
     def isMagicContextVisible(self) -> bool:
-        return bool(self._magic_context_widget and not self._magic_context_widget.isHidden())
+        return self._context_visible("magic")
 
     def setCountContextVisible(self, visible: bool) -> None:
-        if self.isCountContextVisible() == bool(visible):
-            return
-        if self._count_context_widget is not None:
-            self._count_context_widget.setVisible(bool(visible))
-        self._refresh_context_visibility()
+        self._set_context_visible("count", visible)
 
     def isCountContextVisible(self) -> bool:
-        return bool(self._count_context_widget and not self._count_context_widget.isHidden())
+        return self._context_visible("count")
 
     def setPreviewContextVisible(self, visible: bool) -> None:
-        if self.isPreviewContextVisible() == bool(visible):
-            return
-        if self._preview_context_widget is not None:
-            self._preview_context_widget.setVisible(bool(visible))
-        self._refresh_context_visibility()
+        self._set_context_visible("preview", visible)
 
     def isPreviewContextVisible(self) -> bool:
-        return bool(self._preview_context_widget and not self._preview_context_widget.isHidden())
+        return self._context_visible("preview")
 
     def setPathContextVisible(self, visible: bool) -> None:
-        if self.isPathContextVisible() == bool(visible):
-            return
-        if self._path_context_widget is not None:
-            self._path_context_widget.setVisible(bool(visible))
-        self._refresh_context_visibility()
+        self._set_context_visible("path", visible)
 
     def isPathContextVisible(self) -> bool:
-        return bool(self._path_context_widget and not self._path_context_widget.isHidden())
+        return self._context_visible("path")
 
     def setConstructionContextVisible(self, visible: bool) -> None:
-        if self.isConstructionContextVisible() == bool(visible):
-            return
-        if self._construction_context_widget is not None:
-            self._construction_context_widget.setVisible(bool(visible))
-        self._refresh_context_visibility()
+        self._set_context_visible("construction", visible)
 
     def isConstructionContextVisible(self) -> bool:
-        return bool(
-            self._construction_context_widget
-            and not self._construction_context_widget.isHidden()
-        )
-
-    def _refresh_context_visibility(self) -> None:
-        visible = (
-            self.isMagicContextVisible()
-            or self.isCountContextVisible()
-            or self.isPreviewContextVisible()
-            or self.isPathContextVisible()
-            or self.isConstructionContextVisible()
-        )
-        if not visible:
-            self._context_placement = "hidden"
-            self._apply_context_placement()
-            self.updateGeometry()
-            return
-        self._sync_auto_compact_mode()
-        self.updateGeometry()
-
-    def refreshContextLayout(self) -> None:
-        """Re-evaluate placement after the active context changes its hint."""
-
-        self._sync_auto_compact_mode()
-        self._update_context_host_metrics()
-        self._apply_strip_height()
-
-    def _expanded_primary_width(self) -> int:
-        if not self._primary_tools_visible:
-            return 0
-        widths: list[int] = []
-        for mode in self._primary_order:
-            if mode in self._mode_buttons:
-                widths.append(self._mode_buttons[mode].expandedWidthHint())
-            elif mode in self._split_buttons:
-                widths.append(self._split_buttons[mode].expandedWidthHint())
-        if self._magic_tool_button is not None:
-            widths.append(self._magic_tool_button.expandedWidthHint())
-        if self._overlay_button is not None:
-            widths.append(self._overlay_button.expandedWidthHint())
-        if not widths:
-            return 0
-        spacing = self._primary_row_layout.spacing()
-        return sum(widths) + spacing * (len(widths) - 1)
-
-    def _compact_primary_width(self) -> int:
-        if not self._primary_tools_visible:
-            return 0
-        widths = [button.COMPACT_WIDTH for button in self._mode_buttons.values()]
-        widths.extend(button.compactWidthHint() for button in self._split_buttons.values())
-        if self._magic_tool_button is not None:
-            widths.append(self._magic_tool_button.compactWidthHint())
-        if self._overlay_button is not None:
-            widths.append(self._overlay_button.compactWidthHint())
-        if not widths:
-            return 0
-        spacing = self._primary_row_layout.spacing()
-        return sum(widths) + spacing * (len(widths) - 1)
-
-    def _current_context_width(self) -> int:
-        return self._current_context_size().width()
-
-    def _current_context_size(self) -> QSize:
-        widget = self._current_context_widget()
-        if widget is not None:
-            return widget.sizeHint()
-        return QSize()
-
-    def _current_context_widget(self) -> QWidget | None:
-        if self.isMagicContextVisible() and self._magic_context_widget is not None:
-            return self._magic_context_widget
-        if self.isCountContextVisible() and self._count_context_widget is not None:
-            return self._count_context_widget
-        if self.isPreviewContextVisible() and self._preview_context_widget is not None:
-            return self._preview_context_widget
-        if self.isPathContextVisible() and self._path_context_widget is not None:
-            return self._path_context_widget
-        if (
-            self.isConstructionContextVisible()
-            and self._construction_context_widget is not None
-        ):
-            return self._construction_context_widget
-        return None
-
-    def _context_height_for_width(self, width: int) -> int:
-        widget = self._current_context_widget()
-        if widget is None:
-            return 0
-        layout = widget.layout()
-        target_width = max(0, width)
-        if layout is not None:
-            if layout.hasHeightForWidth():
-                return max(widget.minimumSizeHint().height(), layout.heightForWidth(target_width))
-            return max(widget.minimumSizeHint().height(), layout.sizeHint().height())
-        if widget.hasHeightForWidth():
-            return max(widget.minimumSizeHint().height(), widget.heightForWidth(target_width))
-        return max(widget.minimumSizeHint().height(), widget.sizeHint().height())
-
-    def _update_context_host_metrics(self) -> None:
-        if self._context_placement == "hidden" or self._current_context_widget() is None:
-            self._context_host.setMinimumWidth(0)
-            self._context_host.setMaximumWidth(16777215)
-            self._context_host.setMinimumHeight(0)
-            self._context_host.setMaximumHeight(16777215)
-            return
-        if self._context_placement == "inline":
-            context_width = self._current_context_width()
-            self._context_host.setMinimumWidth(context_width)
-            self._context_host.setMaximumWidth(context_width)
-            self._context_host.setMinimumHeight(0)
-            self._context_host.setMaximumHeight(16777215)
-            return
-        self._context_host.setMinimumWidth(0)
-        self._context_host.setMaximumWidth(16777215)
-        layout = self.layout()
-        margins = layout.contentsMargins() if layout is not None else self.contentsMargins()
-        available_width = max(0, self.width() - margins.left() - margins.right())
-        context_height = self._context_height_for_width(available_width)
-        self._context_host.setMinimumHeight(context_height)
-        self._context_host.setMaximumHeight(context_height)
-
-    def _preferred_strip_height(self) -> int:
-        layout = self.layout()
-        margins = layout.contentsMargins() if layout is not None else self.contentsMargins()
-        primary_height = (ToolStripActionButton.HEIGHT + 2) if self._primary_tools_visible else 0
-        height = margins.top() + primary_height + margins.bottom()
-        if not self._primary_tools_visible and self._context_placement == "inline" and self._current_context_widget() is not None:
-            height += self._context_height_for_width(self.width())
-        if self._context_placement == "stacked" and self._current_context_widget() is not None:
-            available_width = max(0, self.width() - margins.left() - margins.right())
-            height += (layout.spacing() if layout is not None else 0) + self._context_height_for_width(available_width)
-        return height
-
-    def _apply_strip_height(self) -> None:
-        target_height = self._preferred_strip_height()
-        if self.height() != target_height or self.minimumHeight() != target_height or self.maximumHeight() != target_height:
-            self.setFixedHeight(target_height)
-
-    def _refresh_parent_layouts(self) -> None:
-        layout = self.layout()
-        if layout is not None:
-            layout.activate()
-        parent = self.parentWidget()
-        if parent is not None and parent.layout() is not None:
-            parent.layout().activate()
-            parent.updateGeometry()
-        self.updateGeometry()
-
-    def _apply_context_placement(self) -> None:
-        placement = (self._context_placement, self._primary_tools_visible)
-        if getattr(self, "_applied_context_placement", None) == placement:
-            self._update_context_host_metrics()
-            self._apply_strip_height()
-            return
-        self._applied_context_placement = placement
-        if self._context_placement == "hidden":
-            self._top_row_layout.removeWidget(self._context_host)
-            self.layout().removeWidget(self._context_host)
-            self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
-            self._context_host.setVisible(False)
-            self.layout().insertWidget(1, self._context_host)
-            self._update_context_host_metrics()
-            self._apply_strip_height()
-            self._refresh_parent_layouts()
-            return
-        self._top_row_layout.removeWidget(self._context_host)
-        self.layout().removeWidget(self._context_host)
-        if self._context_placement == "inline":
-            self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
-            if self._primary_tools_visible:
-                self._top_row_layout.addWidget(
-                    self._context_host,
-                    0,
-                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
-                )
-            else:
-                self._top_row_layout.insertWidget(
-                    0,
-                    self._context_host,
-                    0,
-                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                )
-        else:
-            self._context_host.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            self.layout().insertWidget(1, self._context_host)
-        self._context_host.setVisible(True)
-        self._update_context_host_metrics()
-        self._apply_strip_height()
-        self._refresh_parent_layouts()
+        return self._context_visible("construction")
 
     def isContextInline(self) -> bool:
-        return self._context_placement == "inline"
+        return not self._right_pane.isHidden()
 
-    def isContextStacked(self) -> bool:
-        return self._context_placement == "stacked"
+    def refreshContextLayout(self) -> None:
+        visible = any(not widget.isHidden() for widget in self._contexts.values())
+        if self._right_pane.isHidden() == visible:
+            self._right_pane.setVisible(visible)
+            self._restore_split()
+        self._context_scroll.refresh()
 
-    def _sync_auto_compact_mode(self) -> None:
-        if self.width() <= 0:
-            return
-        available_width = max(0, self.contentsRect().width())
-        expanded_primary_width = self._expanded_primary_width()
-        compact_primary_width = self._compact_primary_width()
-        context_width = self._current_context_width()
-        inline_gap = self._top_row_layout.spacing() if context_width > 0 else 0
+    def splitRatio(self) -> float:
+        return self._split_ratio
 
-        if context_width <= 0:
-            self.setCompactMode(expanded_primary_width > available_width)
-            self._context_placement = "hidden"
-            self._apply_context_placement()
-            return
+    def setSplitRatio(self, ratio: float) -> None:
+        if 0 < ratio < 1:
+            self._split_ratio = ratio
+            self._restore_split()
 
-        if expanded_primary_width + inline_gap + context_width <= available_width:
-            self.setCompactMode(False)
-            self._context_placement = "inline"
-            self._apply_context_placement()
-            return
+    def _restore_split(self) -> None:
+        if self.isContextInline() and self._primary_tools_visible:
+            width = max(0, self._splitter.width() - self._splitter.handleWidth())
+            left = round(self._split_ratio * width)
+            self._splitter.setSizes([left, width - left])
 
-        if expanded_primary_width <= available_width:
-            self.setCompactMode(False)
-            self._context_placement = "stacked"
-            self._apply_context_placement()
-            return
+    def _split_moved(self, _position: int, _index: int) -> None:
+        left, right = self._splitter.sizes()
+        if left > 0 and right > 0:
+            self._split_ratio = left / (left + right)
+            self.splitRatioChanged.emit(self._split_ratio)
 
-        if compact_primary_width + inline_gap + context_width <= available_width:
-            self.setCompactMode(True)
-            self._context_placement = "inline"
-            self._apply_context_placement()
-            return
-
-        self.setCompactMode(expanded_primary_width > available_width)
-        self._context_placement = "stacked"
-        self._apply_context_placement()
+    def _update_row_height(self) -> None:
+        self.setFixedHeight(max(ToolStripActionButton.HEIGHT + 2, self.fontMetrics().height() + 16) + 4)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        self._sync_auto_compact_mode()
-        self._update_context_host_metrics()
-        self._apply_strip_height()
+        self._restore_split()
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
         if event.type() in {QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange}:
             self._apply_theme_styles()
-
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._sync_auto_compact_mode()
-        self._update_context_host_metrics()
-        self._apply_strip_height()
+        elif event.type() in {QEvent.Type.FontChange, QEvent.Type.ApplicationFontChange}:
+            self._update_row_height()
 
     def minimumSizeHint(self) -> QSize:
-        return QSize(0, self._preferred_strip_height())
+        return QSize(0, self.minimumHeight())

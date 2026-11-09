@@ -5211,22 +5211,20 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_measurement_tool_strip_compacts_when_width_is_small(self) -> None:
+    def test_measurement_tools_keep_their_labels_in_a_narrow_viewport(self) -> None:
         window = MainWindow()
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
             self.assertEqual(strip.minimumWidth(), 0)
-            strip.resize(1200, strip.sizeHint().height())
-            strip._sync_auto_compact_mode()
-            self.assertFalse(strip.isCompactMode())
-
-            strip.resize(220, strip.sizeHint().height())
-            strip._sync_auto_compact_mode()
-
-            self.assertTrue(strip.isCompactMode())
-            self.assertTrue(strip.buttonForMode("manual").isCompactMode())
-            self.assertTrue(window._overlay_tool_button.isCompactMode())
+            window.resize(1000, 800)
+            window.show()
+            window.set_tool_mode("magic_segment")
+            strip.setSplitRatio(0.35)
+            self.app.processEvents()
+            self.assertGreater(strip._primary_scroll.area.horizontalScrollBar().maximum(), 0)
+            self.assertFalse(strip.buttonForMode("manual").isCompactMode())
+            self.assertFalse(window._overlay_tool_button.isCompactMode())
             self.assertGreaterEqual(window._overlay_tool_button.menuAreaWidth(), 28)
         finally:
             window.close()
@@ -7238,7 +7236,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_measurement_tool_strip_stacks_context_only_when_width_is_insufficient(self) -> None:
+    def test_tool_strip_stays_inline_at_different_widths_and_hides_during_acquisition(self) -> None:
         window = self._window_with_open_image()
         try:
             strip = window._measurement_tool_strip
@@ -7250,13 +7248,12 @@ class CanvasAndExportTests(unittest.TestCase):
             self.app.processEvents()
             self.assertTrue(strip.isMagicContextVisible())
             self.assertTrue(strip.isContextInline())
-            self.assertFalse(strip.isContextStacked())
-            self.assertFalse(strip.isCompactMode())
+            original_height = strip.height()
 
             window.resize(1000, 900)
             self.app.processEvents()
-            self.assertTrue(strip.isContextStacked())
-            self.assertFalse(strip.isCompactMode())
+            self.assertTrue(strip.isContextInline())
+            self.assertEqual(strip.height(), original_height)
 
             window.resize(1600, 900)
             self.app.processEvents()
@@ -7272,23 +7269,19 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(window._acquisition_right_panel.isVisible())
             self.assertFalse(strip.primaryToolsVisible())
             self.assertFalse(strip.isContextInline())
-            self.assertFalse(strip.isCompactMode())
 
             window.resize(1000, 900)
             self.app.processEvents()
             self.assertFalse(strip.isContextInline())
-            self.assertFalse(strip.isContextStacked())
-            self.assertFalse(strip.isCompactMode())
 
             window.resize(692, 900)
             self.app.processEvents()
             self.assertFalse(strip.isPreviewContextVisible())
             self.assertFalse(strip.isContextInline())
-            self.assertFalse(strip.isContextStacked())
         finally:
             window.close()
 
-    def test_stacked_context_row_has_visible_height_when_window_is_narrow(self) -> None:
+    def test_finish_and_cancel_remain_visible_at_both_ends_of_the_options_range(self) -> None:
         with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
             window = self._window_with_open_image()
         try:
@@ -7299,35 +7292,88 @@ class CanvasAndExportTests(unittest.TestCase):
             self.app.processEvents()
 
             window.set_tool_mode("magic_segment")
+            strip.setSplitRatio(0.8)
+            window.current_canvas()._magic_segment.primary_polygon = [
+                Point(10, 10), Point(90, 10), Point(90, 70), Point(10, 70)
+            ]
+            window._cycle_magic_segment_operation_mode()
             self.app.processEvents()
-
-            self.assertTrue(strip.isContextStacked())
-            self.assertTrue(strip._context_host.isVisible())
-            self.assertGreater(strip._context_host.height(), 0)
-            self.assertGreater(strip._context_host.geometry().top(), strip._top_row.geometry().bottom())
-            self.assertTrue(window._magic_controls_widget.isVisible())
+            bar = strip._context_scroll.area.horizontalScrollBar()
+            self.assertGreater(bar.maximum(), 0)
+            controls = (window._magic_complete_button, window._magic_cancel_button)
+            original = [control.mapTo(strip, QPoint(0, 0)) for control in controls]
+            for value in (bar.maximum(), bar.minimum()):
+                bar.setValue(value)
+                self.app.processEvents()
+                for control, origin in zip(controls, original):
+                    self.assertEqual(control.mapTo(strip, QPoint(0, 0)), origin)
+                    self.assertTrue(control.visibleRegion().contains(control.rect().center()))
         finally:
             window.close()
 
-    def test_context_prefers_stacking_before_compacting_primary_tools(self) -> None:
+    def test_switching_subtract_modes_keeps_canvas_in_the_same_position(self) -> None:
+        from PySide6.QtTest import QTest
+
         with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
             window = self._window_with_open_image()
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
-            window.resize(1000, 900)
+            window.resize(1500, 900)
             window.show()
             self.app.processEvents()
 
             window.set_tool_mode("magic_segment")
             self.app.processEvents()
 
-            self.assertTrue(strip.isContextStacked())
-            self.assertFalse(strip.isCompactMode())
+            canvas = window.current_canvas()
+
+            def canvas_geometry():
+                return (canvas.mapTo(window, QPoint(0, 0)), canvas.size(), strip.height())
+
+            original = canvas_geometry()
+            primary_mask = self._rect_mask(200, 120, (20, 20, 170, 100))
+            canvas._magic_segment.request_id = 1
+            canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+            canvas.apply_magic_segment_result(1, primary_mask)
+            window._cycle_magic_segment_operation_mode()
+            self.app.processEvents()
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+            self.assertEqual(canvas_geometry(), original)
+            for mode in (MagicSegmentSubtractInputMode.POLYGON, MagicSegmentSubtractInputMode.FREEHAND):
+                window._set_magic_subtract_input_mode(mode)
+                self.app.processEvents()
+                self.assertEqual(canvas_geometry(), original)
+                if mode == MagicSegmentSubtractInputMode.POLYGON:
+                    for point in (Point(40, 35), Point(90, 35), Point(90, 80), Point(40, 35)):
+                        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+                    self.assertTrue(window._magic_confirm_subtract_button.isEnabled())
+                    window._magic_confirm_subtract_button.click()
+                    self.app.processEvents()
+                    self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 1)
+                    self.assertEqual(canvas_geometry(), original)
+            self.assertTrue(window._magic_complete_button.isEnabled())
+            window._magic_complete_button.click()
+            deadline = time.monotonic() + 4
+            while not window.current_document().measurements and time.monotonic() < deadline:
+                QTest.qWait(10)
+            self.assertEqual(len(window.current_document().measurements), 1)
+            self.assertEqual(canvas_geometry(), original)
+            canvas._magic_segment.request_id = 2
+            canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+            canvas.apply_magic_segment_result(2, primary_mask)
+            self.assertTrue(window._magic_cancel_button.isEnabled())
+            window._magic_cancel_button.click()
+            self.app.processEvents()
+            self.assertEqual(canvas_geometry(), original)
+            self.assertEqual(len(window.current_document().measurements), 1)
         finally:
+            window._reset_workspace()
             window.close()
 
-    def test_inline_context_keeps_full_width_without_clipping_buttons(self) -> None:
+    def test_tool_split_ratio_survives_modes_without_options_and_restart(self) -> None:
+        from PySide6.QtTest import QTest
+
         window = self._window_with_open_image()
         try:
             strip = window._measurement_tool_strip
@@ -7339,10 +7385,31 @@ class CanvasAndExportTests(unittest.TestCase):
             window.set_tool_mode("magic_segment")
             self.app.processEvents()
 
-            self.assertTrue(strip.isContextInline())
-            self.assertEqual(strip._context_host.width(), window._magic_controls_widget.sizeHint().width())
+            handle = strip._splitter.handle(1)
+            origin = handle.rect().center()
+            ratio_before_drag = strip.splitRatio()
+            QTest.mousePress(handle, Qt.MouseButton.LeftButton, pos=origin)
+            QTest.mouseMove(handle, origin - QPoint(70, 0))
+            QTest.mouseRelease(handle, Qt.MouseButton.LeftButton)
+            self.app.processEvents()
+            ratio = strip.splitRatio()
+            self.assertLess(ratio, ratio_before_drag)
+            self.assertEqual(window._app_settings.workspace_layout.measurement_tool_split_ratio, ratio)
+            widths = strip._splitter.sizes()
+            window.set_tool_mode("select")
+            self.app.processEvents()
+            self.assertEqual(strip._splitter.sizes()[1], 0)
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+            self.assertEqual(strip._splitter.sizes(), widths)
         finally:
             window.close()
+
+        reopened = MainWindow()
+        try:
+            self.assertAlmostEqual(reopened._measurement_tool_strip.splitRatio(), ratio)
+        finally:
+            reopened.close()
 
     def test_shortcut_help_dialog_opens_from_help_action(self) -> None:
         window = MainWindow()
@@ -9953,17 +10020,17 @@ class CanvasAndExportTests(unittest.TestCase):
 
             window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
             self.app.processEvents()
-            reference_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+            reference_width = window._magic_controls_widget.sizeHint().width()
             self.assertFalse(window._magic_prompt_label.isHidden())  # noqa: SLF001
             self.assertTrue(window._magic_toggle_button.isHidden())  # noqa: SLF001
 
             window.set_tool_mode(MagicSegmentToolMode.STANDARD)
             self.app.processEvents()
-            standard_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+            standard_width = window._magic_controls_widget.sizeHint().width()
 
             window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
             self.app.processEvents()
-            fiber_quick_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+            fiber_quick_width = window._magic_controls_widget.sizeHint().width()
 
             self.assertGreater(standard_width, reference_width)
             self.assertNotEqual(fiber_quick_width, standard_width)
