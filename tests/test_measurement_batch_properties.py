@@ -61,7 +61,7 @@ def test_sorted_ctrl_selection_applies_only_explicit_fields_in_one_undo(mounted_
     assert editor._buttons["marker_scale"].isHidden()
     assert editor._buttons["font_family"].text().startswith("继承（")
     assert editor._buttons["stroke_color"].text() == "继承（多种值）"
-    assert window._current_measurement_summary.groupCombo.currentIndex() == -1
+    assert not window._inspector_records_pane.batch_group_button.isHidden()
     before = {m.id: m.to_dict() for m in doc.measurements}
     geometry_revision = doc.measurement_geometry_revision
     history_count = doc.history.command_count
@@ -104,12 +104,13 @@ def test_category_filter_removes_rows_without_retargeting_old_selection(mounted_
     controller.set_filters(group=one.label)
     select_visible(window, ["area-a", "line-b"], shift=True)
     assert set(controller.selected_measurement_ids()) == {"area-a", "line-b"}
-    summary = window._current_measurement_summary
-    old_target = summary.batch_target
-    assert summary.groupCombo.currentData() == one.id
-    index = summary.groupCombo.findData(None)
-    summary.groupCombo.setCurrentIndex(index)
-    summary.groupCombo.activated.emit(index)
+    batch = window._inspector_records_pane.batch_group_button
+    old_target = (doc.id, tuple(controller.selected_measurement_ids()))
+    batch.menu().aboutToShow.emit()
+    next(action for action in batch.menu().actions() if action.text() == "未分类").trigger()
+    batch.menu().aboutToHide.emit()
+    from PySide6.QtWidgets import QApplication
+    QApplication.processEvents()
     assert controller.filters[2] == one.label and controller.proxy_model.rowCount() == 0
     assert controller.selected_measurement_ids() == []
     assert doc.view_state.selected_measurement_id is None
@@ -117,7 +118,7 @@ def test_category_filter_removes_rows_without_retargeting_old_selection(mounted_
     window._edit_selected_measurements(*old_target, {"fiber_group_id": two.id})
     assert doc.history.command_count == count
     assert not one.measurement_ids and two.measurement_ids == ["count-c"]
-    assert not summary.groupCombo.isEnabled()
+    assert batch.isHidden()
     window.undo_current_document()
     assert controller.proxy_model.rowCount() == 2
 

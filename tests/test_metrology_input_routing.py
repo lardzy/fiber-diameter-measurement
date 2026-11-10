@@ -28,7 +28,7 @@ def test_stationary_or_subthreshold_label_click_never_creates_history(mounted_wi
     assert document.state_stamp == stamp
     assert not document.dirty_flags.session_dirty
     assert document.to_dict() == before
-    assert not window._object_properties_section.isExpanded()
+    assert window._inspector_pages.currentWidget() is window._records_page
 
 
 def test_drag_returning_to_original_position_does_not_commit(mounted_window):

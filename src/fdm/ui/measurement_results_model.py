@@ -166,6 +166,7 @@ class MeasurementResultsModel(QAbstractTableModel):
         self._sequence_totals = {}
         self._category_totals = {}
         self._hovered_measurement_id: str | None = None
+        self.category_editable = True
 
     @property
     def document(self) -> ImageDocument | None:
@@ -271,6 +272,10 @@ class MeasurementResultsModel(QAbstractTableModel):
                 return int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             return int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         if role == Qt.ItemDataRole.ToolTipRole:
+            if column is MeasurementResultColumn.GROUP:
+                return group_display
+            if column is MeasurementResultColumn.RESULT_SEQUENCE:
+                return f"{format_measurement_kind(measurement)} · {format_measurement_status(measurement.status)}"
             if column is MeasurementResultColumn.ID:
                 return measurement.id
             if column is MeasurementResultColumn.CREATED_AT:
@@ -297,7 +302,7 @@ class MeasurementResultsModel(QAbstractTableModel):
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         flags = super().flags(index)
-        if index.isValid() and index.column() == MeasurementResultColumn.GROUP:
+        if self.category_editable and index.isValid() and index.column() == MeasurementResultColumn.GROUP:
             flags |= Qt.ItemFlag.ItemIsEditable
         return flags
 
@@ -307,6 +312,7 @@ class MeasurementResultsModel(QAbstractTableModel):
             or index.column() != MeasurementResultColumn.GROUP
             or role != Qt.ItemDataRole.EditRole
             or self._document is None
+            or not self.category_editable
         ):
             return False
         measurement = self.measurement_at(index.row())
@@ -536,16 +542,25 @@ class MeasurementResultsProxyModel(QSortFilterProxyModel):
 class MeasurementGroupDelegate(QStyledItemDelegate):
     """Creates the category combo only while the category cell is edited."""
 
+    editStarted = Signal()
+    editFinished = Signal()
+
     def createEditor(self, parent: QWidget, option, index: QModelIndex) -> QWidget | None:
         del option
         source, _source_index = _source_model_and_index(index)
-        if source is None:
+        if source is None or not source.category_editable or source.document is None:
             return None
         editor = MeasurementGroupComboBox(parent)
+        editor.setProperty("recordId", index.data(MEASUREMENT_ID_ROLE))
+        editor.setProperty("documentId", source.document.id)
         editor.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         for label, group_id, color in source.group_options():
             editor.addItem(_color_icon(color), label, group_id)
         editor.activated.connect(lambda _row, widget=editor: self._commit_and_close(widget))
+        editor.popupDismissed.connect(
+            lambda: self.closeEditor.emit(editor, QAbstractItemDelegate.EndEditHint.RevertModelCache)
+        )
+        self.editStarted.emit()
         return editor
 
     def setEditorData(self, editor: QWidget, index: QModelIndex) -> None:
@@ -556,10 +571,19 @@ class MeasurementGroupDelegate(QStyledItemDelegate):
         editor.setCurrentIndex(0 if target < 0 else target)
 
     def setModelData(self, editor: QWidget, model, index: QModelIndex) -> None:
-        if isinstance(editor, QComboBox):
+        source, _ = _source_model_and_index(index)
+        if (isinstance(editor, MeasurementGroupComboBox) and source is not None and source.document is not None
+                and (not editor.popup_opened or editor.property("categoryConfirmed"))
+                and source.document.id == editor.property("documentId")
+                and index.data(MEASUREMENT_ID_ROLE) == editor.property("recordId")):
             model.setData(index, editor.currentData(), Qt.ItemDataRole.EditRole)
 
+    def destroyEditor(self, editor, index):
+        super().destroyEditor(editor, index)
+        self.editFinished.emit()
+
     def _commit_and_close(self, editor: QWidget) -> None:
+        editor.setProperty("categoryConfirmed", True)
         self.commitData.emit(editor)
         self.closeEditor.emit(editor, QAbstractItemDelegate.EndEditHint.NoHint)
 

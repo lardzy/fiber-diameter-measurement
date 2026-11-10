@@ -9,39 +9,18 @@ from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.main_window import MainWindow
 
 
-@pytest.mark.parametrize("destroy_before_dispatch", [False, True])
-def test_inspector_restore_is_cancelled_when_window_is_deleted(
-    desktop_application, destroy_before_dispatch,
-):
-    calls = []
-
-    class TrackedWindow(MainWindow):
-        def _restore_inspector_section_sizes(self):
-            calls.append(isValid(self))
-            if isValid(self):
-                super()._restore_inspector_section_sizes()
-
-    window = TrackedWindow()
-    try:
-        # Drain construction-time work, then queue the real settings/layout
-        # restore path. Closing before dispatch used to invoke it on dead Qt
-        # children and leave an exception pending for the next paint event.
-        desktop_application.processEvents()
-        calls.clear()
-        window._restore_inspector_section_defaults()
-        assert not calls
-        if destroy_before_dispatch:
-            assert window.close()
-            window.deleteLater()
-            QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-            assert not isValid(window)
-        desktop_application.processEvents()
-        assert calls == ([] if destroy_before_dispatch else [True])
-    finally:
-        if isValid(window):
-            window.close()
-            window.deleteLater()
-            QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+def test_destroy_window_after_records_layout_reset(desktop_application):
+    window = MainWindow()
+    window.resize(1366, 768)
+    window.show()
+    desktop_application.processEvents()
+    window._reset_workspace_layout()
+    assert window._inspector_pages.currentWidget() is window._records_page
+    assert window.close()
+    window.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    desktop_application.processEvents()
+    assert not isValid(window)
 
 
 @pytest.mark.parametrize("destroy_before_dispatch", [False, True])

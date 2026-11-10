@@ -6,7 +6,7 @@ owned by the existing main-window controllers.
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QSize, Qt, Signal
-from PySide6.QtGui import QAction, QPainter, QPalette
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLayout, QLineEdit,
     QListWidget, QListWidgetItem, QMenu, QPushButton, QSizePolicy,
@@ -183,87 +183,6 @@ class WelcomePanel(QFrame):
         steps.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(steps)
         layout.addStretch(1)
-
-
-class FixedLineLabel(QLabel):
-    """Reserve a stable number of lines; long text remains in the tooltip."""
-
-    def __init__(self, text: str = "", parent=None, *, lines: int = 1):
-        self._lines = lines
-        super().__init__(text, parent)
-        self.setTextFormat(Qt.TextFormat.PlainText)
-        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-        self.setToolTip(text)
-
-    def setText(self, text: str) -> None:
-        super().setText(text)
-        self.setToolTip(text)
-
-    def sizeHint(self) -> QSize:
-        return QSize(0, self.fontMetrics().lineSpacing() * self._lines + 2)
-
-    def minimumSizeHint(self) -> QSize:
-        return self.sizeHint()
-
-    def paintEvent(self, event) -> None:
-        painter = QPainter(self)
-        painter.setFont(self.font())
-        painter.setPen(self.palette().color(QPalette.ColorRole.WindowText))
-        rect = self.contentsRect()
-        metrics = self.fontMetrics()
-        for index, text in enumerate(self.text().splitlines()[:self._lines]):
-            line = metrics.elidedText(text, Qt.TextElideMode.ElideRight, rect.width())
-            painter.drawText(rect.left(), rect.top() + 1 + metrics.ascent() + index * metrics.lineSpacing(), line)
-
-
-class CurrentMeasurementSummary(QFrame):
-    editRequested = Signal()
-    groupChangeRequested = Signal(str, object)
-    batchEditRequested = Signal(str, object, object)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setObjectName("currentMeasurementSummary")
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.measurement_id: str | None = None
-        self.batch_target = None
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 8, 10, 8)
-        layout.setSpacing(4)
-        heading = QHBoxLayout()
-        heading.addWidget(QLabel("当前对象", self))
-        self.editButton = QPushButton("属性", self)
-        self.editButton.setObjectName("currentObjectProperties")
-        self.editButton.setCheckable(True)
-        self.editButton.setToolTip("展开或收起当前对象的详细属性")
-        self.editButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.editButton.clicked.connect(self.editRequested)
-        heading.addWidget(self.editButton)
-        layout.addLayout(heading)
-        self.valueLabel = FixedLineLabel("未选中对象", self)
-        self.valueLabel.setObjectName("currentMeasurementValue")
-        layout.addWidget(self.valueLabel)
-        self.sourceLabel = FixedLineLabel("点击画布中的测量对象\n或在测量记录中选择", self, lines=2)
-        layout.addWidget(self.sourceLabel)
-        self.groupCombo = NoWheelComboBox(self)
-        self.groupCombo.setAccessibleName("当前对象类别")
-        self.groupCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.groupCombo.setMinimumWidth(0)
-        self.groupCombo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-        self.groupCombo.setSizeAdjustPolicy(NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.groupCombo.activated.connect(self._activate_group)
-        self.groupCombo.currentTextChanged.connect(self.groupCombo.setToolTip)
-        heading.insertWidget(1, self.groupCombo, 1)
-        self.groupCombo.addItem("对象类别", None)
-        self.groupCombo.setEnabled(False)
-
-    def _activate_group(self, index: int) -> None:
-        if index < 0:
-            return
-        if self.batch_target is not None:
-            self.batchEditRequested.emit(*self.batch_target, {"fiber_group_id": self.groupCombo.itemData(index)})
-        elif self.measurement_id:
-            self.groupChangeRequested.emit(self.measurement_id, self.groupCombo.itemData(index))
 
 
 class CommandSearchDialog(QDialog):

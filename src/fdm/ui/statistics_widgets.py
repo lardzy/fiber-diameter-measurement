@@ -11,11 +11,8 @@ from PySide6.QtCore import (
     Slot,
 )
 from PySide6.QtWidgets import (
-    QFrame,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -122,31 +119,9 @@ class _StatisticsTask(QRunnable):
         self._signals.ready.emit(self._generation, result, error)
 
 
-class _MetricCell(QFrame):
-    def __init__(self, title: str, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setObjectName("statisticsMetricCell")
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(9, 7, 9, 7)
-        layout.setSpacing(2)
-        title_label = QLabel(title, self)
-        title_label.setProperty("statisticsCaption", True)
-        self.value_label = QLabel("—", self)
-        self.value_label.setProperty("statisticsValue", True)
-        self.value_label.setMinimumWidth(0)
-        self.value_label.setSizePolicy(
-            QSizePolicy.Policy.Ignored,
-            QSizePolicy.Policy.Fixed,
-        )
-        self.value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        layout.addWidget(title_label)
-        layout.addWidget(self.value_label)
-
-
 class MeasurementStatisticsPanel(QWidget):
     """Compact live statistics and the latest selected measurement result."""
 
-    resultsRequested = Signal()
     statisticsChanged = Signal(object)
     BACKGROUND_THRESHOLD = 5000
 
@@ -168,91 +143,38 @@ class MeasurementStatisticsPanel(QWidget):
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(8)
-
-        header = QHBoxLayout()
-        title = QLabel("实时统计", self)
-        title.setProperty("panelTitle", True)
-        self._results_button = QPushButton("结果", self)
-        self._results_button.clicked.connect(self.resultsRequested)
-        header.addWidget(title)
-        header.addStretch(1)
-        header.addWidget(self._results_button)
-        root.addLayout(header)
-
+        root.setSpacing(3)
         filter_row = QHBoxLayout()
+        filter_row.addWidget(QLabel("指标", self))
         self.metric_combo = NoWheelComboBox(self)
         self.metric_combo.addItem("自动", None)
         self.metric_combo.addItem("长度", MeasurementMetric.LENGTH)
         self.metric_combo.addItem("面积", MeasurementMetric.AREA)
         self.metric_combo.addItem("计数", MeasurementMetric.COUNT)
-        self.metric_combo.setMinimumWidth(0)
-        self.metric_combo.setMinimumContentsLength(4)
-        self.metric_combo.setSizeAdjustPolicy(
-            NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
-        )
-        self.metric_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.metric_combo.setAccessibleName("统计指标")
         self.metric_combo.currentIndexChanged.connect(self.refresh)
         self.scope_combo = NoWheelComboBox(self)
         self.scope_combo.addItem("当前类别", StatisticsScope.CURRENT_CATEGORY)
         self.scope_combo.addItem("当前图片", StatisticsScope.CURRENT_DOCUMENT)
         self.scope_combo.addItem("整个项目", StatisticsScope.PROJECT)
-        self.scope_combo.setMinimumWidth(0)
-        self.scope_combo.setMinimumContentsLength(4)
-        self.scope_combo.setSizeAdjustPolicy(
-            NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
-        )
-        self.scope_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.scope_combo.setAccessibleName("统计范围")
         self.scope_combo.currentIndexChanged.connect(self.refresh)
-        filter_row.addWidget(self.metric_combo, 1)
-        filter_row.addWidget(self.scope_combo, 1)
+        filter_row.addWidget(self.metric_combo)
+        filter_row.addWidget(QLabel("范围", self))
+        filter_row.addWidget(self.scope_combo)
+
+        self.current_value_label = QLabel(self)
+        self.current_value_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.current_value_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.current_value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        filter_row.addWidget(self.current_value_label, 1)
         root.addLayout(filter_row)
 
-        self.current_value_label = QLabel("尚未选择测量对象", self)
-        self.current_value_label.setObjectName("currentMeasurementValue")
-        self.current_value_label.setWordWrap(True)
-        self.current_value_label.setMinimumWidth(0)
-        self.current_value_label.setSizePolicy(
-            QSizePolicy.Policy.Ignored,
-            QSizePolicy.Policy.Preferred,
-        )
-        self.current_value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        root.addWidget(self.current_value_label)
-
-        metrics = QGridLayout()
-        metrics.setContentsMargins(0, 0, 0, 0)
-        metrics.setHorizontalSpacing(6)
-        metrics.setVerticalSpacing(6)
-        self._n_cell = _MetricCell("有效 N", self)
-        self._mean_cell = _MetricCell("均值", self)
-        self._std_cell = _MetricCell("总体标准差", self)
-        self._cv_cell = _MetricCell("CV", self)
-        metrics.addWidget(self._n_cell, 0, 0)
-        metrics.addWidget(self._mean_cell, 0, 1)
-        metrics.addWidget(self._std_cell, 1, 0)
-        metrics.addWidget(self._cv_cell, 1, 1)
-        root.addLayout(metrics)
-
-        self.details_label = QLabel("", self)
-        self.details_label.setObjectName("statisticsDetails")
+        self.details_label = QLabel(self)
+        self.details_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.details_label.setWordWrap(True)
-        self.details_label.setMinimumWidth(0)
-        self.details_label.setSizePolicy(
-            QSizePolicy.Policy.Ignored,
-            QSizePolicy.Policy.Preferred,
-        )
         self.details_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         root.addWidget(self.details_label)
-        self.quality_label = QLabel("有效 0 · 需复核 0 · 失败 0", self)
-        self.quality_label.setObjectName("statisticsQuality")
-        self.quality_label.setWordWrap(True)
-        self.quality_label.setMinimumWidth(0)
-        self.quality_label.setSizePolicy(
-            QSizePolicy.Policy.Ignored,
-            QSizePolicy.Policy.Preferred,
-        )
-        root.addWidget(self.quality_label)
-        self._apply_style()
 
     @property
     def snapshots(self) -> tuple[MeasurementStatisticsSnapshot, ...]:
@@ -297,8 +219,8 @@ class MeasurementStatisticsPanel(QWidget):
         if scope is not StatisticsScope.PROJECT and document is None:
             self._snapshots = ()
             self._category_comparisons = ()
-            self._render_empty(metric)
-            self.statisticsChanged.emit(self._snapshots)
+            self.current_value_label.clear()
+            self._publish_statistics()
             return
         comparison_documents = (
             tuple(self._project.documents)
@@ -309,7 +231,8 @@ class MeasurementStatisticsPanel(QWidget):
         self._render_selected_measurement(document)
         if candidate_count > self.BACKGROUND_THRESHOLD:
             self._category_comparisons = ()
-            self._render_pending(metric)
+            self._snapshots = ()
+            self._publish_statistics(f"正在后台计算{self._metric_label(metric)}统计…")
             task = _StatisticsTask(
                 generation=generation,
                 signals=self._task_signals,
@@ -339,11 +262,7 @@ class MeasurementStatisticsPanel(QWidget):
         except (KeyError, ValueError):
             self._snapshots = ()
             self._category_comparisons = ()
-        if not self._snapshots:
-            self._render_empty(metric)
-        else:
-            self._render_snapshot(self._preferred_snapshot(metric, document))
-        self.statisticsChanged.emit(self._snapshots)
+        self._publish_statistics()
 
     @Slot(int, object, object)
     def _on_async_statistics_ready(
@@ -362,27 +281,20 @@ class MeasurementStatisticsPanel(QWidget):
             # older integrations which supplied the snapshot tuple itself.
             self._snapshots = tuple(result or ()) if error is None else ()
             self._category_comparisons = ()
-        metric = self.active_metric()
-        document = self._document
-        if not self._snapshots:
-            self._render_empty(metric)
-            if error is not None:
-                self.details_label.setText("统计计算失败；测量数据未被修改。")
-        else:
-            self._render_snapshot(self._preferred_snapshot(metric, document))
-        self.statisticsChanged.emit(self._snapshots)
+        self._publish_statistics("统计计算失败。" if error is not None else "")
 
-    def _preferred_snapshot(
-        self,
-        metric: MeasurementMetric,
-        document: ImageDocument | None,
-    ) -> MeasurementStatisticsSnapshot:
-        if document is not None:
-            expected = self._service.display_unit_for(document, metric)
-            for snapshot in self._snapshots:
-                if snapshot.unit == expected:
-                    return snapshot
-        return self._snapshots[0]
+    def _publish_statistics(self, message: str = "") -> None:
+        metric_label = self._metric_label(self.active_metric())
+        if not message:
+            if self._snapshots:
+                comparison_scope = "整个项目" if self.active_scope() is StatisticsScope.PROJECT else "当前图片"
+                message = f"{metric_label} · {self.scope_combo.currentText()} · 总体标准差口径 · 类别比较范围：{comparison_scope}"
+                if len(self._snapshots) > 1:
+                    message += " · 多种单位已分开展示"
+            else:
+                message = f"当前作用域没有有效的{metric_label}结果。"
+        self.details_label.setText(message)
+        self.statisticsChanged.emit(self._snapshots)
 
     def _render_selected_measurement(self, document: ImageDocument | None) -> None:
         measurement = self._selected_measurement
@@ -404,63 +316,13 @@ class MeasurementStatisticsPanel(QWidget):
         group = document.get_group(measurement.fiber_group_id) if document is not None else None
         category = group.display_name() if group is not None else "未分类"
         self.current_value_label.setText(
-            f"当前结果  {value:.4g} {unit}\n"
+            f"当前结果  {value:.4g} {unit} · "
             f"{category} · {self._kind_label(measurement.measurement_kind)} · {confidence}"
         )
 
     @staticmethod
     def _kind_label(kind: str) -> str:
         return {"line": "线段", "polyline": "折线", "area": "面积", "count": "计数"}.get(kind, kind)
-
-    def _render_empty(self, metric: MeasurementMetric) -> None:
-        self._n_cell.value_label.setText("0")
-        self._mean_cell.value_label.setText("—")
-        self._std_cell.value_label.setText("—")
-        self._cv_cell.value_label.setText("—")
-        self.details_label.setText(f"当前作用域没有有效的{self._metric_label(metric)}结果。")
-        self.quality_label.setText("有效 0 · 需复核 0 · 失败 0")
-
-    def _render_pending(self, metric: MeasurementMetric) -> None:
-        self._n_cell.value_label.setText("…")
-        self._mean_cell.value_label.setText("…")
-        self._std_cell.value_label.setText("…")
-        self._cv_cell.value_label.setText("…")
-        self.details_label.setText(f"正在后台计算{self._metric_label(metric)}统计…")
-        self.quality_label.setText("数据变化时，晚到的旧统计结果会自动丢弃。")
-
-    def _render_snapshot(self, snapshot: MeasurementStatisticsSnapshot) -> None:
-        suffix = "" if snapshot.metric is MeasurementMetric.COUNT else f" {snapshot.unit}"
-        self._n_cell.value_label.setText(str(snapshot.valid_count))
-        self._mean_cell.value_label.setText(self._format_value(snapshot.mean, suffix=suffix))
-        self._std_cell.value_label.setText(self._format_value(snapshot.stddev, suffix=suffix))
-        self._cv_cell.value_label.setText(self._format_value(snapshot.cv_percent, suffix="%"))
-        if snapshot.valid_count:
-            details = (
-                f"中位数 {self._format_value(snapshot.median, suffix=suffix)}\n"
-                f"范围 {self._format_value(snapshot.minimum, suffix=suffix)} – "
-                f"{self._format_value(snapshot.maximum, suffix=suffix)}\n"
-                f"P10 / P90  {self._format_value(snapshot.p10, suffix=suffix)} / "
-                f"{self._format_value(snapshot.p90, suffix=suffix)}"
-            )
-            if snapshot.metric is MeasurementMetric.AREA:
-                details += f"\n对象净面积合计 {self._format_value(snapshot.total_value, suffix=suffix)}"
-            elif snapshot.metric is MeasurementMetric.COUNT:
-                details = f"计数合计 {snapshot.valid_count} 个"
-            if len(self._snapshots) > 1:
-                details += f"\n项目包含 {len(self._snapshots)} 种单位，已分开统计"
-            self.details_label.setText(details)
-        else:
-            self.details_label.setText("当前作用域没有可用于数值统计的结果。")
-        self.quality_label.setText(
-            f"有效 {snapshot.valid_count} · 需复核 {snapshot.manual_review_count} · "
-            f"失败 {snapshot.hard_failure_count} · 无效值 {snapshot.non_finite_count + snapshot.missing_value_count}"
-        )
-
-    @staticmethod
-    def _format_value(value: float | None, *, suffix: str = "") -> str:
-        if value is None:
-            return "—"
-        return f"{value:.4g}{suffix}"
 
     @staticmethod
     def _metric_label(metric: MeasurementMetric) -> str:
@@ -469,24 +331,3 @@ class MeasurementStatisticsPanel(QWidget):
             MeasurementMetric.AREA: "面积",
             MeasurementMetric.COUNT: "计数",
         }[metric]
-
-    def _apply_style(self) -> None:
-        self.setStyleSheet(
-            """
-            QWidget#measurementStatisticsPanel { background: transparent; }
-            QLabel[panelTitle="true"] { font-weight: 700; font-size: 14px; }
-            QFrame#statisticsMetricCell {
-                border: 1px solid palette(mid);
-                border-radius: 6px;
-                background: palette(alternate-base);
-            }
-            QLabel[statisticsCaption="true"] { color: palette(placeholder-text); }
-            QLabel[statisticsValue="true"] { font-size: 15px; font-weight: 700; }
-            QLabel#currentMeasurementValue {
-                padding: 8px;
-                border-left: 3px solid #2A9D8F;
-                background: palette(alternate-base);
-            }
-            QLabel#statisticsDetails, QLabel#statisticsQuality { color: palette(placeholder-text); }
-            """
-        )

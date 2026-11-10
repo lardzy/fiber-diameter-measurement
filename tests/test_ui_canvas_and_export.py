@@ -832,8 +832,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window._runtime_features = frozenset({"measurement", "capture", "digital-slide"})
             window._update_action_states()
 
-            self.assertIsNotNone(window._area_auto_button)
-            self.assertTrue(window._area_auto_button.isHidden())
+            self.assertFalse(window._area_auto_action.isVisible())
+            self.assertFalse(window._area_auto_action.isEnabled())
             self.assertIsNotNone(window._magic_tool_button)
             self.assertTrue(window._magic_tool_button.isHidden())
             self.assertFalse(window._mode_actions[MagicSegmentToolMode.STANDARD].isVisible())
@@ -3633,21 +3633,16 @@ class CanvasAndExportTests(unittest.TestCase):
             image,
         )
 
-        self.assertEqual(window._calibration_status_title_label.text(), "未标定")
-        self.assertEqual(window.calibration_label.text(), "测量仅显示 px，无法输出真实尺寸")
-        self.assertFalse(window._calibration_start_button.isHidden())
-        self.assertEqual(window._calibration_start_button.text(), "开始标定")
-        self.assertIs(window._calibration_start_button.parentWidget(), window._calibration_card_action_row)
-        self.assertIs(window._calibration_details_button.parentWidget(), window._calibration_card_action_row)
-        self.assertIs(window._apply_preset_button.parentWidget(), window._calibration_preset_action_row)
-        self.assertIs(window._import_cu_preset_button.parentWidget(), window._calibration_preset_action_row)
-        self.assertLess(
-            window._calibration_preset_action_row.layout().indexOf(window._apply_preset_button),
-            window._calibration_preset_action_row.layout().indexOf(window._import_cu_preset_button),
-        )
-        self.assertEqual(window._calibration_start_button.styleSheet(), "")
-        self.assertEqual(window._apply_preset_button.styleSheet(), "")
-        self.assertIn("font-weight: 800", window._calibration_status_title_label.styleSheet())
+        bar = window._calibration_bar
+        self.assertEqual(bar.notice.text(), "未标定 · 结果为 px / px²")
+        self.assertFalse(bar.actions.isHidden())
+        self.assertTrue(bar.status.isHidden())
+        self.assertEqual(bar.draw.text(), "手动标定")
+        self.assertEqual(bar.notice.property("statusTone"), "warning")
+        self.assertEqual(bar.choose.text(), "应用标尺")
+        self.assertEqual(bar.choose.property("emphasis"), "primary")
+        self.assertTrue(bar.choose.isEnabled())
+        self.assertTrue(window._calibration_manager.isHidden())
 
     def test_calibration_card_shows_calibrated_summary(self) -> None:
         window = MainWindow()
@@ -3671,23 +3666,25 @@ class CanvasAndExportTests(unittest.TestCase):
             image,
         )
 
-        self.assertEqual(window._calibration_status_title_label.text(), "已标定 · 20x")
-        self.assertEqual(window.calibration_label.text(), "0.2 um/px")
-        self.assertTrue(window._calibration_start_button.isHidden())
-        self.assertEqual(window._apply_preset_button.styleSheet(), "")
+        bar = window._calibration_bar
+        self.assertEqual(bar.status.accessibleName(), "20x · 0.2 μm/px")
+        self.assertTrue(bar.actions.isHidden())
+        self.assertTrue(bar.notice.isHidden())
+        self.assertFalse(bar.status.isHidden())
 
     def test_live_preview_does_not_show_legacy_floating_edit_disabled_notice(self) -> None:
         window = MainWindow()
         try:
             window._on_live_preview_state_changed(True)
 
-            self.assertEqual(window._calibration_status_title_label.text(), "实时预览中")
+            self.assertIn("实时预览", window._calibration_bar.notice.text())
+            self.assertIsNone(window._calibration_bar.notice.property("statusTone"))
             label_texts = [label.text() for label in window.findChildren(QLabel)]
             self.assertNotIn("实时预览中，图片编辑已禁用", label_texts)
         finally:
             window.close()
 
-    def test_calibration_details_are_scrollable_and_do_not_expand_for_long_sidecar_name(self) -> None:
+    def test_calibration_details_live_in_manager_and_long_sidecar_stays_out_of_bar(self) -> None:
         window = MainWindow()
         image = QImage(120, 80, QImage.Format.Format_RGB32)
         image.fill(QColor("#FFFFFF"))
@@ -3712,14 +3709,12 @@ class CanvasAndExportTests(unittest.TestCase):
         document.sidecar_path = "/tmp/this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json"
         window._update_calibration_panel(document)
 
-        self.assertTrue(window.calibration_label.wordWrap())
-        self.assertEqual(window.calibration_label.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Ignored)
-        self.assertNotIn("this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json", window.calibration_label.text())
-        self.assertIn("侧车:", window._calibration_details_label.text())
-        self.assertIn("this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json", window._calibration_details_label.toolTip())
-        self.assertIsNotNone(window._calibration_label_scroll)
-        self.assertEqual(window._calibration_label_scroll.verticalScrollBarPolicy(), Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.assertEqual(window._calibration_label_scroll.maximumHeight(), 118)
+        status = window._calibration_bar.status
+        self.assertEqual(status.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Ignored)
+        self.assertNotIn(Path(document.sidecar_path).name, status.text())
+        self.assertIn(Path(document.sidecar_path).name, status.toolTip())
+        self.assertIn(Path(document.sidecar_path).name, window._calibration_manager.details.text())
+        self.assertTrue(window._calibration_manager.isHidden())
 
     def test_preset_combo_uses_eliding_friendly_size_policy_for_long_names(self) -> None:
         window = MainWindow()
@@ -4951,7 +4946,7 @@ class CanvasAndExportTests(unittest.TestCase):
                     "single-overlay edit requested an unbounded update()",
                 )
             self.assertEqual(document.get_overlay_annotation(overlay.id).content, "更新后的文字")
-            self.assertEqual(window._object_properties_section.summaryLabel.text(), "文字")
+            self.assertEqual(window._properties_heading.text(), "文字")
         finally:
             with patch.object(window, "_confirm_close_documents", return_value=True):
                 window.close()
@@ -4991,7 +4986,7 @@ class CanvasAndExportTests(unittest.TestCase):
             refresh_validity.assert_called_once_with(document)
             self.assertEqual(document.view_state.selected_measurement_id, measurement.id)
             self.assertEqual(window._object_inspector._object_id, measurement.id)
-            self.assertEqual(window._object_properties_section.summaryLabel.text(), "线段")
+            self.assertEqual(window._properties_heading.text(), "已选 1 条")
             self.assertIn("撤销历史已达到内存预算", window.statusBar().currentMessage())
             self.assertFalse(document.history.consume_budget_notice())
         finally:
@@ -5394,18 +5389,41 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_right_panel_hides_onnx_status_and_keeps_area_auto_entry(self) -> None:
+    def test_area_auto_is_one_shared_action_in_area_and_records_menus(self) -> None:
         window = MainWindow()
         try:
             group_titles = [box.title() for box in window.findChildren(QGroupBox)]
             self.assertIsNone(getattr(window, "model_status_label", None))
-            self.assertIsNotNone(window._area_auto_button)
-            self.assertEqual(window._area_auto_button.text(), "面积自动识别...")
-            self.assertIsNotNone(window._area_recognition_section)
-            self.assertEqual(window._area_recognition_section.toggleButton.text(), "面积识别")
-            self.assertFalse(window._area_recognition_section.isExpanded())
+            self.assertEqual(window._area_auto_action.text(), "面积自动识别…")
+            self.assertIn(window._area_auto_action, window._area_tool_menu.actions())
+            self.assertIn(window._area_auto_action, window._inspector_records_pane.more_menu.actions())
             self.assertNotIn("模型状态", group_titles)
-            self.assertNotIn("模型状态", group_titles)
+        finally:
+            window.close()
+
+    def test_area_auto_batch_can_start_from_unsupported_image_and_skips_it(self) -> None:
+        from PySide6.QtCore import QTimer
+        from fdm.models import RasterSemantic
+        from fdm.ui.dialogs import AreaAutoRecognitionDialog
+
+        window = self._window_with_open_image()
+        try:
+            height = window.current_document()
+            height.raster_semantic = RasterSemantic.HEIGHT
+            window._runtime_features = frozenset({"area-inference"})
+            window._update_action_states()
+            self.assertFalse(window._area_auto_action.isEnabled())
+            ordinary = ImageDocument("ordinary", "/tmp/ordinary.png", (200, 120))
+            slide = ImageDocument("slide", "/tmp/slide.fdmslide", (200, 120), document_kind="digital_slide")
+            window.project.documents.extend([ordinary, slide])
+            window._update_action_states()
+            self.assertTrue(window._area_auto_action.isEnabled())
+            QTimer.singleShot(0, lambda: window.findChild(AreaAutoRecognitionDialog).accept())
+            with patch.object(window, "_start_area_inference_batch") as start_batch:
+                window._area_auto_action.trigger()
+            requests = start_batch.call_args.args[0]
+            self.assertEqual([request.document_id for request in requests], [ordinary.id])
+            self.assertIs(window.current_document(), height)
         finally:
             window.close()
 
@@ -5481,29 +5499,20 @@ class CanvasAndExportTests(unittest.TestCase):
                 ImageDocument(id=new_id("image"), path="/tmp/preset_scope_b.png", image_size=(10, 10)),
             ]
             preset = CalibrationPreset(name="40x", pixels_per_unit=12.5, unit="um")
-            added_labels: list[str] = []
-            captured: dict[str, str | None] = {}
-            original_add_button = QMessageBox.addButton
+            from fdm.ui.dialogs import CalibrationScopeSelector
 
-            def tracking_add_button(box: QMessageBox, text: str, role: QMessageBox.ButtonRole):
-                button = original_add_button(box, text, role)
-                added_labels.append(text)
-                return button
+            def choose_current(dialog):
+                scope = dialog.findChild(CalibrationScopeSelector)
+                self.assertTrue(scope.project.isChecked())
+                self.assertIn("2 张", scope.effect.text())
+                scope.current.click()
+                self.assertIn("1 张", scope.effect.text())
+                return QDialog.DialogCode.Accepted
 
-            def fake_exec(box: QMessageBox) -> int:
-                default_button = box.defaultButton()
-                captured["default"] = default_button.text() if default_button is not None else None
-                return 0
-
-            with (
-                patch("fdm.ui.main_window.QMessageBox.addButton", new=tracking_add_button),
-                patch("fdm.ui.main_window.QMessageBox.exec", new=fake_exec),
-            ):
-                result = window._prompt_preset_apply_scope(preset)
-
-            self.assertIsNone(result)
-            self.assertEqual(added_labels[:2], ["项目所有图片", "当前图片"])
-            self.assertEqual(captured["default"], "项目所有图片")
+            with patch.object(QDialog, "exec", new=choose_current):
+                self.assertEqual(window._prompt_preset_apply_scope(preset), "current")
+            with patch.object(QDialog, "exec", return_value=QDialog.DialogCode.Rejected):
+                self.assertIsNone(window._prompt_preset_apply_scope(preset))
         finally:
             window.close()
 

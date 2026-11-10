@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QSizePolicy,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -94,12 +93,7 @@ class CurrentObjectInspector(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(6)
-        self.annotation_editor = ResultAnnotationProperties(self)
-        root.addWidget(self.annotation_editor)
-        self._stack = QStackedWidget(self)
-        root.addWidget(self._stack)
-
-        self._empty_label = QLabel("请选择一个测量、辅助几何或叠加对象。", self._stack)
+        self._empty_label = QLabel("请选择一个测量、辅助几何或叠加对象。", self)
         self._empty_label.setWordWrap(True)
         self._empty_label.setMinimumWidth(0)
         self._empty_label.setSizePolicy(
@@ -107,11 +101,11 @@ class CurrentObjectInspector(QWidget):
             QSizePolicy.Policy.Preferred,
         )
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._stack.addWidget(self._empty_label)
-        self.batch_editor = MeasurementBatchProperties(self._stack)
-        self._stack.addWidget(self.batch_editor)
+        root.addWidget(self._empty_label)
+        self.batch_editor = MeasurementBatchProperties(self)
+        root.addWidget(self.batch_editor)
 
-        self._editor_page = QWidget(self._stack)
+        self._editor_page = QWidget(self)
         page_layout = QVBoxLayout(self._editor_page)
         page_layout.setContentsMargins(0, 0, 0, 0)
         page_layout.setSpacing(8)
@@ -406,7 +400,15 @@ class CurrentObjectInspector(QWidget):
         self._reset_button.clicked.connect(self._request_reset)
         page_layout.addWidget(self._reset_button)
         page_layout.addStretch(1)
-        self._stack.addWidget(self._editor_page)
+        root.addWidget(self._editor_page)
+        self.annotation_editor = ResultAnnotationProperties(self)
+        root.addWidget(self.annotation_editor)
+        root.addStretch(1)
+        self._show_base_properties(self._empty_label)
+
+    def _show_base_properties(self, page: QWidget) -> None:
+        for widget in (self._empty_label, self.batch_editor, self._editor_page):
+            widget.setVisible(widget is page)
 
     def set_context(
         self,
@@ -452,7 +454,7 @@ class CurrentObjectInspector(QWidget):
             if len(records) == len(selected):
                 self._object_type, self._object_id = "", ""
                 self.batch_editor.set_selection(document, records, settings)
-                self._stack.setCurrentWidget(self.batch_editor)
+                self._show_base_properties(self.batch_editor)
                 return
         self.batch_editor.clear_selection()
         if document is None:
@@ -483,7 +485,7 @@ class CurrentObjectInspector(QWidget):
         self._text_layout_spec = None
         self._construction_definition = None
         self._empty_label.setText(text)
-        self._stack.setCurrentWidget(self._empty_label)
+        self._show_base_properties(self._empty_label)
 
     def _load_measurement(self, measurement: Measurement) -> None:
         document = self._document
@@ -602,7 +604,7 @@ class CurrentObjectInspector(QWidget):
             self._inheritance_label.hide()
             self._reset_button.hide()
             self._construction_group.show()
-            self._stack.setCurrentWidget(self._editor_page)
+            self._show_base_properties(self._editor_page)
         finally:
             self._updating = False
 
@@ -816,7 +818,7 @@ class CurrentObjectInspector(QWidget):
             else "当前对象继承类别和首选项样式。"
         )
         self._reset_button.setEnabled(has_override)
-        self._stack.setCurrentWidget(self._editor_page)
+        self._show_base_properties(self._editor_page)
 
     def _set_text_layout_controls(
         self,

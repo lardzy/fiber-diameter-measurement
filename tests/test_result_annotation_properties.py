@@ -1,5 +1,5 @@
 """Property edits start from real records or professional result-table selections."""
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QMenu
 
@@ -19,25 +19,50 @@ def choose(editor, key, value):
     raise AssertionError(f"Missing {key} option {value}")
 
 
+def test_properties_starts_at_basic_controls_and_annotation_shortcut_reveals_group(mounted_window, desktop_application):
+    window, doc, _, _ = mounted_window()
+    window.set_tool_mode("select")
+    add_records(window, doc)
+    inspector = window._object_inspector
+    scroll = window._inspector_scroll
+    scroll.setMaximumHeight(160)
+    for identities, first, last in (
+        (["line-b"], inspector._summary_label, inspector._reset_button),
+        (["line-b", "area-a"], inspector.batch_editor._summary, inspector.batch_editor._apply),
+    ):
+        select_visible(window, identities)
+        window._inspector_records_pane.properties_button.click()
+        desktop_application.processEvents()
+        assert scroll.verticalScrollBar().value() == 0
+        assert scroll.viewport().rect().contains(first.mapTo(scroll.viewport(), QPoint(1, 1)))
+        assert last.mapTo(inspector, last.rect().bottomLeft()).y() < inspector.annotation_editor.y()
+        window._show_result_annotation_properties()
+        desktop_application.processEvents()
+        assert scroll.verticalScrollBar().value() > 0
+        assert scroll.viewport().rect().contains(inspector.annotation_editor.mapTo(scroll.viewport(), QPoint(1, 3)))
+        window._return_to_records_button.click()
+        window._inspector_records_pane.properties_button.click()
+        desktop_application.processEvents()
+        assert scroll.verticalScrollBar().value() == 0
+        window._return_to_records_button.click()
+
+
 def test_selection_leaves_inspector_visibility_and_scroll_to_user(mounted_window, desktop_application, monkeypatch):
     window, doc, _, _ = mounted_window()
     window.set_tool_mode("select")
     add_records(window, doc)
     line = doc.get_measurement("line-b")
     line.annotation_layout = MeasurementAnnotationLayout.ordinary_near()
-    section = window._object_properties_section
     editor = window._object_inspector.annotation_editor
     canvas = window.current_canvas()
-    summary = window._current_measurement_summary
     window._inspector_dock.raise_()
-    window._records_section.setExpanded(True)
     desktop_application.processEvents()
 
-    assert not section.isExpanded()
+    assert window._inspector_pages.currentWidget() is window._records_page
     select_visible(window, ["line-b", "area-a"])
     desktop_application.processEvents()
     assert set(editor.target[2]) == {"line-b", "area-a"}
-    assert not section.isExpanded() and not summary.editButton.isChecked()
+    assert window._inspector_pages.currentWidget() is window._records_page
     # A click on the canvas label should select that record, without scrolling to its editor.
     select_visible(window, ["area-a"])
     desktop_application.processEvents()
@@ -48,7 +73,7 @@ def test_selection_leaves_inspector_visibility_and_scroll_to_user(mounted_window
     QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=label.text_rect.center().toPoint())
     desktop_application.processEvents()
     assert editor.target[2] == (line.id,)
-    assert not section.isExpanded() and scroll.value() == previous_scroll
+    assert window._inspector_pages.currentWidget() is window._records_page and scroll.value() == previous_scroll
 
     class ChooseProperties(QMenu):
         def exec(self, *_):
@@ -57,12 +82,12 @@ def test_selection_leaves_inspector_visibility_and_scroll_to_user(mounted_window
     monkeypatch.setattr("fdm.ui.canvas.QMenu", ChooseProperties)
     QTest.mouseClick(canvas, Qt.MouseButton.RightButton, pos=label.text_rect.center().toPoint())
     desktop_application.processEvents()
-    assert section.isExpanded() and summary.editButton.isChecked()
+    assert window._inspector_pages.currentWidget() is window._properties_page
     select_visible(window, ["area-a"])
-    assert section.isExpanded() and editor.target[2] == ("area-a",)
-    summary.editButton.click()
+    assert window._inspector_pages.currentWidget() is window._properties_page and editor.target[2] == ("area-a",)
+    window._return_to_records_button.click()
     select_visible(window, ["line-b"])
-    assert not section.isExpanded()
+    assert window._inspector_pages.currentWidget() is window._records_page
 
 
 def test_ordinary_named_default_reaches_actual_creation_and_restore_only_changes_position(mounted_window):
@@ -131,9 +156,13 @@ def test_professional_multiselection_uses_unique_definition_ids_and_one_undo(mou
     assert set(editor.target[2]) == {one.id, two.id}
     assert len(editor.targets) == 2
     assert editor.default_button.isEnabled()
-    assert not window._object_properties_section.isExpanded()
+    assert window._inspector_pages.currentWidget() is window._records_page
     workspace.panel.properties_button.click()
-    assert window._object_properties_section.isExpanded()
+    assert window._inspector_pages.currentWidget() is window._properties_page
+    inspector = window._object_inspector
+    assert inspector._empty_label.isVisible()
+    assert inspector._empty_label.geometry().bottom() < editor.y()
+    assert inspector._empty_label.height() <= inspector._empty_label.sizeHint().height() + 4
     choose(editor, "show_identifier", True)
     choose(editor, "metric_key", "dy")
     count = doc.history.command_count

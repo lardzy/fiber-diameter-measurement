@@ -9,11 +9,15 @@ from PySide6.QtCore import (
     QModelIndex,
     QObject,
     QPoint,
+    QTimer,
     Qt,
     Signal,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
+    QComboBox,
+    QFormLayout,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -21,20 +25,27 @@ from PySide6.QtWidgets import (
     QMenu,
     QPushButton,
     QSizePolicy,
+    QStyle,
+    QStyledItemDelegate,
     QTableView,
+    QToolButton,
     QVBoxLayout,
     QWidget,
+    QWidgetAction,
 )
 
 from fdm.models import ImageDocument, Measurement, UNCATEGORIZED_LABEL
+from fdm.services.measurement_statistics import MeasurementStatisticsService
+from fdm.units import resolve_length_unit
 from fdm.ui.measurement_results_model import (
     MEASUREMENT_ID_ROLE,
+    RAW_STATUS_ROLE,
     MeasurementGroupDelegate,
     MeasurementResultColumn,
     MeasurementResultsModel,
     MeasurementResultsProxyModel,
 )
-from fdm.ui.widgets import FlowLayout, NoWheelComboBox
+from fdm.ui.widgets import NoWheelComboBox
 
 
 class _MeasurementRecordsHeader(QHeaderView):
@@ -45,16 +56,38 @@ class _MeasurementRecordsHeader(QHeaderView):
         self._compact = bool(compact)
 
     def display_label(self, logical_index: int, fallback: str) -> str:
-        if (
-            self._compact
-            and int(logical_index) == int(MeasurementResultColumn.RESULT_SEQUENCE)
-        ):
-            return "序号"
+        if self._compact:
+            if logical_index == MeasurementResultColumn.RESULT_SEQUENCE:
+                return "序号"
+            if logical_index == MeasurementResultColumn.GROUP:
+                return "类别"
         return fallback
 
     def initStyleOptionForIndex(self, option, logical_index: int) -> None:
         super().initStyleOptionForIndex(option, logical_index)
         option.text = self.display_label(logical_index, option.text)
+
+
+class _CompactValueDelegate(QStyledItemDelegate):
+    """Compose two display columns without changing the shared sort or edit roles."""
+
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        if index.column() == MeasurementResultColumn.RESULT:
+            unit = index.siblingAtColumn(MeasurementResultColumn.UNIT).data() or ""
+            length_unit = resolve_length_unit(unit.removesuffix("²"))
+            if length_unit:
+                unit = length_unit.symbol + ("²" if unit.endswith("²") else "")
+            option.text = f"{option.text} {unit}".rstrip()
+        elif index.column() == MeasurementResultColumn.RESULT_SEQUENCE:
+            kind = index.siblingAtColumn(MeasurementResultColumn.KIND).data()
+            option.text = f"{kind} {option.text}"
+            option.displayAlignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+            status = index.data(RAW_STATUS_ROLE)
+            if (status == MeasurementStatisticsService.MANUAL_REVIEW_STATUS
+                    or status in MeasurementStatisticsService.DEFAULT_HARD_FAILURE_STATUSES):
+                option.icon = QApplication.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxWarning)
+                option.features |= option.ViewItemFeature.HasDecoration
 
 
 class MeasurementRecordsController(QObject):
@@ -71,6 +104,8 @@ class MeasurementRecordsController(QObject):
     countsChanged = Signal(int, int)
     sortChanged = Signal(int, int)
     groupChangeRequested = Signal(str, object)
+    refreshRequested = Signal(object)
+    newRecordsReady = Signal(object, object)
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -84,6 +119,9 @@ class MeasurementRecordsController(QObject):
         self._status = ""
         self._sort_column = -1
         self._sort_order = Qt.SortOrder.AscendingOrder
+        self._category_editors = 0
+        self._refresh_after_edit = False
+        self._pending_new_records: list[str] = []
         self.source_model.modelReset.connect(self._emit_counts)
         self.proxy_model.modelReset.connect(self._emit_counts)
         self.proxy_model.rowsInserted.connect(self._emit_counts)
@@ -115,6 +153,9 @@ class MeasurementRecordsController(QObject):
         return self._sort_column, self._sort_order
 
     def set_document(self, document: ImageDocument | None) -> None:
+        if document is not self.document:
+            self._pending_new_records.clear()
+            self._refresh_after_edit = False
         self.selection_model.clear()
         self.source_model.set_document(document)
         available_groups = {label.casefold() for label in self.group_labels()}
@@ -127,6 +168,39 @@ class MeasurementRecordsController(QObject):
             )
         self.documentChanged.emit(document)
         self._emit_counts()
+
+    def category_edit_started(self) -> None:
+        self._category_editors += 1
+
+    def category_edit_finished(self) -> None:
+        # A menu can send aboutToHide before triggering its action, and a
+        # delegate may still be committing data. Finish that transaction first.
+        QTimer.singleShot(0, self, self._release_category_editor)
+
+    def _release_category_editor(self) -> None:
+        self._category_editors -= 1
+        self._publish_pending_records()
+
+    def defer_refresh_while_editing(self, document) -> bool:
+        if self._category_editors and document is self.document and document is not None:
+            self._refresh_after_edit = True
+            return True
+        return False
+
+    def records_committed(self, document: ImageDocument, ids) -> None:
+        if document is self.document:
+            self._pending_new_records.extend(ids)
+            self._publish_pending_records()
+
+    def _publish_pending_records(self) -> None:
+        if self._category_editors or self.document is None:
+            return
+        if self._refresh_after_edit:
+            self._refresh_after_edit = False
+            self.refreshRequested.emit(self.document)
+        if self._pending_new_records:
+            ids, self._pending_new_records = self._pending_new_records, []
+            self.newRecordsReady.emit(self.document, ids)
 
     def append_measurement(self, document: ImageDocument, measurement: Measurement) -> bool:
         appended = self.source_model.append_measurement(document, measurement)
@@ -267,11 +341,13 @@ class MeasurementRecordsPane(QWidget):
     deleteCategoryRequested = Signal()
     deleteAllRequested = Signal()
     headerStateChanged = Signal(str)
+    propertiesRequested = Signal()
+    batchGroupChangeRequested = Signal(str, object, object)
 
     _WIDE_WIDTHS = (105, 125, 150, 90, 120, 75, 110, 125, 90, 125, 160, 120)
     HEADER_STATE_SCHEMA = "measurement-records-v2"
-    COMPACT_HEADER_STATE_SCHEMA = "measurement-records-compact-v4"
-    _COMPACT_WIDTHS = (44, 80, 184, 36, 64, 36, 70, 80, 60, 48, 110, 90)
+    COMPACT_HEADER_STATE_SCHEMA = "measurement-records-compact-v5"
+    _COMPACT_WIDTHS = (82, 80, 91, 48, 102, 40, 70, 80, 60, 48, 110, 90)
     _WIDE_VISIBLE = frozenset(
         {
             MeasurementResultColumn.RESULT_SEQUENCE,
@@ -290,10 +366,7 @@ class MeasurementRecordsPane(QWidget):
         {
             MeasurementResultColumn.RESULT_SEQUENCE,
             MeasurementResultColumn.GROUP,
-            MeasurementResultColumn.KIND,
             MeasurementResultColumn.RESULT,
-            MeasurementResultColumn.UNIT,
-            MeasurementResultColumn.STATUS,
         }
     )
 
@@ -309,6 +382,11 @@ class MeasurementRecordsPane(QWidget):
         self.controller = controller
         self.compact = bool(compact)
         self._syncing_sort = False
+        self._selection_label = ""
+        self._count_notice_timer = QTimer(self)
+        self._count_notice_timer.setSingleShot(True)
+        self._count_notice_timer.timeout.connect(self._refresh_count_label)
+        self._notice_document = None
         # 启动恢复前禁止外发列状态：构造和初次布局期间的列宽信号是默认值，
         # 若写回设置会在 restore_header_state 读取之前覆盖已保存的用户列宽。
         self._header_state_persist_ready = False
@@ -346,10 +424,25 @@ class MeasurementRecordsPane(QWidget):
             )
         self.group_filter.currentTextChanged.connect(self.group_filter.setToolTip)
         if self.compact:
-            layout.addWidget(self.search_edit)
-            filter_row.addWidget(self.kind_filter, 1)
-            filter_row.addWidget(self.group_filter, 1)
-            filter_row.addWidget(self.status_filter, 1)
+            self.search_edit.setPlaceholderText("搜索记录…")
+            self.search_edit.setAccessibleName("搜索当前图的测量记录")
+            filter_row.addWidget(self.search_edit, 1)
+            self.filter_button = self._popup_button("筛选")
+            filter_panel = QWidget()
+            filters = QFormLayout(filter_panel)
+            filters.addRow("类型", self.kind_filter)
+            filters.addRow("类别", self.group_filter)
+            filters.addRow("状态", self.status_filter)
+            filter_panel.setMinimumWidth(210)
+            filter_menu = self.filter_button.menu()
+            filter_action = QWidgetAction(filter_menu)
+            filter_action.setDefaultWidget(filter_panel)
+            filter_menu.addAction(filter_action)
+            filter_menu.addAction("清除搜索与筛选", lambda: controller.set_filters())
+            self.more_button = self._popup_button("更多")
+            self.more_menu = self.more_button.menu()
+            filter_row.addWidget(self.filter_button)
+            filter_row.addWidget(self.more_button)
             layout.addLayout(filter_row)
         else:
             filter_row.addWidget(self.search_edit, 1)
@@ -371,10 +464,12 @@ class MeasurementRecordsPane(QWidget):
             QAbstractItemView.EditTrigger.DoubleClicked
             | QAbstractItemView.EditTrigger.EditKeyPressed
         )
-        self.table.setItemDelegateForColumn(
-            int(MeasurementResultColumn.GROUP),
-            MeasurementGroupDelegate(self.table),
-        )
+        if self.compact:
+            self.table.setItemDelegate(_CompactValueDelegate(self.table))
+        group_delegate = MeasurementGroupDelegate(self.table)
+        group_delegate.editStarted.connect(controller.category_edit_started)
+        group_delegate.editFinished.connect(controller.category_edit_finished)
+        self.table.setItemDelegateForColumn(int(MeasurementResultColumn.GROUP), group_delegate)
         # 类别是唯一可编辑列：单击单元格直接弹出下拉，省去双击。
         self.table.clicked.connect(self._edit_group_on_click)
         self.table.verticalHeader().setVisible(False)
@@ -391,14 +486,32 @@ class MeasurementRecordsPane(QWidget):
         header.sectionMoved.connect(lambda *_args: self._emit_header_state())
         layout.addWidget(self.table, 1)
 
-        action_host = QWidget(self) if show_actions and self.compact else None
-        action_parent = action_host or self
-        self.count_label = QLabel(action_parent)
+        self.count_label = QLabel(self)
         self.count_label.setObjectName("measurementRecordsCount")
-        if show_actions:
-            self.delete_selected_button = QPushButton("删除选中", action_parent)
-            self.delete_category_button = QPushButton("删除类别", action_parent)
-            self.delete_all_button = QPushButton("删除全部", action_parent)
+        if self.compact:
+            footer = QHBoxLayout()
+            footer.setSpacing(4)
+            self.count_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+            footer.addWidget(self.count_label, 1)
+            self.batch_group_button = self._popup_button("批量改类别")
+            batch_menu = self.batch_group_button.menu()
+            batch_menu.aboutToShow.connect(self._populate_batch_groups)
+            batch_menu.aboutToShow.connect(controller.category_edit_started)
+            batch_menu.aboutToHide.connect(controller.category_edit_finished)
+            footer.addWidget(self.batch_group_button)
+            self.properties_button = QPushButton("属性 →", self)
+            self.properties_button.clicked.connect(self.propertiesRequested)
+            footer.addWidget(self.properties_button)
+            self.set_selection_context("", can_open=False, can_batch_edit=False)
+            layout.addLayout(footer)
+            if show_actions:
+                self.delete_selected_button = self.more_menu.addAction("删除选中", self._request_delete_selected)
+                self.delete_category_button = self.more_menu.addAction("按类别删除…", self.deleteCategoryRequested.emit)
+                self.delete_all_button = self.more_menu.addAction("删除全部测量…", self.deleteAllRequested.emit)
+        elif show_actions:
+            self.delete_selected_button = QPushButton("删除选中", self)
+            self.delete_category_button = QPushButton("删除类别", self)
+            self.delete_all_button = QPushButton("删除全部", self)
             self.delete_selected_button.clicked.connect(self._request_delete_selected)
             self.delete_category_button.clicked.connect(
                 lambda _checked=False: self.deleteCategoryRequested.emit()
@@ -406,24 +519,15 @@ class MeasurementRecordsPane(QWidget):
             self.delete_all_button.clicked.connect(
                 lambda _checked=False: self.deleteAllRequested.emit()
             )
-            if self.compact:
-                assert action_host is not None
-                action_flow = FlowLayout(action_host, h_spacing=6, v_spacing=4)
-                action_flow.addWidget(self.delete_selected_button)
-                action_flow.addWidget(self.delete_category_button)
-                action_flow.addWidget(self.delete_all_button)
-                action_flow.addWidget(self.count_label)
-                layout.addWidget(action_host)
-            else:
-                action_row = QHBoxLayout()
-                action_row.setContentsMargins(0, 0, 0, 0)
-                action_row.setSpacing(8)
-                action_row.addWidget(self.delete_selected_button)
-                action_row.addWidget(self.delete_category_button)
-                action_row.addWidget(self.delete_all_button)
-                action_row.addStretch(1)
-                action_row.addWidget(self.count_label)
-                layout.addLayout(action_row)
+            action_row = QHBoxLayout()
+            action_row.setContentsMargins(0, 0, 0, 0)
+            action_row.setSpacing(8)
+            action_row.addWidget(self.delete_selected_button)
+            action_row.addWidget(self.delete_category_button)
+            action_row.addWidget(self.delete_all_button)
+            action_row.addStretch(1)
+            action_row.addWidget(self.count_label)
+            layout.addLayout(action_row)
         else:
             layout.addWidget(self.count_label, 0, Qt.AlignmentFlag.AlignRight)
 
@@ -443,6 +547,43 @@ class MeasurementRecordsPane(QWidget):
         self._update_count(controller.proxy_model.rowCount(), controller.source_model.rowCount())
         sort_column, sort_order = controller.sort_state
         self._sync_sort(sort_column, int(sort_order.value))
+
+    def _popup_button(self, title: str) -> QToolButton:
+        button = QToolButton(self)
+        button.setText(title)
+        button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        button.setMenu(QMenu(button))
+        return button
+
+    def _populate_batch_groups(self) -> None:
+        menu = self.batch_group_button.menu()
+        menu.clear()
+        document = self.controller.document
+        ids = tuple(self.controller.selected_measurement_ids())
+        if document is None or len(ids) < 2:
+            return
+        for label, group_id, _color in self.controller.source_model.group_options():
+            action = menu.addAction(label)
+            action.triggered.connect(
+                lambda checked=False, target=group_id: self.batchGroupChangeRequested.emit(
+                    document.id, ids, {"fiber_group_id": target}
+                )
+            )
+
+    def set_selection_context(self, label: str, *, can_open: bool, can_batch_edit: bool) -> None:
+        self.properties_button.setEnabled(can_open)
+        self.batch_group_button.setVisible(can_batch_edit)
+        self._selection_label = label if can_open else ""
+        self._refresh_count_label()
+
+    def show_filtered_insert_notice(self, count: int) -> None:
+        self._notice_document = self.controller.document
+        self.count_label.setText(f"新增 {count} 条，当前筛选未显示")
+        self.count_label.setToolTip(self.count_label.text())
+        self._count_notice_timer.start(5000)
+
+    def _refresh_count_label(self) -> None:
+        self._update_count(self.controller.proxy_model.rowCount(), self.controller.source_model.rowCount())
 
     def save_header_state(self) -> str:
         encoded = bytes(self.table.horizontalHeader().saveState().toBase64()).decode("ascii")
@@ -519,6 +660,11 @@ class MeasurementRecordsPane(QWidget):
             self._set_combo_data(self.kind_filter, kind)
             self._set_combo_data(self.group_filter, group)
             self._set_combo_data(self.status_filter, status)
+        if self.compact:
+            count = sum(bool(value) for value in (kind, group, status))
+            self.filter_button.setText(f"筛选 ({count})" if count else "筛选")
+            self._count_notice_timer.stop()
+            self._refresh_count_label()
 
     def _refresh_group_filter(self, _document: object = None) -> None:
         current = self.controller.filters[2]
@@ -562,7 +708,14 @@ class MeasurementRecordsPane(QWidget):
     def _edit_group_on_click(self, index: QModelIndex) -> None:
         if not index.isValid() or index.column() != int(MeasurementResultColumn.GROUP):
             return
+        if (QApplication.keyboardModifiers() & (
+            Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.MetaModifier | Qt.KeyboardModifier.ShiftModifier
+        ) or len(self.controller.selected_measurement_ids()) > 1):
+            return
         self.table.edit(index)
+        editor = self.table.indexWidget(index)
+        if isinstance(editor, QComboBox):
+            editor.showPopup()
 
     def _activate_index(self, index: QModelIndex) -> None:
         if not index.isValid() or index.column() == int(MeasurementResultColumn.GROUP):
@@ -605,9 +758,16 @@ class MeasurementRecordsPane(QWidget):
         super().showEvent(event)
 
     def _update_count(self, visible: int, total: int) -> None:
-        self.count_label.setText(
-            f"{visible}/{total} 条" if visible != total else f"{total} 条"
-        )
+        if self._count_notice_timer.isActive():
+            if self._notice_document is self.controller.document:
+                return
+            self._count_notice_timer.stop()
+        count = f"{visible}/{total} 条" if visible != total else f"{total} 条"
+        if self.compact:
+            label = self._selection_label or "当前图"
+            count = f"{label} · {count}"
+        self.count_label.setText(count)
+        self.count_label.setToolTip(count)
 
 
 @contextmanager

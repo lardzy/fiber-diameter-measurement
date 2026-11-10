@@ -648,9 +648,7 @@ class ScaleOverlayPreviewController(QObject):
                 else "image",
             )
         self.panel.show()
-        self.host._inspector_dock.show()
-        self.host._inspector_dock.raise_()
-        self.host._inspector_scroll.ensureWidgetVisible(self.panel)
+        self.host._show_scale_editor_page()
         self.refresh()
         self.sync()
         canvas.setFocus()
@@ -683,6 +681,7 @@ class ScaleOverlayPreviewController(QObject):
         self._drag = None
         if self.panel:
             self.panel.hide()
+            self.host._close_scale_editor_page()
         self.refresh()
         self.host._update_action_states()
         return True
@@ -693,6 +692,7 @@ class ScaleOverlayPreviewController(QObject):
         self._drag = None
         if self.panel:
             self.panel.hide()
+            self.host._close_scale_editor_page()
         self.refresh()
         self.host._update_action_states()
 

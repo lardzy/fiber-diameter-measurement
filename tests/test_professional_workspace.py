@@ -256,44 +256,24 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         long_name = "LaserConfocal_" + ("UnbrokenPresetName" * 32)
         preferred_width = window._app_settings.workspace_layout.inspector_width
 
-        window._set_calibration_status_card(
-            title=f"已标定 · {long_name}",
-            summary="0.133333 um/px",
-            status="calibrated",
-            details=f"标定来源: {long_name}\n换算关系: 7.5 px/um",
-        )
+        self._open_tool_image(window)
+        document = window.current_document()
+        document.calibration = Calibration(mode="preset", source_label=long_name, unit="um", pixels_per_unit=7.5)
+        window._update_calibration_panel(document)
         window.preset_combo.addItem(f"{long_name} (7.5 px/um)")
         window.preset_combo.setCurrentIndex(window.preset_combo.count() - 1)
-        for _ in range(3):
-            self.app.processEvents()
+        self.app.processEvents()
 
         self.assertEqual(window.size().toTuple(), (1280, 720))
         self.assertAlmostEqual(window._inspector_dock.width(), initial_width, delta=12)
         self.assertGreaterEqual(window.tab_widget.width(), 560)
-        self.assertLessEqual(
-            window._inspector_content.minimumSizeHint().width(),
-            window._inspector_scroll.viewport().width(),
-        )
-        self.assertEqual(
-            window._calibration_section.summaryLabel.sizePolicy().horizontalPolicy(),
-            QSizePolicy.Policy.Ignored,
-        )
-        self.assertEqual(window._calibration_section.summaryLabel.text(), "0.133333 um/px")
-        self.assertGreater(window._calibration_section.summaryLabel.width(), 40)
-        self.assertIn(long_name, window._calibration_section.summaryLabel.toolTip())
+        status = window._calibration_bar.status
+        self.assertTrue(status.isVisible())
+        self.assertTrue(status.text().endswith("0.133333 μm/px"))
+        self.assertNotIn(long_name, status.text())
+        self.assertIn(long_name, status.toolTip())
         self.assertEqual(window.preset_combo.toolTip(), window.preset_combo.currentText())
-        self.assertEqual(
-            window._app_settings.workspace_layout.inspector_width,
-            preferred_width,
-        )
-
-        window._calibration_section.setExpanded(False)
-        self.app.processEvents()
-        self.assertAlmostEqual(window._inspector_dock.width(), initial_width, delta=12)
-        self.assertLessEqual(
-            window._calibration_section.minimumSizeHint().width(),
-            window._inspector_scroll.viewport().width(),
-        )
+        self.assertEqual(window._app_settings.workspace_layout.inspector_width, preferred_width)
 
         window.resize(1093, 576)
         for _ in range(4):
@@ -459,74 +439,47 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertAlmostEqual(window._project_dock.width(), expected[0], delta=12)
         self.assertAlmostEqual(window._inspector_dock.width(), expected[1], delta=12)
 
-    def test_restore_default_layout_resets_sizes_and_section_states(self) -> None:
+    def test_restore_default_layout_resets_sizes_and_opens_records(self) -> None:
         settings = AppSettings()
         settings.workspace_layout.measurement_tool_split_ratio = 0.45
         window = self._window(settings)
         self.assertEqual(window._measurement_tool_strip.splitRatio(), 0.45)
         state = window._app_settings.workspace_layout
-        state.project_width = 420
-        state.inspector_width = 460
-        state.results_height = 380
-        state.inspector_records_height = 360
-        window._statistics_section.setExpanded(True)
-        window._calibration_section.setExpanded(False)
-        window._records_section.setExpanded(False)
-        window._area_recognition_section.setExpanded(True)
-        window._object_properties_section.setExpanded(True)
-
+        state.project_width, state.inspector_width, state.results_height = 420, 460, 380
+        window._show_current_object_properties()
         window._reset_workspace_layout()
-
         defaults = WorkspaceLayoutSettings()
         self.assertEqual(window._app_settings.workspace_layout, defaults)
         self.assertEqual(window._measurement_tool_strip.splitRatio(), defaults.measurement_tool_split_ratio)
-        self.assertFalse(window._statistics_section.isExpanded())
-        self.assertFalse(window._calibration_section.isExpanded())
-        self.assertTrue(window._records_section.isExpanded())
-        self.assertFalse(window._area_recognition_section.isExpanded())
-        self.assertFalse(window._object_properties_section.isExpanded())
+        self.assertIs(window._inspector_pages.currentWidget(), window._records_page)
 
-    def test_collapsible_section_without_summary_keeps_title_left_aligned(self) -> None:
+    def test_records_use_available_height_at_standard_window_sizes(self) -> None:
         window = self._window()
-        window.resize(1280, 720)
+        self.addCleanup(window._reset_workspace)
+        self._open_tool_image(window)
+        document = window.current_document()
+        document.calibration = Calibration(mode="preset", pixels_per_unit=4.0, unit="um", source_label="测试标尺")
+        for row in range(40):
+            document.add_measurement(Measurement(
+                id=f"line-{row}", image_id=document.id, mode="manual", fiber_group_id=None,
+                line_px=Line(Point(10, row), Point(70, row)),
+            ))
+        window._update_ui_for_current_document()
+        table = window._inspector_records_pane.table
         window.show()
-        for _ in range(3):
-            self.app.processEvents()
-
-        section = window._area_recognition_section
-        window._object_properties_section.setExpanded(True)
-        self.app.processEvents()
-        self.assertEqual(section.summaryLabel.text(), "")
-        self.assertTrue(section.summaryLabel.isVisible())
-        self.assertGreater(section.summaryLabel.width(), 40)
-        self.assertLessEqual(section.toggleButton.x(), 16)
-        self.assertAlmostEqual(
-            section.toggleButton.x(),
-            window._object_properties_section.toggleButton.x(),
-            delta=2,
-        )
-
-    def test_inspector_records_collapse_restores_dragged_height(self) -> None:
-        window = self._window()
-        window.resize(1600, 900)
-        window.show()
-        self.app.processEvents()
-        section = window._records_section
-        section.setContentHeight(340)
-        self.app.processEvents()
-        remembered = section.height()
-        self.assertEqual(section.contentHeight(), 340)
-        self.assertEqual(
-            window._app_settings.workspace_layout.inspector_records_height,
-            340,
-        )
-        section.setExpanded(False)
-        self.app.processEvents()
-        self.assertLess(section.height(), remembered)
-        self.assertEqual(section.contentHeight(), 340)
-        section.setExpanded(True)
-        self.app.processEvents()
-        self.assertAlmostEqual(section.height(), remembered, delta=4)
+        heights = []
+        for width, height, expected in ((1366, 768, 8), (1600, 900, 12)):
+            window.resize(width, height)
+            for _ in range(4):
+                self.app.processEvents()
+            with self.subTest(size=(width, height)):
+                self.assertTrue(table.isVisible())
+                self.assertFalse(window._results_dock.isVisible())
+                self.assertEqual(table.model().rowCount(), 40)
+                self.assertGreaterEqual(table.viewport().height() // table.rowHeight(0), expected)
+                self.assertEqual(table.horizontalScrollBar().maximum(), 0)
+                heights.append(table.viewport().height())
+        self.assertGreater(heights[1], heights[0])
 
     def test_right_and_bottom_record_views_share_state_but_keep_column_layouts(self) -> None:
         window = self._window()
@@ -711,87 +664,45 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                     expected_palette.color(QPalette.ColorRole.Base).name(),
                 )
 
-    def test_measurement_inspector_uses_locked_section_order_and_defaults(self) -> None:
+    def test_switching_inspector_pages_preserves_record_selection_and_geometry(self) -> None:
         window = self._window()
-        content = window._inspector_scroll.widget()
-        self.assertIs(content, window._inspector_content)
-        scale_editor = content.layout().itemAt(0).widget()
-        self.assertEqual(scale_editor.objectName(), "scaleOverlayEditor")
-        self.assertTrue(scale_editor.isHidden())
-        ordered = [content.layout().itemAt(index).widget() for index in range(1, 7)]
-        self.assertEqual(
-            ordered,
-            [
-                window._current_measurement_summary,
-                window._object_properties_section,
-                window._calibration_section,
-                window._statistics_section,
-                window._records_section,
-                window._area_recognition_section,
-            ],
-        )
-        self.assertFalse(window._statistics_section.isExpanded())
-        self.assertFalse(window._calibration_section.isExpanded())
-        self.assertTrue(window._records_section.isExpanded())
-        self.assertFalse(window._area_recognition_section.isExpanded())
-        self.assertFalse(window._object_properties_section.isExpanded())
-        self.assertEqual(
-            [widget for widget in ordered if not widget.isHidden()],
-            [
-                window._current_measurement_summary,
-                window._calibration_section,
-                window._statistics_section,
-                window._records_section,
-                window._area_recognition_section,
-            ],
-        )
-
-    def test_inspector_sections_remain_contiguous_and_expansion_pushes_down(self) -> None:
-        window = self._window()
-        window.resize(1600, 900)
+        self.addCleanup(window._reset_workspace)
+        self._open_tool_image(window)
+        document = window.current_document()
+        window._on_canvas_line_committed(document.id, "manual", Line(Point(10, 20), Point(70, 20)))
+        window.resize(1366, 768)
         window.show()
+        for _ in range(4):
+            self.app.processEvents()
+        pane = window._inspector_records_pane
+        self.assertTrue(pane.table.isVisible())
+        geometry = window.current_canvas().geometry()
+        selected = window._records_controller.selected_measurement_ids()
+        self.assertEqual(len(selected), 1)
+        pane.properties_button.click()
         self.app.processEvents()
-        content = window._inspector_content
-        layout = content.layout()
-        window._object_properties_section.setExpanded(True)
+        self.assertTrue(window._object_inspector.isVisible())
+        self.assertFalse(pane.table.isVisible())
+        window._return_to_records_button.click()
         self.app.processEvents()
-        sections = (
-            window._object_properties_section,
-            window._calibration_section,
-            window._statistics_section,
-            window._records_section,
-            window._area_recognition_section,
-        )
-
-        initial_tops = [section.y() for section in sections]
-        window._statistics_section.setExpanded(True)
-        self.app.processEvents()
-        expanded_tops = [section.y() for section in sections]
-        self.assertEqual(expanded_tops[0], initial_tops[0])
-        for before, after in zip(initial_tops[1:], expanded_tops[1:], strict=True):
-            self.assertGreaterEqual(after, before)
-
-        window._records_section.setExpanded(False)
-        self.app.processEvents()
-        for current, following in zip(sections, sections[1:]):
-            gap = following.y() - (current.y() + current.height())
-            self.assertGreaterEqual(gap, 0)
-            self.assertLessEqual(gap, layout.spacing() + 1)
+        self.assertTrue(pane.table.isVisible())
+        self.assertEqual(window.current_canvas().geometry(), geometry)
+        self.assertEqual(window._records_controller.selected_measurement_ids(), selected)
 
     def test_inspector_value_editors_redirect_wheel_to_page_scroll(self) -> None:
         window = self._window()
+        self.addCleanup(window._reset_workspace)
         window.resize(1093, 576)
         window.show()
         self.app.processEvents()
+        self._open_tool_image(window)
+        document = window.current_document()
+        window._on_canvas_line_committed(document.id, "manual", Line(Point(10, 20), Point(70, 20)))
+        window._show_current_object_properties()
+        self.app.processEvents()
         scroll_bar = window._inspector_scroll.verticalScrollBar()
         self.assertGreater(scroll_bar.maximum(), 0)
-        window.preset_combo.addItems(["预设 A", "预设 B"])
-        window.preset_combo.setCurrentIndex(0)
-
         controls = (
-            (window.preset_combo, lambda widget: widget.currentIndex()),
-            (window._statistics_panel.metric_combo, lambda widget: widget.currentIndex()),
-            (window._inspector_records_pane.kind_filter, lambda widget: widget.currentIndex()),
             (window._object_inspector._stroke_width_spin, lambda widget: widget.value()),
             (window._object_inspector._font_size_spin, lambda widget: widget.value()),
             (
@@ -819,26 +730,19 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                 self.assertEqual(getter(control), before)
                 self.assertGreater(scroll_bar.value(), 0)
 
-    def test_compact_record_columns_give_category_double_default_width(self) -> None:
+    def test_compact_records_show_three_columns_without_horizontal_scroll(self) -> None:
         window = self._window()
         window.resize(1093, 576)
         window.show()
         self.app.processEvents()
         pane = window._inspector_records_pane
         self.assertIsNotNone(pane)
-        # 类别列默认宽度按产品要求翻倍（184px），窄屏下允许横向滚动。
-        self.assertGreaterEqual(
-            pane.table.columnWidth(int(MeasurementResultColumn.GROUP)),
-            184,
-        )
-        self.assertGreaterEqual(
-            pane.table.columnWidth(int(MeasurementResultColumn.RESULT_SEQUENCE)),
-            44,
-        )
-        self.assertGreaterEqual(
-            pane.table.columnWidth(int(MeasurementResultColumn.RESULT)),
-            64,
-        )
+        visible = {c for c in MeasurementResultColumn if not pane.table.isColumnHidden(c)}
+        self.assertEqual(visible, {MeasurementResultColumn.RESULT_SEQUENCE,
+                                   MeasurementResultColumn.GROUP, MeasurementResultColumn.RESULT})
+        pane.resize(300, 360)
+        self.app.processEvents()
+        self.assertEqual(pane.table.horizontalScrollBar().maximum(), 0)
 
     def test_canvas_workspace_background_follows_light_and_dark_palettes(self) -> None:
         canvas = DocumentCanvas()
@@ -860,7 +764,7 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                     painter.end()
                 self.assertEqual(target.pixelColor(2, 2).name(), expected)
 
-    def test_dark_palette_exposes_card_borders_and_record_resize_handle(self) -> None:
+    def test_dark_palette_exposes_card_borders(self) -> None:
         palette = build_dark_palette()
         window_color = palette.color(QPalette.ColorRole.Window)
         outline_color = palette.color(QPalette.ColorRole.Mid)
@@ -873,12 +777,6 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
             )
         )
         self.assertGreaterEqual(contrast, 90)
-
-        window = self._window()
-        handle = window._records_section.resizeHandle
-        self.assertFalse(handle.isHidden())
-        self.assertGreaterEqual(handle.height(), 14)
-        self.assertEqual(handle.cursor().shape(), Qt.CursorShape.SizeVerCursor)
 
     def test_workspace_mode_replaces_measurement_tools_with_acquisition_context(self) -> None:
         with patch("fdm.services.capture.available_capture_backends", return_value=[]):
@@ -942,8 +840,26 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertEqual(snapshot.unit, "um")
         self.assertEqual(snapshot.valid_count, 3)
         self.assertEqual(snapshot.mean, 20.0)
-        self.assertIn("20 um", panel._mean_cell.value_label.text())
+        self.assertIn("长度", panel.details_label.text())
         self.assertIn("手工", panel.current_value_label.text())
+
+    def test_open_statistics_and_full_table_preserves_dock_and_inspector(self) -> None:
+        window = self._window()
+        self._open_tool_image(window)
+        window.resize(1600, 900)
+        window.show()
+        self.app.processEvents()
+        window._open_results_tab("statistics")
+        self.app.processEvents()
+        self.assertIs(window._results_tabs.currentWidget(), window._statistics_page)
+        self.assertTrue(window._statistics_panel.metric_combo.isVisible())
+        self.assertTrue(window._statistics_panel.scope_combo.isVisible())
+        self.assertTrue(window._inspector_records_pane.isVisible())
+        window._open_results_tab("statistics")
+        self.assertTrue(window._results_dock.isVisible())
+        window._open_results_tab("records")
+        self.assertTrue(window._bottom_records_pane.isVisible())
+        self.assertTrue(window._inspector_records_pane.isVisible())
 
     def test_distribution_inherits_tool_only_when_first_opened(self) -> None:
         window = self._window()

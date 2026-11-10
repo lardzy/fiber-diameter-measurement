@@ -776,24 +776,9 @@ def main() -> int:
             widget._results_tabs.setCurrentIndex(
                 {"records": 0, "statistics": 1, "distribution": 2}[args.results_tab]
             )
-        elif isinstance(widget, MainWindow) and args.scenario == "measurement-object":
-            widget._object_properties_section.setExpanded(True)
+        elif isinstance(widget, MainWindow) and args.scenario in {"measurement-object", "overlay-text-object"}:
             widget._refresh_object_inspector()
-        elif isinstance(widget, MainWindow) and args.scenario == "overlay-text-object":
-            widget._calibration_section.setExpanded(False)
-            widget._records_section.setExpanded(False)
-            widget._area_recognition_section.setExpanded(False)
-            widget._object_properties_section.setExpanded(True)
-            widget._refresh_object_inspector()
-            widget._inspector_scroll.ensureWidgetVisible(
-                widget._object_properties_section,
-                0,
-                0,
-            )
-        elif isinstance(widget, MainWindow) and args.scenario == "measurement-calibration-collapsed":
-            widget._calibration_section.setExpanded(False)
-        elif isinstance(widget, MainWindow) and args.scenario == "measurement-records-collapsed":
-            widget._records_section.setExpanded(False)
+            widget._show_current_object_properties()
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-fullscreen":
             _apply_measurement_fullscreen_scene(widget)
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-zoomed":

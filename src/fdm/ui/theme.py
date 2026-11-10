@@ -325,12 +325,6 @@ def build_application_stylesheet() -> str:
         QToolButton#quickAreaOperationButton[magicPrompt="negative"] {
             background: @error_background; color: @error; border: 1px solid @error;
         }
-        QFrame#currentMeasurementSummary {
-            background: palette(base); border-bottom: 1px solid palette(mid);
-        }
-        QPushButton#currentObjectProperties:checked {
-            background: palette(alternate-base); border-color: palette(highlight);
-        }
         QLabel#currentMeasurementValue { font-size: 18px; font-weight: 600; }
         QLabel#welcomeTitle { font-size: 24px; font-weight: 600; padding: 12px; }
         QLabel#welcomeHint { color: palette(window-text); padding: 12px; }

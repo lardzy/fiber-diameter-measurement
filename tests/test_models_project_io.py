@@ -1126,13 +1126,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                 project_width=310,
                 inspector_width=390,
                 results_height=330,
-                inspector_records_height=280,
                 measurement_tool_split_ratio=0.47,
-                statistics_expanded=True,
-                calibration_expanded=False,
-                records_expanded=False,
-                area_recognition_expanded=True,
-                object_properties_expanded=True,
             ),
             main_window_is_maximized=True,
         )
@@ -1193,13 +1187,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.workspace_layout.project_width, 310)
         self.assertEqual(loaded.workspace_layout.inspector_width, 390)
         self.assertEqual(loaded.workspace_layout.results_height, 330)
-        self.assertEqual(loaded.workspace_layout.inspector_records_height, 280)
         self.assertEqual(loaded.workspace_layout.measurement_tool_split_ratio, 0.47)
-        self.assertTrue(loaded.workspace_layout.statistics_expanded)
-        self.assertFalse(loaded.workspace_layout.calibration_expanded)
-        self.assertFalse(loaded.workspace_layout.records_expanded)
-        self.assertTrue(loaded.workspace_layout.area_recognition_expanded)
-        self.assertTrue(loaded.workspace_layout.object_properties_expanded)
         self.assertTrue(loaded.main_window_is_maximized)
 
     def test_digital_slide_navigation_preferences_default_and_roundtrip(self) -> None:
@@ -1403,11 +1391,10 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.workspace_layout.project_width, 120)
         self.assertEqual(settings.workspace_layout.inspector_width, 320)
         self.assertEqual(settings.workspace_layout.results_height, 2000)
-        self.assertEqual(settings.workspace_layout.inspector_records_height, 260)
+        self.assertNotIn("inspector_records_height", settings.workspace_layout.to_dict())
+        self.assertNotIn("statistics_expanded", settings.workspace_layout.to_dict())
         self.assertEqual(settings.workspace_layout.measurement_tool_split_ratio,
                          WorkspaceLayoutSettings().measurement_tool_split_ratio)
-        self.assertTrue(settings.workspace_layout.statistics_expanded)
-        self.assertFalse(settings.workspace_layout.calibration_expanded)
 
     def test_app_settings_clamp_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict(

@@ -337,9 +337,28 @@ class MeasurementGroupComboBox(QComboBox):
     scrolling while the user is browsing the canvas.
     """
 
+    popupDismissed = Signal()
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.popup_opened = False
+
+    def showPopup(self) -> None:
+        self.popup_opened = True
+        self.view().window().installEventFilter(self)
+        super().showPopup()
+
+    def eventFilter(self, watched, event) -> bool:
+        if event.type() == QEvent.Type.Hide and watched is self.view().window():
+            # On Windows, Escape dismisses the list but leaves the inline
+            # editor focused. An item click also hides before emitting activated.
+            QTimer.singleShot(0, self, self._finish_dismissed_popup)
+        return super().eventFilter(watched, event)
+
+    def _finish_dismissed_popup(self) -> None:
+        if self.isVisible() and not self.view().window().isVisible():
+            self.popupDismissed.emit()
 
     def wheelEvent(self, event) -> None:
         _redirect_wheel_to_inspector_scroll(self, event)

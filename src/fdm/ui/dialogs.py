@@ -723,8 +723,28 @@ def _calibration_unit_combo(initial_unit: str = DEFAULT_LENGTH_UNIT) -> QComboBo
     return combo
 
 
+class CalibrationScopeSelector(QGroupBox):
+    def __init__(self, document_count: int, parent: QWidget) -> None:
+        super().__init__("应用范围", parent)
+        self.project = QRadioButton("整个项目（含后续图片）", self)
+        self.current = QRadioButton("仅当前图", self)
+        self.project.setChecked(True)
+        self.effect = QLabel(self)
+        self.effect.setWordWrap(True)
+        self._document_count = document_count
+        layout = QVBoxLayout(self)
+        for control in (self.project, self.current, self.effect):
+            layout.addWidget(control)
+        self.project.toggled.connect(self._update_effect)
+        self._update_effect(True)
+
+    def _update_effect(self, project: bool) -> None:
+        count = self._document_count if project else 1
+        self.effect.setText(f"确认后将按新标尺重算 {count} 张已打开图像的测量结果。")
+
+
 class CalibrationInputDialog(QDialog):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None, *, document_count: int = 1) -> None:
         super().__init__(parent)
         self.setWindowTitle("图内标尺标定")
         self._length_spin = QDoubleSpinBox()
@@ -732,8 +752,7 @@ class CalibrationInputDialog(QDialog):
         self._length_spin.setRange(0.000001, 1_000_000.0)
         self._length_spin.setValue(100.0)
         self._unit_combo = _calibration_unit_combo()
-        self._apply_to_project = QCheckBox("应用到当前项目（当前及后续打开图片）")
-        self._apply_to_project.setChecked(True)
+        self.scope = CalibrationScopeSelector(document_count, self)
 
         form = QFormLayout()
         form.addRow("真实长度", self._length_spin)
@@ -745,14 +764,14 @@ class CalibrationInputDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addLayout(form)
-        layout.addWidget(self._apply_to_project)
+        layout.addWidget(self.scope)
         layout.addWidget(buttons)
 
     def values(self) -> tuple[float, str, bool]:
         return (
             self._length_spin.value(),
             self._unit_combo.currentData(),
-            self._apply_to_project.isChecked(),
+            self.scope.project.isChecked(),
         )
 
 
@@ -4163,6 +4182,7 @@ class AreaAutoRecognitionDialog(QDialog):
         model_mappings: list[AreaModelMapping],
         *,
         allow_all_scope: bool,
+        allow_current_scope: bool = True,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -4172,7 +4192,10 @@ class AreaAutoRecognitionDialog(QDialog):
         for mapping in model_mappings:
             self._model_combo.addItem(mapping.model_name, mapping.model_file)
         self._scope_all = QCheckBox("处理全部已打开图片")
-        self._scope_all.setEnabled(allow_all_scope)
+        self._scope_all.setChecked(not allow_current_scope)
+        self._scope_all.setEnabled(allow_all_scope and allow_current_scope)
+        if not allow_current_scope:
+            self._scope_all.setText("处理所有普通图像（跳过数字切片和高度图）")
         self._weight_hint = QLabel("权重文件: -")
         self._weight_hint.setWordWrap(True)
         self._model_combo.currentIndexChanged.connect(self._refresh_weight_hint)
@@ -4199,5 +4222,5 @@ class AreaAutoRecognitionDialog(QDialog):
         return (
             self._model_combo.currentText().strip(),
             str(self._model_combo.currentData() or "").strip(),
-            self._scope_all.isChecked() and self._scope_all.isEnabled(),
+            self._scope_all.isChecked(),
         )

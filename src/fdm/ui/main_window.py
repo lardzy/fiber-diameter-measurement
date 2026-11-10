@@ -236,7 +236,6 @@ from fdm.services.construction_operations import (
 )
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
 from fdm.services.group_manager import GroupManager
-from fdm.services.measurement_statistics import StatisticsScope
 from fdm.services.preview_analysis import (
     FocusStackFinalResult,
     FocusStackRenderConfig,
@@ -371,9 +370,11 @@ from fdm.ui.dataset_export_dialog import (
     DatasetDocumentOption,
     DatasetExportDialog,
 )
+from fdm.ui.measurement_calibration import CalibrationManagerDialog, MeasurementCalibrationBar, calibration_scale_text
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
     CalibrationInputDialog,
+    CalibrationScopeSelector,
     CalibrationPresetDialog,
     DigitalSlideCompressionDialog,
     ExportOptionsDialog,
@@ -425,7 +426,7 @@ from fdm.ui.analysis_batch_dialog import (
 from fdm.ui.icons import application_icon, themed_icon
 from fdm.ui.layout_utils import detach_widget_from_layout
 from fdm.ui.workbench_controls import (
-    CommandSearchDialog, CurrentMeasurementSummary, MeasurementContextBar, WelcomePanel, action_button,
+    CommandSearchDialog, MeasurementContextBar, WelcomePanel, action_button,
 )
 from fdm.ui.image_loader import ImageLoadRequest, raster_document_contract_error
 from fdm.ui.display_adjustment_dialog import (
@@ -463,7 +464,7 @@ from fdm.ui.measurement_results_model import (
     format_measurement_status as _format_measurement_status_label,
 )
 from fdm.ui.measurement_records import MeasurementRecordsController, MeasurementRecordsPane
-from fdm.ui.measurement_batch_properties import common_style_fields, common_value, populate_group_choices
+from fdm.ui.measurement_batch_properties import common_style_fields
 from fdm.ui.roi_manager import (
     RoiBooleanRequest,
     RoiCreateFromAreaRequest,
@@ -532,7 +533,6 @@ from fdm.ui.view_transform import MIN_VIEW_ZOOM, CanvasViewportSnapshot
 from fdm.ui.view_zoom_control import ViewZoomStatusButton
 from fdm.ui.scale_overlay_control import ScaleOverlayStatusButton
 from fdm.ui.widgets import (
-    CollapsibleSection,
     FiberGroupListItemWidget,
     FiberGroupListWidget,
     FlowLayout,
@@ -1948,15 +1948,9 @@ class MainWindow(QMainWindow):
         self._bottom_records_pane: MeasurementRecordsPane | None = None
         self._inspector_records_pane: MeasurementRecordsPane | None = None
         self._inspector_scroll: QScrollArea | None = None
-        self._inspector_content: QWidget | None = None
-        self._statistics_section: CollapsibleSection | None = None
-        self._calibration_section: CollapsibleSection | None = None
-        self._records_section: CollapsibleSection | None = None
-        self._area_recognition_section: CollapsibleSection | None = None
-        self._object_properties_section: CollapsibleSection | None = None
+        self._inspector_scale_return_page: QWidget | None = None
         self._object_inspector: CurrentObjectInspector | None = None
         self._statistics_panel: MeasurementStatisticsPanel | None = None
-        self._statistics_detail_label: QLabel | None = None
         self._statistics_summary_table: QTableWidget | None = None
         self._statistics_category_table: QTableWidget | None = None
         self._distribution_widget: StatisticsDistributionWidget | None = None
@@ -2050,7 +2044,6 @@ class MainWindow(QMainWindow):
         self._fiber_quick_background_jobs: dict[tuple[str, int], dict[str, object]] = {}
         self._interactive_segmentation_services: dict[str, object] = {}
         self._show_area_fill = True
-        self._area_auto_button: QPushButton | None = None
         self._magic_controls_widget: QWidget | None = None
         self._magic_prompt_label: QLabel | None = None
         self._magic_toggle_button: QToolButton | None = None
@@ -2098,15 +2091,9 @@ class MainWindow(QMainWindow):
         self._preview_status_label: QLabel | None = None
         self._image_resolution_label: QLabel | None = None
         self._digital_slide_boundary_label: QLabel | None = None
-        self._calibration_label_scroll: QScrollArea | None = None
-        self._calibration_status_card: QFrame | None = None
-        self._calibration_status_title_label: QLabel | None = None
-        self._calibration_status_summary_label: QLabel | None = None
-        self._calibration_details_button: QPushButton | None = None
-        self._calibration_details_label: QLabel | None = None
-        self._calibration_start_button: QPushButton | None = None
-        self._calibration_card_action_row: QWidget | None = None
-        self._calibration_preset_action_row: QWidget | None = None
+        self._calibration_bar: MeasurementCalibrationBar | None = None
+        self._calibration_manager: CalibrationManagerDialog | None = None
+        self._calibration_manager_document: ImageDocument | None = None
         self._version_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
@@ -2122,12 +2109,6 @@ class MainWindow(QMainWindow):
         self._workspace_layout_save_timer.setSingleShot(True)
         self._workspace_layout_save_timer.setInterval(250)
         self._workspace_layout_save_timer.timeout.connect(self._persist_workspace_layout_preferences)
-        self._inspector_layout_restore_timer = QTimer(self)
-        self._inspector_layout_restore_timer.setSingleShot(True)
-        self._inspector_layout_restore_timer.setInterval(40)
-        self._inspector_layout_restore_timer.timeout.connect(
-            self._restore_inspector_section_sizes
-        )
         self._slide_motion = MotionController(parent=self)
         self._slide_jog_timer = QTimer(self)
         self._slide_jog_timer.timeout.connect(self._perform_digital_slide_jog_repeat)
@@ -2293,6 +2274,8 @@ class MainWindow(QMainWindow):
         self._records_controller.groupChangeRequested.connect(
             self._on_measurement_group_change_requested
         )
+        self._records_controller.refreshRequested.connect(self._populate_measurement_table)
+        self._records_controller.newRecordsReady.connect(self._reveal_new_measurements)
         self._records_controller.selection_model.selectionChanged.connect(
             self._on_measurement_selection_changed
         )
@@ -2542,7 +2525,7 @@ class MainWindow(QMainWindow):
         self._project_dock.setPanelWidget(self._build_left_panel())
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self._project_dock)
 
-        self._inspector_dock = WorkspaceDockWidget("测量概览与属性", "measurementInspectorDock", self)
+        self._inspector_dock = WorkspaceDockWidget("测量记录", "measurementInspectorDock", self)
         self._inspector_dock.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
         self._inspector_dock.setPanelWidget(self._build_right_panel())
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._inspector_dock)
@@ -2570,9 +2553,6 @@ class MainWindow(QMainWindow):
         self._adaptive_layout.layoutPreferencesChanged.connect(self._schedule_workspace_layout_save)
         self.professional_workspace.register_layout(self._adaptive_layout)
         self._adaptive_layout.pageChanged.connect(self._snapshot_controls.page_changed)
-        self._inspector_dock.extentChanged.connect(
-            lambda _size: self._schedule_inspector_layout_restore()
-        )
         for dock in (self._project_dock, self._inspector_dock, self._results_dock):
             dock.visibilityChanged.connect(self._on_workspace_dock_visibility_changed)
         self._fullscreen_controller = FullscreenMeasurementController(
@@ -2598,6 +2578,9 @@ class MainWindow(QMainWindow):
         )
 
     def _create_actions(self) -> None:
+        self._area_auto_action = QAction("面积自动识别…", self)
+        self._area_auto_action.setIcon(themed_icon("area_auto"))
+        self._area_auto_action.triggered.connect(self.run_area_auto_recognition)
         self.watermark_action = QAction("水印…", self)
         self.watermark_action.setToolTip("为普通图片设置文字或 Logo 水印")
         self.watermark_action.triggered.connect(self.edit_watermark)
@@ -4320,10 +4303,7 @@ class MainWindow(QMainWindow):
             menu.addAction(action)
             self._area_subtool_actions[tool_mode] = action
         menu.addSeparator()
-        area_auto_action = QAction("面积自动识别...", menu)
-        area_auto_action.setIcon(themed_icon("area_auto", color=self._professional_tool_icon_color(False)))
-        area_auto_action.triggered.connect(self.run_area_auto_recognition)
-        menu.addAction(area_auto_action)
+        menu.addAction(self._area_auto_action)
         button.setMenu(menu)
         self._area_tool_menu = menu
         self._sync_area_tool_button()
@@ -5240,165 +5220,49 @@ class MainWindow(QMainWindow):
         menu.addAction(self.actual_size_action)
         menu.exec(tab_bar.mapToGlobal(position))
 
+    def _build_inspector_calibration(self, parent: QWidget) -> QWidget:
+        bar = MeasurementCalibrationBar(parent)
+        self._calibration_bar = bar
+        bar.draw.clicked.connect(self._mode_actions["calibration"].trigger)
+        bar.choose.menu().aboutToShow.connect(
+            lambda: self._populate_calibration_menu(bar.choose.menu(), choose_preset=True)
+        )
+        bar.status.menu().aboutToShow.connect(lambda: self._populate_calibration_menu(bar.status.menu()))
+
+        manager = CalibrationManagerDialog(self)
+        self._calibration_manager = manager
+        self.preset_combo = manager.presets
+        self._add_preset_button = manager.add
+        self._edit_preset_button = manager.edit
+        self._delete_preset_button = manager.delete
+        self._apply_preset_button = manager.apply
+        self._import_cu_preset_button = manager.import_cu
+        manager.add.clicked.connect(self.add_calibration_preset)
+        manager.edit.clicked.connect(self.edit_selected_preset)
+        manager.delete.clicked.connect(self.delete_selected_preset)
+        manager.apply.clicked.connect(self.apply_selected_preset)
+        manager.import_cu.clicked.connect(self.import_cu_calibration_presets)
+        return bar
+
     def _build_right_panel(self) -> QWidget:
         container = QWidget()
         self._right_panel = container
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
 
-        state = self._app_settings.workspace_layout
-        inspector_content = QWidget(container)
-        self._inspector_content = inspector_content
-        inspector_content.setObjectName("measurementInspectorContent")
-        inspector_content.setMinimumWidth(0)
-        inspector_content.setSizePolicy(
-            # The scroll viewport owns the inspector width. Dynamic user text
-            # inside a section must wrap or clip, never resize the dock.
-            QSizePolicy.Policy.Ignored,
-            QSizePolicy.Policy.Preferred,
-        )
+        self._inspector_pages = WorkspaceStack(container)
+        self._inspector_pages.setMinimumWidth(284)
+        self._inspector_pages.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+        inspector_content = QWidget(self._inspector_pages)
+        inspector_content.setObjectName("measurementRecordsPage")
+        inspector_content.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         inspector_layout = QVBoxLayout(inspector_content)
         inspector_layout.setContentsMargins(0, 0, 0, 0)
-        inspector_layout.setSpacing(6)
-        inspector_layout.setHorizontalSizeConstraint(
-            QLayout.SizeConstraint.SetDefaultConstraint
-        )
-        inspector_layout.setVerticalSizeConstraint(
-            QLayout.SizeConstraint.SetMinimumSize
-        )
-        self._current_measurement_summary = CurrentMeasurementSummary(inspector_content)
-        self._current_measurement_summary.editRequested.connect(self._show_current_object_properties)
-        self._current_measurement_summary.groupChangeRequested.connect(self._on_measurement_group_change_requested)
-        self._current_measurement_summary.batchEditRequested.connect(self._edit_selected_measurements)
-        inspector_layout.addWidget(self._current_measurement_summary)
+        inspector_layout.setSpacing(4)
+        self._records_page = inspector_content
+        self._inspector_pages.addWidget(inspector_content)
 
-        self._statistics_panel = MeasurementStatisticsPanel(inspector_content)
-        self._statistics_panel.resultsRequested.connect(self._toggle_results_panel)
-        self._statistics_panel.statisticsChanged.connect(self._sync_statistics_detail_views)
-        self._statistics_section = CollapsibleSection(
-            "实时统计",
-            expanded=state.statistics_expanded,
-            summary="N / 均值 / SD / CV",
-            parent=inspector_content,
-        )
-        self._statistics_section.setContentWidget(self._statistics_panel)
-        self._statistics_section.expandedChanged.connect(
-            lambda expanded: self._set_inspector_section_state("statistics_expanded", expanded)
-        )
-        inspector_layout.addWidget(self._statistics_section)
-
-        calibration_panel = QWidget(inspector_content)
-        calibration_panel.setObjectName("calibrationBox")
-        calibration_panel.setMinimumWidth(0)
-        calibration_panel.setSizePolicy(
-            QSizePolicy.Policy.Ignored,
-            QSizePolicy.Policy.Preferred,
-        )
-        calibration_layout = QVBoxLayout(calibration_panel)
-        calibration_layout.setContentsMargins(0, 0, 0, 0)
-        self._calibration_status_card = QFrame(calibration_panel)
-        self._calibration_status_card.setObjectName("calibrationStatusCard")
-        card_layout = QVBoxLayout(self._calibration_status_card)
-        card_layout.setContentsMargins(12, 10, 12, 10)
-        card_layout.setSpacing(6)
-
-        self._calibration_status_title_label = QLabel("未标定", self._calibration_status_card)
-        self._calibration_status_title_label.setWordWrap(True)
-        self._calibration_status_title_label.setMinimumWidth(0)
-        self._calibration_status_title_label.setSizePolicy(
-            QSizePolicy.Policy.Ignored,
-            QSizePolicy.Policy.Preferred,
-        )
-        self._calibration_status_title_label.setStyleSheet("font-weight: 800;")
-        card_layout.addWidget(self._calibration_status_title_label)
-
-        self._calibration_status_summary_label = QLabel("测量仅显示 px，无法输出真实尺寸", self._calibration_status_card)
-        self._calibration_status_summary_label.setWordWrap(True)
-        self._calibration_status_summary_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        card_layout.addWidget(self._calibration_status_summary_label)
-        self.calibration_label = self._calibration_status_summary_label
-
-        self._calibration_card_action_row = QWidget(self._calibration_status_card)
-        card_action_layout = QHBoxLayout(self._calibration_card_action_row)
-        card_action_layout.setContentsMargins(0, 0, 0, 0)
-        card_action_layout.setSpacing(8)
-
-        self._calibration_start_button = QPushButton("开始标定", self._calibration_card_action_row)
-        self._calibration_start_button.setIcon(themed_icon("calibration", color="#FF7F50"))
-        self._calibration_start_button.clicked.connect(lambda checked=False: self.set_tool_mode("calibration"))
-        card_action_layout.addWidget(self._calibration_start_button, 1)
-
-        self._calibration_details_button = QPushButton("查看详情", self._calibration_card_action_row)
-        self._calibration_details_button.setCheckable(True)
-        self._calibration_details_button.toggled.connect(self._toggle_calibration_details)
-        card_action_layout.addWidget(self._calibration_details_button, 1)
-        card_layout.addWidget(self._calibration_card_action_row)
-
-        self._calibration_details_label = QLabel("", self._calibration_status_card)
-        self._calibration_details_label.setWordWrap(True)
-        self._calibration_details_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self._calibration_label_scroll = QScrollArea()
-        self._calibration_label_scroll.setWidget(self._calibration_details_label)
-        self._calibration_label_scroll.setWidgetResizable(True)
-        self._calibration_label_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self._calibration_label_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._calibration_label_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self._calibration_label_scroll.setMinimumHeight(72)
-        self._calibration_label_scroll.setMaximumHeight(118)
-        self._calibration_label_scroll.hide()
-        card_layout.addWidget(self._calibration_label_scroll)
-
-        calibration_layout.addWidget(self._calibration_status_card)
-        self.preset_combo = NoWheelComboBox(calibration_panel)
-        self.preset_combo.setMinimumWidth(0)
-        self.preset_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-        self.preset_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.preset_combo.setMinimumContentsLength(10)
-        self.preset_combo.currentTextChanged.connect(self._update_preset_combo_tooltip)
-        calibration_layout.addWidget(self.preset_combo)
-        preset_row = QHBoxLayout()
-        self._add_preset_button = QPushButton("新增预设")
-        self._add_preset_button.setIcon(themed_icon("preset_add", color="#7BD389"))
-        self._add_preset_button.clicked.connect(self.add_calibration_preset)
-        self._edit_preset_button = QPushButton("编辑预设")
-        self._edit_preset_button.setIcon(themed_icon("rename", color="#D7E3FC"))
-        self._edit_preset_button.clicked.connect(self.edit_selected_preset)
-        self._delete_preset_button = QPushButton("删除预设")
-        self._delete_preset_button.setIcon(themed_icon("delete", color="#F28482"))
-        self._delete_preset_button.clicked.connect(self.delete_selected_preset)
-        preset_row.addWidget(self._add_preset_button)
-        preset_row.addWidget(self._edit_preset_button)
-        preset_row.addWidget(self._delete_preset_button)
-        calibration_layout.addLayout(preset_row)
-        self._calibration_preset_action_row = QWidget(calibration_panel)
-        preset_action_layout = QHBoxLayout(self._calibration_preset_action_row)
-        preset_action_layout.setContentsMargins(0, 0, 0, 0)
-        preset_action_layout.setSpacing(8)
-
-        self._apply_preset_button = QPushButton("应用预设", self._calibration_preset_action_row)
-        self._apply_preset_button.setIcon(themed_icon("preset_apply", color="#D7E3FC"))
-        self._apply_preset_button.clicked.connect(self.apply_selected_preset)
-        preset_action_layout.addWidget(self._apply_preset_button, 1)
-
-        self._import_cu_preset_button = QPushButton("导入CU标尺", self._calibration_preset_action_row)
-        self._import_cu_preset_button.setIcon(themed_icon("preset_import", color="#D7E3FC"))
-        self._import_cu_preset_button.clicked.connect(self.import_cu_calibration_presets)
-        preset_action_layout.addWidget(self._import_cu_preset_button, 1)
-        calibration_layout.addWidget(self._calibration_preset_action_row)
-        self._calibration_section = CollapsibleSection(
-            "标定",
-            expanded=state.calibration_expanded,
-            summary="请先确认标定状态",
-            parent=inspector_content,
-        )
-        self._calibration_section.setContentWidget(calibration_panel)
-        self._calibration_section.expandedChanged.connect(
-            lambda expanded: self._set_inspector_section_state(
-                "calibration_expanded",
-                expanded,
-            )
-        )
-        inspector_layout.addWidget(self._calibration_section)
+        inspector_layout.addWidget(self._build_inspector_calibration(inspector_content))
 
         self._inspector_records_pane = MeasurementRecordsPane(
             self._records_controller,
@@ -5407,60 +5271,21 @@ class MainWindow(QMainWindow):
             parent=inspector_content,
         )
         self._wire_records_pane(self._inspector_records_pane)
-        self._records_section = CollapsibleSection(
-            "测量记录",
-            expanded=state.records_expanded,
-            summary="0 条",
-            resizable=True,
-            content_height=state.inspector_records_height,
-            minimum_content_height=180,
-            maximum_content_height=900,
-            parent=inspector_content,
-        )
-        self._records_section.setContentWidget(self._inspector_records_pane)
-        # Show one quiet, bounded count beside the section title. Keep the
-        # results workspace's independent footer and filtering behavior intact.
-        self._inspector_records_pane.count_label.hide()
-        record_count = self._records_section.summaryLabel
-        record_count.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
-        record_count.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        record_count.setStyleSheet(
-            "QLabel { color: palette(window-text); background: palette(alternate-base);"
-            " border: 1px solid palette(mid); border-radius: 9px; padding: 2px 8px; font-size: 12px; }"
-        )
-        self._records_section.layout().itemAt(0).layout().insertStretch(1, 1)
-        self._records_section.expandedChanged.connect(self._on_inspector_records_expanded)
-        self._records_section.contentHeightChanged.connect(
-            self._on_inspector_records_height_changed
-        )
-        self._records_controller.countsChanged.connect(
-            lambda visible, total: self._records_section
-            and self._records_section.setSummary(
-                f"{visible} / {total} 条" if visible != total else f"{total} 条"
-            )
-        )
-        inspector_layout.addWidget(self._records_section)
+        inspector_layout.addWidget(self._inspector_records_pane, 1)
 
-        model_panel = QWidget(inspector_content)
-        model_panel.setObjectName("areaRecognitionBox")
-        model_layout = QVBoxLayout(model_panel)
-        model_layout.setContentsMargins(0, 0, 0, 0)
-        self._area_auto_button = QPushButton("面积自动识别...", model_panel)
-        self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
-        self._area_auto_button.clicked.connect(self.run_area_auto_recognition)
-        model_layout.addWidget(self._area_auto_button)
-        self._area_recognition_section = CollapsibleSection(
-            "面积识别",
-            expanded=state.area_recognition_expanded,
-            parent=inspector_content,
-        )
-        self._area_recognition_section.setContentWidget(model_panel)
-        self._area_recognition_section.expandedChanged.connect(
-            lambda expanded: self._set_inspector_section_state("area_recognition_expanded", expanded)
-        )
-        inspector_layout.addWidget(self._area_recognition_section)
-
-        self._object_inspector = CurrentObjectInspector(inspector_content)
+        self._properties_page = QWidget(self._inspector_pages)
+        properties = QVBoxLayout(self._properties_page)
+        properties.setContentsMargins(0, 0, 0, 0)
+        properties.setSpacing(6)
+        header = QHBoxLayout()
+        self._return_to_records_button = QPushButton("← 返回记录", self._properties_page)
+        self._return_to_records_button.clicked.connect(self._show_inspector_records)
+        header.addWidget(self._return_to_records_button)
+        self._properties_heading = QLabel(self._properties_page)
+        self._properties_heading.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        header.addWidget(self._properties_heading, 1)
+        properties.addLayout(header)
+        self._object_inspector = CurrentObjectInspector(self._properties_page)
         self._object_inspector.annotation_editor.editRequested.connect(self._edit_result_annotations)
         self._object_inspector.batch_editor.editRequested.connect(self._edit_selected_measurements)
         self._object_inspector.appearanceChangeRequested.connect(self._on_object_appearance_change_requested)
@@ -5488,45 +5313,16 @@ class MainWindow(QMainWindow):
         self._object_inspector.constructionDefinitionChangeRequested.connect(
             self._on_construction_definition_change_requested
         )
-        self._object_properties_section = CollapsibleSection(
-            "当前对象属性",
-            expanded=state.object_properties_expanded,
-            summary="未选择对象",
-            parent=inspector_content,
-        )
-        self._object_properties_section.setContentWidget(self._object_inspector)
-        self._object_properties_section.expandedChanged.connect(
-            lambda expanded: self._set_inspector_section_state("object_properties_expanded", expanded)
-        )
-        self._object_properties_section.expandedChanged.connect(self._object_properties_section.setVisible)
-        self._object_properties_section.expandedChanged.connect(self._current_measurement_summary.editButton.setChecked)
-        self._object_properties_section.setVisible(state.object_properties_expanded)
-        self._current_measurement_summary.editButton.setChecked(state.object_properties_expanded)
-        inspector_layout.insertWidget(1, self._object_properties_section)
-        inspector_layout.insertWidget(0, self.scale_preview.create_panel(inspector_content))
-        inspector_layout.removeWidget(self._statistics_section)
-        inspector_layout.insertWidget(4, self._statistics_section)
-        inspector_layout.addStretch(1)
+        self._inspector_scroll = self._inspector_editor_scroll(self._object_inspector)
+        self._inspector_scroll.setObjectName("measurementInspectorScroll")
+        properties.addWidget(self._inspector_scroll, 1)
+        self._inspector_pages.addWidget(self._properties_page)
 
-        inspector_scroll = QScrollArea(container)
-        self._inspector_scroll = inspector_scroll
-        inspector_scroll.setObjectName("measurementInspectorScroll")
-        inspector_scroll.setWidgetResizable(True)
-        inspector_scroll.setMinimumWidth(300)
-        inspector_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        inspector_scroll.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-        inspector_scroll.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        )
-        inspector_scroll.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
-        inspector_scroll.setWidget(inspector_content)
-        self._right_standard_panel = inspector_scroll
-        layout.addWidget(inspector_scroll, 1)
-        QTimer.singleShot(0, self, self._restore_inspector_section_sizes)
+        scale_panel = self.scale_preview.create_panel(self._inspector_pages)
+        self._scale_editor_page = self._inspector_editor_scroll(scale_panel)
+        self._inspector_pages.addWidget(self._scale_editor_page)
+        self._right_standard_panel = self._inspector_pages
+        layout.addWidget(self._inspector_pages, 1)
 
         self._acquisition_right_panel = self._build_acquisition_right_panel(container)
         self._acquisition_right_panel.hide()
@@ -5539,6 +5335,15 @@ class MainWindow(QMainWindow):
 
         return container
 
+    def _inspector_editor_scroll(self, editor: QWidget) -> QScrollArea:
+        scroll = QScrollArea(self._inspector_pages)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setProperty("redirectEditorWheel", True)
+        scroll.setWidget(editor)
+        return scroll
+
     def _wire_records_pane(self, pane: MeasurementRecordsPane) -> None:
         pane.delete_selected_button.setIcon(themed_icon("delete", color="#F28482"))
         pane.delete_category_button.setIcon(themed_icon("delete", color="#F28482"))
@@ -5550,6 +5355,17 @@ class MainWindow(QMainWindow):
         pane.deleteCategoryRequested.connect(self.delete_measurements_by_category)
         pane.deleteAllRequested.connect(self.delete_all_measurements)
         if pane.compact:
+            pane.propertiesRequested.connect(self._show_current_object_properties)
+            pane.batchGroupChangeRequested.connect(self._edit_selected_measurements)
+            menu = pane.more_menu
+            before = pane.delete_selected_button
+            menu.insertAction(before, self._area_auto_action)
+            menu.insertSeparator(before)
+            for label, tab in (("查看统计", "statistics"), ("完整记录表", "records")):
+                action = QAction(label, menu)
+                action.triggered.connect(lambda checked=False, tab=tab: self._open_results_tab(tab))
+                menu.insertAction(before, action)
+            menu.insertSeparator(before)
             pane.headerStateChanged.connect(
                 lambda state: self._store_records_header_state(state, inspector=True)
             )
@@ -5568,65 +5384,6 @@ class MainWindow(QMainWindow):
     def _on_measurement_tool_split_changed(self, ratio: float) -> None:
         self._app_settings.workspace_layout.measurement_tool_split_ratio = ratio
         self._schedule_workspace_layout_save()
-
-    def _set_inspector_section_state(self, field_name: str, expanded: bool) -> None:
-        setattr(self._app_settings.workspace_layout, field_name, bool(expanded))
-        if self._inspector_content is not None:
-            self._inspector_content.updateGeometry()
-        self._schedule_workspace_layout_save()
-
-    def _on_inspector_records_expanded(self, expanded: bool) -> None:
-        section = self._records_section
-        if section is None:
-            return
-        state = self._app_settings.workspace_layout
-        state.records_expanded = bool(expanded)
-        if expanded:
-            section.setContentHeight(state.inspector_records_height, emit_signal=False)
-        if self._inspector_content is not None:
-            self._inspector_content.updateGeometry()
-        self._schedule_workspace_layout_save()
-
-    def _on_inspector_records_height_changed(self, height: int) -> None:
-        self._app_settings.workspace_layout.inspector_records_height = int(height)
-        if self._inspector_content is not None:
-            self._inspector_content.updateGeometry()
-        self._schedule_workspace_layout_save()
-
-    def _schedule_inspector_layout_restore(self, *, immediate: bool = False) -> None:
-        timer = getattr(self, "_inspector_layout_restore_timer", None)
-        if timer is None:
-            return
-        try:
-            timer.start(0 if immediate else 40)
-        except RuntimeError:
-            # Late resize notifications can arrive while the window is being
-            # destroyed.  There is no layout left to restore in that case.
-            return
-
-    def _restore_inspector_section_sizes(self) -> None:
-        section = self._records_section
-        if section is None:
-            return
-        state = self._app_settings.workspace_layout
-        section.setContentHeight(state.inspector_records_height, emit_signal=False)
-        state.inspector_records_height = section.contentHeight()
-        if self._inspector_content is not None:
-            self._inspector_content.updateGeometry()
-
-    def _restore_inspector_section_defaults(self) -> None:
-        defaults = self._app_settings.workspace_layout
-        sections = (
-            (self._statistics_section, defaults.statistics_expanded),
-            (self._calibration_section, defaults.calibration_expanded),
-            (self._records_section, defaults.records_expanded),
-            (self._area_recognition_section, defaults.area_recognition_expanded),
-            (self._object_properties_section, defaults.object_properties_expanded),
-        )
-        for section, expanded in sections:
-            if section is not None:
-                section.setExpanded(expanded)
-        QTimer.singleShot(0, self, self._restore_inspector_section_sizes)
 
     def _build_acquisition_right_panel(self, parent: QWidget) -> QWidget:
         scroll = QScrollArea(parent)
@@ -5780,10 +5537,9 @@ class MainWindow(QMainWindow):
         self._statistics_page_layout = QVBoxLayout(self._statistics_page)
         self._statistics_page_layout.setContentsMargins(8, 8, 8, 8)
         self._statistics_page_layout.setSpacing(6)
-        self._statistics_detail_label = QLabel("统计数据将在当前测量发生变化时自动更新。", self._statistics_page)
-        self._statistics_detail_label.setWordWrap(True)
-        self._statistics_detail_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self._statistics_page_layout.addWidget(self._statistics_detail_label)
+        self._statistics_panel = MeasurementStatisticsPanel(self._statistics_page)
+        self._statistics_panel.statisticsChanged.connect(self._sync_statistics_detail_views)
+        self._statistics_page_layout.addWidget(self._statistics_panel)
 
         statistics_splitter = QSplitter(Qt.Orientation.Horizontal, self._statistics_page)
         statistics_splitter.setChildrenCollapsible(False)
@@ -6266,15 +6022,11 @@ class MainWindow(QMainWindow):
         })
         calibration = document.calibration if document else None
         if calibration is not None:
-            scale = 1.0 / calibration.pixels_per_unit
-            text = f"已标定 · {scale:.6g} {calibration.unit}/px"
-            details = f"{calibration.source_label}\n{calibration.pixels_per_unit:.6g} px/{calibration.unit}"
-            if not calibration.is_isotropic:
-                text = f"已标定 · X {calibration.pixel_size_x:.6g} / Y {calibration.pixel_size_y:.6g} {calibration.unit}/px"
-                details = f"{calibration.source_label}\n{text}"
+            text = f"已标定 · {calibration_scale_text(calibration)}"
+            details = f"{calibration.source_label}\n{text}"
         elif available:
             text = "⚠ 未标定 · 结果为 px / px²"
-            details = "当前图片尚未标定，长度为像素、面积为平方像素。点击开始标定或应用预设。"
+            details = "当前图片尚未标定，长度为像素、面积为平方像素。可应用已有标尺，或画一段已知长度的线进行手动标定。"
         else:
             text, details = "标定 · 请先打开图片", "打开图片后确认标定，再测量真实尺寸。"
         bar.set_calibration(text, details, missing=available and calibration is None, enabled=available)
@@ -6282,16 +6034,24 @@ class MainWindow(QMainWindow):
             self._center_stack.setCurrentWidget(self.tab_widget if entries else self._welcome_panel)
 
     def _populate_quick_calibration_menu(self) -> None:
-        menu = self._measurement_context_bar.calibrationMenu
+        self._populate_calibration_menu(self._measurement_context_bar.calibrationMenu)
+
+    def _populate_calibration_menu(self, menu: QMenu, *, choose_preset: bool = False) -> None:
         menu.clear()
-        menu.addAction(self._mode_actions["calibration"])
-        menu.addAction("标定详情与预设管理…", self._show_calibration_controls)
-        menu.addAction(self.device_calibration_action)
-        if self.preset_combo.count():
+        for index in range(self.preset_combo.count()):
+            action = menu.addAction(f"应用：{self.preset_combo.itemText(index)}")
+            action.setEnabled(self._apply_preset_button.isEnabled())
+            action.triggered.connect(lambda _checked=False, i=index: self._apply_quick_calibration_preset(i))
+        if menu.actions():
             menu.addSeparator()
-            for index in range(self.preset_combo.count()):
-                action = menu.addAction(f"应用：{self.preset_combo.itemText(index)}")
-                action.triggered.connect(lambda _checked=False, i=index: self._apply_quick_calibration_preset(i))
+        else:
+            menu.addAction("新增标尺…", self.add_calibration_preset)
+            import_action = menu.addAction("导入 CU 标尺…", self.import_cu_calibration_presets)
+            import_action.setEnabled(_CU_SCALE_IMPORT_ERROR is None)
+        if not choose_preset:
+            menu.addAction(self._mode_actions["calibration"])
+            menu.addAction(self.device_calibration_action)
+        menu.addAction("标定详情与标尺管理…", self._show_calibration_controls)
 
     def _cycle_magic_subtract_shape(self) -> None:
         canvas = self.current_canvas()
@@ -6307,64 +6067,42 @@ class MainWindow(QMainWindow):
         self.apply_selected_preset()
         self._focus_current_canvas()
 
-    def _show_inspector_section(self, section: CollapsibleSection) -> None:
+    def _show_calibration_controls(self) -> None:
+        if not self._measurement_workspace_active() or self._preview_active or self.scale_preview.editing:
+            return
+        self._calibration_manager_document = self.current_document()
+        try:
+            self._calibration_manager.exec()
+        finally:
+            self._calibration_manager_document = None
+
+    def _show_current_object_properties(self, *, annotation: bool = False) -> None:
+        if not self._measurement_workspace_active() or self.scale_preview.editing:
+            return
         if not self._inspector_dock.isVisible():
             self._toggle_inspector_panel()
-        section.setExpanded(True)
-        QTimer.singleShot(0, self, lambda: self._inspector_scroll.ensureWidgetVisible(section, 0, 0))
+        self._inspector_dock.raise_()
+        self._inspector_pages.setCurrentWidget(self._properties_page)
+        inspector = self._object_inspector
+        inspector.layout().activate()
+        top = inspector.annotation_editor.y() - 4 if annotation else 0
+        self._inspector_scroll.verticalScrollBar().setValue(top)
 
-    def _show_calibration_controls(self) -> None:
-        self._show_inspector_section(self._calibration_section)
+    def _show_inspector_records(self) -> None:
+        if not self.scale_preview.editing:
+            self._inspector_pages.setCurrentWidget(self._records_page)
 
-    def _show_current_object_properties(self) -> None:
-        if self._object_properties_section.isExpanded():
-            self._object_properties_section.setExpanded(False)
-        else:
-            self._show_inspector_section(self._object_properties_section)
+    def _show_scale_editor_page(self) -> None:
+        if self._inspector_pages.currentWidget() is not self._scale_editor_page:
+            self._inspector_scale_return_page = self._inspector_pages.currentWidget()
+        self._inspector_pages.setCurrentWidget(self._scale_editor_page)
+        self._inspector_dock.show()
+        self._inspector_dock.raise_()
 
-    def _sync_current_measurement_summary(self, document, selected_ids) -> None:
-        panel = self._current_measurement_summary
-        panel.measurement_id = None
-        panel.batch_target = None
-        panel.groupCombo.setEnabled(False)
-        panel.groupCombo.clear()
-        panel.groupCombo.addItem("对象类别", None)
-        panel.sourceLabel.setText("点击画布中的测量对象\n或在测量记录中选择")
-        if document is None or not selected_ids:
-            panel.valueLabel.setText("未选中对象")
-            return
-        if len(selected_ids) > 1:
-            identities = set(selected_ids)
-            selected = [m for m in document.measurements if m.id in identities]
-            if len(selected) != len(identities):
-                panel.valueLabel.setText("请选择测量对象")
-                return
-            panel.valueLabel.setText(f"已选择 {len(selected_ids)} 个对象")
-            panel.sourceLabel.setText("选择类别可批量归类\n点击属性可批量编辑样式")
-            panel.batch_target = (document.id, tuple(sorted(identities)))
-            populate_group_choices(panel.groupCombo, document, common_value(m.fiber_group_id for m in selected))
-            panel.groupCombo.setEnabled(not self.project.is_read_only_compatible and self._measurement_workspace_active())
-            return
-        measurement = document.get_measurement(selected_ids[0])
-        model = self._records_controller.source_model
-        row = model.source_row_for_id(selected_ids[0])
-        if measurement is None or row < 0:
-            panel.valueLabel.setText("未选择测量对象")
-            return
-        value = model.index(row, MeasurementResultColumn.RESULT).data()
-        unit = model.index(row, MeasurementResultColumn.UNIT).data()
-        panel.valueLabel.setText(f"{value} {unit}")
-        panel.sourceLabel.setText(f"{self._format_measurement_kind(measurement)} · {Path(document.path).name}\n"
-                                  f"{_format_measurement_status_label(measurement.status)} · 当前图片")
-        panel.measurement_id = measurement.id
-        panel.groupCombo.blockSignals(True)
-        panel.groupCombo.clear()
-        panel.groupCombo.addItem("未分类", None)
-        for group in document.sorted_groups():
-            panel.groupCombo.addItem(group.label, group.id)
-        panel.groupCombo.setCurrentIndex(panel.groupCombo.findData(measurement.fiber_group_id))
-        panel.groupCombo.blockSignals(False)
-        panel.groupCombo.setEnabled(True)
+    def _close_scale_editor_page(self) -> None:
+        if self._inspector_pages.currentWidget() is self._scale_editor_page:
+            self._inspector_pages.setCurrentWidget(self._inspector_scale_return_page or self._records_page)
+        self._inspector_scale_return_page = None
 
     def _install_capture_task_bar(self) -> None:
         for widget in (
@@ -6405,6 +6143,8 @@ class MainWindow(QMainWindow):
             return
         document = self.current_document()
         if document is None and mode != "select":
+            return
+        if mode == "calibration" and not self._calibration_target_available(document):
             return
         if document is not None and document.raster_semantic is RasterSemantic.HEIGHT and is_magic_toolbar_tool_mode(mode):
             self.statusBar().showMessage("高度图不参与普通纤维分析。", 4000)
@@ -14012,7 +13752,7 @@ class MainWindow(QMainWindow):
             "_panel_command_button": "results", "_more_command_button": "more",
             "_rename_group_button": "rename", "_add_preset_button": "preset_add",
             "_edit_preset_button": "rename", "_apply_preset_button": "preset_apply",
-            "_import_cu_preset_button": "preset_import", "_area_auto_button": "area_auto",
+            "_import_cu_preset_button": "preset_import", "_area_auto_action": "area_auto",
         }.items():
             button = getattr(self, name, None)
             if button is not None:
@@ -14126,92 +13866,6 @@ class MainWindow(QMainWindow):
         for label in self._group_header_labels:
             label.setStyleSheet(f"color: {muted}; padding: 0 0 2px 0;")
 
-    def _toggle_calibration_details(self, checked: bool) -> None:
-        if self._calibration_label_scroll is not None:
-            self._calibration_label_scroll.setVisible(bool(checked))
-        if self._calibration_details_button is not None:
-            self._calibration_details_button.setText("收起详情" if checked else "查看详情")
-
-    def _clear_calibration_action_prominence(self) -> None:
-        for button in (self._calibration_start_button, self._apply_preset_button):
-            if button is not None:
-                button.setStyleSheet("")
-
-    def _set_calibration_status_card(
-        self,
-        *,
-        title: str,
-        summary: str,
-        status: str,
-        details: str = "",
-        show_start_button: bool = False,
-    ) -> None:
-        if self._calibration_status_title_label is None or self._calibration_status_summary_label is None:
-            return
-        palette = {
-            "uncalibrated": ("#FEF2F2", "#FCA5A5", "#7F1D1D", "#991B1B"),
-            "calibrated": ("#ECFDF5", "#6EE7B7", "#064E3B", "#047857"),
-            "preview": ("#F1F5F9", "#CBD5E1", "#334155", "#475569"),
-            "warning": ("#FFFBEB", "#FCD34D", "#78350F", "#92400E"),
-        }.get(status, ("#F8FAFC", "#CBD5E1", "#1F2937", "#475569"))
-        background, border, title_color, text_color = palette
-        if self._is_dark_palette():
-            palette = {
-                "uncalibrated": ("#3F1518", "#F87171", "#FEE2E2", "#FECACA"),
-                "calibrated": ("#063C33", "#34D399", "#ECFDF5", "#A7F3D0"),
-                "preview": ("#1F2937", "#64748B", "#E5E7EB", "#CBD5E1"),
-                "warning": ("#3B2A08", "#FBBF24", "#FEF3C7", "#FDE68A"),
-            }.get(status, ("#1F2937", "#64748B", "#E5E7EB", "#CBD5E1"))
-            background, border, title_color, text_color = palette
-        if self._calibration_status_card is not None:
-            self._calibration_status_card.setStyleSheet(
-                "QFrame#calibrationStatusCard {"
-                f"background: {background};"
-                f"border: 1px solid {border};"
-                "border-radius: 8px;"
-                "}"
-            )
-        self._calibration_status_title_label.setText(title)
-        self._calibration_status_title_label.setStyleSheet(f"font-weight: 800; color: {title_color};")
-        self._calibration_status_summary_label.setText(summary)
-        self._calibration_status_summary_label.setToolTip("\n".join(part for part in [title, summary, details] if part))
-        self._calibration_status_summary_label.setStyleSheet(f"color: {text_color};")
-        self.calibration_label = self._calibration_status_summary_label
-        if self._calibration_section is not None:
-            # The full source name remains in the card and tooltip.  Keep the
-            # one-line section header compact so a long preset cannot dominate
-            # the right dock width.
-            self._calibration_section.setSummary(summary if status == "calibrated" else title)
-            self._calibration_section.summaryLabel.setToolTip(
-                "\n".join(part for part in (title, summary, details) if part)
-            )
-        if self._calibration_details_label is not None:
-            self._calibration_details_label.setText(details)
-            self._calibration_details_label.setToolTip(details)
-            self._calibration_details_label.setStyleSheet(f"color: {text_color};")
-        if self._calibration_details_button is not None:
-            has_details = bool(details.strip())
-            self._calibration_details_button.setVisible(has_details)
-            self._calibration_details_button.setEnabled(has_details)
-            if not has_details:
-                self._calibration_details_button.setChecked(False)
-            self._calibration_details_button.setText("收起详情" if self._calibration_details_button.isChecked() else "查看详情")
-        if self._calibration_start_button is not None:
-            self._calibration_start_button.setVisible(show_start_button)
-        self._clear_calibration_action_prominence()
-
-    def _set_calibration_label(self, text: str, *, status: str) -> None:
-        self._set_calibration_status_card(
-            title=text.splitlines()[0] if text else "",
-            summary=text,
-            status=status,
-            details=text,
-            show_start_button=status == "uncalibrated",
-        )
-
-    def _update_preset_combo_tooltip(self, text: str) -> None:
-        self.preset_combo.setToolTip(text)
-
     def _update_image_resolution_label(self, document: ImageDocument | None = None) -> None:
         self._update_digital_slide_boundary_label(document)
         if self._image_resolution_label is None:
@@ -14306,7 +13960,7 @@ class MainWindow(QMainWindow):
             if not getattr(self, "_theme_icon_refresh_pending", False):
                 self._theme_icon_refresh_pending = True
                 QTimer.singleShot(0, self, self._refresh_theme_sensitive_icons)
-            if getattr(self, "tab_widget", None) is not None and hasattr(self, "calibration_label"):
+            if getattr(self, "tab_widget", None) is not None and self._calibration_manager is not None:
                 self._update_calibration_panel(self.current_document())
             self._apply_tool_menu_stylesheets()
 
@@ -14359,7 +14013,6 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         if self._adaptive_layout is not None:
             self._adaptive_layout.end_window_resize(self.width())
-        self._schedule_inspector_layout_restore()
 
     def showEvent(self, event) -> None:
         self._ensure_workbench_toolbar_rows()
@@ -14430,8 +14083,6 @@ class MainWindow(QMainWindow):
             self.toggle_results_panel_action.blockSignals(True)
             self.toggle_results_panel_action.setChecked(self._results_dock.isVisible())
             self.toggle_results_panel_action.blockSignals(False)
-            if self._records_section is not None:
-                self._records_section.setVisible(not self._results_dock.isVisible())
 
     def _toggle_project_panel(self, _checked: bool = False) -> None:
         if not self._panel_allowed("project"):
@@ -14462,15 +14113,24 @@ class MainWindow(QMainWindow):
             if self._results_dock.isVisible() != show:
                 self._adaptive_layout.toggle_results()
         self._on_workspace_dock_visibility_changed(False)
-        self._schedule_inspector_layout_restore(immediate=True)
         QTimer.singleShot(0, self, self._refresh_distribution_if_visible)
+
+    def _open_results_tab(self, page: str) -> None:
+        if not self._panel_allowed("results"):
+            return
+        if not self._results_dock.isVisible():
+            self._toggle_results_panel()
+        tabs = self._results_tabs
+        target = tabs.widget(0) if page == "records" else self._statistics_page
+        tabs.setCurrentWidget(target)
+        self._results_dock.raise_()
 
     def _reset_workspace_layout(self) -> None:
         self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
             self._adaptive_layout.reset_defaults()
         self._measurement_tool_strip.setSplitRatio(self._app_settings.workspace_layout.measurement_tool_split_ratio)
-        self._restore_inspector_section_defaults()
+        self._show_inspector_records()
         self.statusBar().showMessage("已恢复默认工作区布局", 3000)
 
     def _restore_workbench_presentation(self) -> None:
@@ -14577,7 +14237,7 @@ class MainWindow(QMainWindow):
         self._capture_task_bar.setVisible(workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE)
         self._project_dock.setWindowTitle("采集范围与焦层" if workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE else "项目与类别")
         self._inspector_dock.setWindowTitle({
-            WorkspaceMode.MEASURE: "当前对象与测量", WorkspaceMode.ACQUIRE: "采集设置",
+            WorkspaceMode.MEASURE: "测量记录", WorkspaceMode.ACQUIRE: "采集设置",
             WorkspaceMode.DIGITAL_SLIDE_ACQUIRE: "样品台与采集设置",
         }[workspace])
         self.acquisition_workspace_action.blockSignals(True)
@@ -14673,10 +14333,9 @@ class MainWindow(QMainWindow):
         summary_table = self._statistics_summary_table
         category_table = self._statistics_category_table
         panel = self._statistics_panel
-        if self._statistics_detail_label is None or summary_table is None or category_table is None:
+        if summary_table is None or category_table is None:
             return
         if not snapshots:
-            self._statistics_detail_label.setText("当前作用域没有统计数据。")
             summary_table.setRowCount(0)
             category_table.setRowCount(0)
             return
@@ -14700,25 +14359,6 @@ class MainWindow(QMainWindow):
                         Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
                     )
                 table.setItem(row, column, item)
-
-        scope = panel.active_scope() if panel is not None else StatisticsScope.CURRENT_DOCUMENT
-        metric = panel.active_metric() if panel is not None else None
-        metric_label = {
-            "length": "长度",
-            "area": "面积",
-            "count": "计数",
-        }.get(getattr(metric, "value", ""), "测量")
-        scope_label = {
-            StatisticsScope.CURRENT_CATEGORY: "当前类别",
-            StatisticsScope.CURRENT_DOCUMENT: "当前图片",
-            StatisticsScope.PROJECT: "整个项目",
-        }[scope]
-        category_scope_label = "整个项目" if scope is StatisticsScope.PROJECT else "当前图片"
-        unit_note = " · 多种单位已分开展示" if len(snapshots) > 1 else ""
-        self._statistics_detail_label.setText(
-            f"{metric_label} · {scope_label} · 总体标准差口径；类别比较范围："
-            f"{category_scope_label}{unit_note}"
-        )
 
         summary_table.setSortingEnabled(False)
         summary_table.setRowCount(len(snapshots))
@@ -14804,8 +14444,7 @@ class MainWindow(QMainWindow):
             group=request.category_label,
             status=status,
         )
-        if self._records_section is not None and not self._records_section.isExpanded():
-            self._records_section.setExpanded(True)
+        self._show_inspector_records()
         if self._results_tabs is not None:
             self._results_tabs.setCurrentIndex(0)
         metric_label = {
@@ -19720,23 +19359,23 @@ class MainWindow(QMainWindow):
         return template_changed or sync_changed
 
     def _prompt_preset_apply_scope(self, preset: CalibrationPreset) -> str | None:
-        if len(self.project.documents) <= 1:
-            return "current"
-        box = QMessageBox(self)
-        box.setIcon(QMessageBox.Icon.Question)
-        box.setWindowTitle("应用标定预设")
-        box.setText(f"将预设“{preset.name}”应用到哪里？")
-        project_button = box.addButton("项目所有图片", QMessageBox.ButtonRole.AcceptRole)
-        current_button = box.addButton("当前图片", QMessageBox.ButtonRole.ActionRole)
-        cancel_button = box.addButton("取消", QMessageBox.ButtonRole.RejectRole)
-        box.setDefaultButton(project_button)
-        box.setEscapeButton(cancel_button)
-        box.exec()
-        if box.clickedButton() == project_button:
-            return "project_all"
-        if box.clickedButton() == current_button:
-            return "current"
-        return None
+        dialog = QDialog(self)
+        dialog.setWindowTitle("应用标尺")
+        layout = QVBoxLayout(dialog)
+        preset_label = QLabel(f"所选标尺：{preset.name}", dialog)
+        preset_label.setTextFormat(Qt.TextFormat.PlainText)
+        preset_label.setWordWrap(True)
+        layout.addWidget(preset_label)
+        scope = CalibrationScopeSelector(len(self.project.documents), dialog)
+        layout.addWidget(scope)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("应用")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return None
+        return "project_all" if scope.project.isChecked() else "current"
 
     def _build_cu_import_preview_text(
         self,
@@ -22320,7 +21959,6 @@ class MainWindow(QMainWindow):
         if self._adaptive_layout is not None:
             self._adaptive_layout.set_layout_settings(settings.workspace_layout)
             QTimer.singleShot(0, self._adaptive_layout, self._adaptive_layout.restore_preferred_extents)
-        self._restore_inspector_section_defaults()
         self._apply_theme_mode()
         self._refresh_theme_sensitive_icons()
         if self._measurement_tool_strip is not None:
@@ -22542,11 +22180,14 @@ class MainWindow(QMainWindow):
     def apply_selected_preset(self) -> None:
         document = self.current_document()
         selected = self._selected_preset()
-        if document is None or selected is None:
+        if selected is None or not self._calibration_target_available(document):
             return
         _, preset = selected
+        open_ids = {item.id for item in self.project.documents}
         scope = self._prompt_preset_apply_scope(preset)
-        if scope is None:
+        if scope is None or not self._calibration_target_available(
+            document, open_ids if scope == "project_all" else None
+        ):
             return
 
         if scope == "project_all":
@@ -23303,7 +22944,13 @@ class MainWindow(QMainWindow):
         scope = ExportScope.CURRENT if current_radio.isChecked() else ExportScope.ALL_OPEN
         return scope, group_combo.currentText() if group_combo is not None else None
 
+    @staticmethod
+    def _supports_area_inference(document: ImageDocument) -> bool:
+        return not document.is_digital_slide() and document.raster_semantic is not RasterSemantic.HEIGHT
+
     def run_area_auto_recognition(self) -> None:
+        if not self._measurement_workspace_active() or self._preview_active or self.project.is_read_only_compatible:
+            return
         if "area-inference" not in self._runtime_features:
             QMessageBox.information(self, "面积自动识别", "当前 core 发布配置未包含面积推理功能。")
             return
@@ -23314,9 +22961,13 @@ class MainWindow(QMainWindow):
         if not mappings:
             QMessageBox.information(self, "面积自动识别", "请先在设置中配置面积模型名称与权重文件映射。")
             return
+        document = self.current_document()
+        if document is None or not any(self._supports_area_inference(item) for item in self.project.documents):
+            return
         dialog = AreaAutoRecognitionDialog(
             mappings,
             allow_all_scope=len(self.project.documents) > 1,
+            allow_current_scope=self._supports_area_inference(document),
             parent=self,
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
@@ -23325,16 +22976,15 @@ class MainWindow(QMainWindow):
         if not model_name or not model_file:
             QMessageBox.warning(self, "面积自动识别", "请选择有效的模型配置。")
             return
-        target_documents = self.project.documents if apply_all else ([self.current_document()] if self.current_document() else [])
-        target_documents = [document for document in target_documents if document is not None]
-        skipped_slides = [document for document in target_documents if document.is_digital_slide()]
-        target_documents = [document for document in target_documents if not document.is_digital_slide() and document.raster_semantic is not RasterSemantic.HEIGHT]
-        if not target_documents:
-            if skipped_slides:
-                QMessageBox.information(self, "面积自动识别", "数字化切片文件会跳过面积自动识别。")
+        if not apply_all and self.current_document() is not document:
             return
-        if skipped_slides:
-            self.statusBar().showMessage(f"已跳过 {len(skipped_slides)} 个数字化切片文件。", 4000)
+        candidates = self.project.documents if apply_all else [document]
+        target_documents = [item for item in candidates if self._supports_area_inference(item)]
+        skipped = len(candidates) - len(target_documents)
+        if skipped:
+            self.statusBar().showMessage(f"已跳过 {skipped} 个数字切片或高度图。", 4000)
+        if not target_documents:
+            return
         requests = [
             AreaInferenceRequest(
                 document_id=document.id,
@@ -24882,9 +24532,11 @@ class MainWindow(QMainWindow):
         )
         previous_measurement_ids = {m.id for m in document.measurements}
         mutator()
+        new_measurement_ids = []
         for measurement in document.measurements:
             if measurement.id not in previous_measurement_ids:
                 self._initialize_measurement_annotation(document, measurement)
+                new_measurement_ids.append(measurement.id)
         if not geometry_measurement_ids:
             document.rebuild_group_memberships()
         after = DocumentHistoryState.capture(
@@ -24925,6 +24577,13 @@ class MainWindow(QMainWindow):
             document.mark_calibration_saved()
         if changed:
             self._refresh_document_analysis_validity(document)
+        if document is not self.current_document():
+            if changed:
+                canvas = self._canvases.get(document.id)
+                if canvas is not None:
+                    canvas.notify_document_visual_changed()
+                self._refresh_background_measurement_ui()
+            return changed
         if (
             changed
             and geometry_measurement_ids
@@ -24933,6 +24592,8 @@ class MainWindow(QMainWindow):
             self._refresh_measurement_geometry_ui(document, geometry_measurement_ids)
         else:
             self._update_ui_for_current_document()
+        if changed and new_measurement_ids:
+            self._records_controller.records_committed(document, new_measurement_ids)
         return changed
 
     def _refresh_measurement_geometry_ui(self, document, measurement_ids) -> None:
@@ -25116,14 +24777,22 @@ class MainWindow(QMainWindow):
         if canvas is not None:
             canvas.notify_document_visual_changed(added_measurement_ids=(measurement.id,))
         if document is not self.current_document():
-            self._update_action_states()
-            self._show_pending_history_budget_notice()
+            self._refresh_background_measurement_ui()
             return
         self._refresh_group_list_counts(document)
         self._append_measurement_table_row(document, measurement)
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._refresh_object_inspector()
+        self._show_pending_history_budget_notice()
+
+    def _refresh_background_measurement_ui(self) -> None:
+        # Project totals and save state can change while the user is reading
+        # another image. Resetting its table would scroll back to its selection.
+        self._update_action_states()
+        self._schedule_statistics_refresh()
+        if self.project.analysis_artifacts:
+            self._refresh_analysis_results_center()
         self._show_pending_history_budget_notice()
 
     def _apply_documents_change(
@@ -25234,6 +24903,10 @@ class MainWindow(QMainWindow):
         return total_removed
 
     def _on_tab_changed(self, index: int) -> None:
+        if self.scale_preview.editing:
+            self._inspector_scale_return_page = self._records_page
+        else:
+            self._show_inspector_records()
         popup = self._slide_brightness_popup
         if popup is not None and popup.canvas is not self.current_canvas():
             self._close_slide_brightness_popup()
@@ -26136,9 +25809,7 @@ class MainWindow(QMainWindow):
         editor = self._object_inspector.annotation_editor
         if editor.isHidden() or not self._measurement_workspace_active():
             return
-        self._show_inspector_section(self._object_properties_section)
-        self._inspector_dock.raise_()
-        QTimer.singleShot(0, editor, lambda: self._inspector_scroll.ensureWidgetVisible(editor, 0, 4))
+        self._show_current_object_properties(annotation=True)
 
     def _refresh_object_inspector(self) -> None:
         inspector = self._object_inspector
@@ -26172,38 +25843,23 @@ class MainWindow(QMainWindow):
         editable = not self.project.is_read_only_compatible and self._measurement_workspace_active()
         inspector.batch_editor.setEnabled(editable)
         inspector.annotation_editor.setEnabled(editable)
-        self._sync_current_measurement_summary(document, selected_ids)
-        section = self._object_properties_section
-        if section is None:
-            return
         if professional_targets:
-            section.setSummary(f"已选择 {len(professional_targets)} 个专业测量")
-            self._current_measurement_summary.valueLabel.setText(f"已选择 {len(professional_targets)} 个专业测量")
-            self._current_measurement_summary.sourceLabel.setText("在对象属性中编辑结果标注")
-        elif construction_id and document is not None:
-            getter = getattr(document, "get_construction_entity", None)
-            entity = getter(construction_id) if callable(getter) else None
-            section.setSummary(
-                self._construction_tool_label(
-                    str(getattr(getattr(entity, "definition", None), "kind", ""))
-                )
-                if entity is not None
-                else "辅助几何"
-            )
-        elif overlay_id and document is not None:
-            overlay = document.get_overlay_annotation(overlay_id)
-            section.setSummary(
-                "文字" if overlay is not None and overlay.is_text() else "叠加图形"
-            )
-        elif len(selected_ids) > 1:
-            section.setSummary(f"已选择 {len(selected_ids)} 个")
-        elif selected_ids and document is not None:
-            measurement = document.get_measurement(selected_ids[0])
-            section.setSummary(
-                self._format_measurement_kind(measurement) if measurement is not None else "未选择对象"
-            )
+            label = f"专业测量 · {len(professional_targets)} 个"
+        elif construction_id or overlay_id:
+            label = "辅助几何" if construction_id else "叠加图形"
+            if overlay_id and document is not None:
+                overlay = document.get_overlay_annotation(overlay_id)
+                if overlay is not None and overlay.is_text():
+                    label = "文字"
+        elif selected_ids:
+            label = f"已选 {len(selected_ids)} 条"
         else:
-            section.setSummary("未选择对象")
+            label = "未选中对象"
+        self._properties_heading.setText(label)
+        self._inspector_records_pane.set_selection_context(
+            label, can_open=bool(professional_targets or construction_id or overlay_id or selected_ids),
+            can_batch_edit=editable and len(selected_ids) > 1,
+        )
 
     def _on_canvas_view_zoom_changed(self, document_id: str) -> None:
         document = self.current_document()
@@ -26248,11 +25904,30 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("已更新当前图片的比例尺位置", 3000)
         self._focus_current_canvas()
 
+    def _calibration_target_available(
+        self, document: ImageDocument | None, project_image_ids: set[str] | None = None
+    ) -> bool:
+        if (
+            document is None or self.current_document() is not document
+            or not self._measurement_workspace_active() or self._preview_active
+            or self.project.is_read_only_compatible or self.scale_preview.editing
+        ):
+            return False
+        if project_image_ids is not None and project_image_ids != {item.id for item in self.project.documents}:
+            self.statusBar().showMessage("打开的图像已变化，请重新确认标定范围。", 4500)
+            return False
+        return self._ensure_current_pixel_work_available("标定")
+
     def _apply_calibration_line(self, document: ImageDocument, line: Line) -> None:
-        dialog = CalibrationInputDialog(self)
+        if not self._calibration_target_available(document):
+            return
+        open_ids = {item.id for item in self.project.documents}
+        dialog = CalibrationInputDialog(self, document_count=len(open_ids))
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
         actual_length, unit, apply_to_project = dialog.values()
+        if not self._calibration_target_available(document, open_ids if apply_to_project else None):
+            return
         pixels_per_unit = line_length(line) / actual_length
         calibration = Calibration(
             mode="image_scale",
@@ -26298,14 +25973,16 @@ class MainWindow(QMainWindow):
             self.preset_combo.setCurrentIndex(target_index)
         elif self.preset_combo.count() > 0:
             self.preset_combo.setCurrentIndex(0)
-        self._update_preset_combo_tooltip(self.preset_combo.currentText())
+        self.preset_combo.setToolTip(self.preset_combo.currentText())
         has_preset = self.preset_combo.count() > 0
         if self._edit_preset_button is not None:
             self._edit_preset_button.setEnabled(has_preset)
         if self._delete_preset_button is not None:
             self._delete_preset_button.setEnabled(has_preset)
         if self._apply_preset_button is not None:
-            self._apply_preset_button.setEnabled(has_preset and self.current_document() is not None)
+            self._apply_preset_button.setEnabled(
+                has_preset and self._calibration_bar.choose.isEnabled() and self.current_document() is not None
+            )
 
     def _populate_group_list(self, document: ImageDocument | None) -> None:
         self._group_list_rebuilding = True
@@ -26544,48 +26221,44 @@ class MainWindow(QMainWindow):
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
         self._sync_measurement_context()
-        if self._preview_active:
-            self._set_calibration_status_card(
-                title="实时预览中",
-                summary="图片编辑与标定已暂停",
-                status="preview",
-                details="实时预览中，图片编辑、测量记录编辑与标定操作暂时不可用。",
-                show_start_button=False,
-            )
+        bar = self._calibration_bar
+        if bar is None or self._calibration_manager is None:
             return
-        if document is None or document.calibration is None:
-            self._set_calibration_status_card(
-                title="未标定",
-                summary="测量仅显示 px，无法输出真实尺寸",
-                status="uncalibrated",
-                details="请使用图内标定或应用标定预设后再进行真实尺寸测量。",
-                show_start_button=True,
-            )
+        if self._preview_active or document is None or document.calibration is None:
+            if self._preview_active:
+                message = "实时预览中，图像标定已暂停"
+            elif document is None:
+                message = "请先打开图像"
+            else:
+                message = "未标定 · 结果为 px / px²"
+            bar.show_notice(message, uncalibrated=document is not None and not self._preview_active)
+            self._calibration_manager.details.setText(message)
             return
         calibration = document.calibration
         source_label = calibration.source_label or self._format_calibration_mode(calibration.mode)
-        unit_per_px = 1.0 / calibration.pixels_per_unit if calibration.pixels_per_unit > 0 else 0.0
+        scale = calibration_scale_text(calibration)
+        ratio = f"{calibration.pixels_per_unit:.6g}"
+        if not calibration.is_isotropic:
+            ratio = f"X {ratio} / Y {calibration.y_pixels_per_unit:.6g}"
         details = [
             f"标定来源: {source_label}",
             f"标定模式: {self._format_calibration_mode(calibration.mode)}",
-            f"换算关系: {calibration.pixels_per_unit:.4f} px/{calibration.unit}",
-            f"像素尺寸: X {unit_per_px:.6g} / Y {calibration.pixel_size_y:.6g} {calibration.unit}/px",
+            f"像素尺寸: {scale}",
+            f"换算关系: {ratio} px/{calibration.unit}",
         ]
         if calibration.mode == "project_default" or not document.uses_sidecar():
             details.append("保存位置: 当前项目")
         else:
             details.append(f"侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}")
-        self._set_calibration_status_card(
-            title=f"已标定 · {source_label}",
-            summary=(f"X {unit_per_px:.6g} / Y {calibration.pixel_size_y:.6g} {calibration.unit}/px"
-                     if not calibration.is_isotropic else f"{unit_per_px:.6g} {calibration.unit}/px"),
-            status="calibrated",
-            details="\n".join(details),
-            show_start_button=False,
-        )
+        info = "\n".join(details)
+        source = f"项目标尺 · {source_label}" if calibration.mode == "project_default" and calibration.source_label else source_label
+        bar.show_scale(source, scale, info)
+        self._calibration_manager.details.setText(info)
 
     def _populate_measurement_table(self, document: ImageDocument | None) -> None:
         controller = self._records_controller
+        if controller.defer_refresh_while_editing(document):
+            return
         selected_ids = controller.selected_measurement_ids() if document is controller.document else []
         primary = document.view_state.selected_measurement_id if document else None
         preserve_multiple = len(selected_ids) > 1 and primary in selected_ids
@@ -26621,20 +26294,45 @@ class MainWindow(QMainWindow):
         )
 
     def _append_measurement_table_row(self, document: ImageDocument, measurement: Measurement) -> None:
-        model = self._records_controller.source_model
-        expected_existing_rows = max(0, len(document.measurements) - 1)
-        if model.rowCount() != expected_existing_rows:
-            self._populate_measurement_table(document)
-            return
         self._table_rebuilding = True
         try:
-            if not self._records_controller.append_measurement(document, measurement):
-                self._populate_measurement_table(document)
-                return
-            self._records_controller.selection_model.clearSelection()
+            appended = self._records_controller.append_measurement(document, measurement)
         finally:
             self._table_rebuilding = False
-        self._select_measurement_table_id(measurement.id, scroll=True)
+        if not appended:
+            self._populate_measurement_table(document)
+        self._records_controller.records_committed(document, (measurement.id,))
+
+    def _reveal_new_measurements(self, document: ImageDocument, ids) -> None:
+        if document is not self.current_document() or not self._measurement_workspace_active():
+            return
+        controller = self._records_controller
+        latest_visible = None
+        hidden = 0
+        for identity in ids:
+            row = controller.source_model.source_row_for_id(identity)
+            if row < 0:  # Removed or undone while the category popup was open.
+                continue
+            index = controller.source_model.index(row, 0)
+            if controller.proxy_model.mapFromSource(index).isValid():
+                latest_visible = identity
+            else:
+                hidden += 1
+        if latest_visible:
+            document.select_measurement(latest_visible)
+            canvas = self.current_canvas()
+            if canvas is not None:
+                canvas.set_selected_measurement(latest_visible)
+            self._select_measurement_table_id(latest_visible, scroll=True)
+            self._refresh_object_inspector()
+        elif hidden and document.view_state.selected_measurement_id in ids:
+            # The canvas selected the new, filtered object. Do not leave an
+            # unrelated visible row selected as the target for table actions.
+            self._sync_measurement_table_selection(document)
+            self._refresh_object_inspector()
+        if hidden:
+            self._inspector_records_pane.show_filtered_insert_notice(hidden)
+            self.statusBar().showMessage(f"新增 {hidden} 条，当前筛选未显示", 5000)
 
     # Compatibility adapters for older integrations which used the formatting
     # helpers on MainWindow before the result table moved to a data model.
@@ -27188,7 +26886,8 @@ class MainWindow(QMainWindow):
         canvas.focus_canvas()
 
     def _on_measurement_group_change_requested(self, measurement_id: str, target_group_id: object) -> None:
-        if self._table_rebuilding:
+        if (self._table_rebuilding or self.project.is_read_only_compatible
+                or not self._measurement_workspace_active()):
             return
         if not self._ensure_current_pixel_work_available("编辑测量类别"):
             return
@@ -27467,6 +27166,8 @@ class MainWindow(QMainWindow):
             or active_canvas.vector_measurement_controls_enabled()
         ))
         can_pixel_work = has_document and not preview_active and pixel_work_enabled
+        can_edit_records = can_pixel_work and self._tool_mode != "calibration" and not self.project.is_read_only_compatible
+        self._records_controller.source_model.category_editable = can_edit_records
         selection_model = self.measurement_table.selectionModel() if hasattr(self, "measurement_table") else None
         has_selected_rows = bool(selection_model and selection_model.selectedRows())
         has_selected_object = bool(
@@ -27623,22 +27324,11 @@ class MainWindow(QMainWindow):
         self.toggle_canvas_navigator_action.setEnabled(
             has_document and not preview_active
         )
-        self.delete_measurement_action.setEnabled(
-            has_selected_object and not preview_active and pixel_work_enabled
-        )
-        self.delete_measurement_button.setEnabled(
-            has_selected_object and not preview_active and pixel_work_enabled
-        )
-        if self._delete_group_measurements_button is not None:
-            self._delete_group_measurements_button.setEnabled(
-                has_measurement_groups
-                and not preview_active
-                and pixel_work_enabled
-            )
-        if self._delete_all_measurements_button is not None:
-            self._delete_all_measurements_button.setEnabled(
-                has_measurements and not preview_active and pixel_work_enabled
-            )
+        self.delete_measurement_action.setEnabled(can_edit_records and has_selected_object)
+        for records_pane in (self._inspector_records_pane, self._bottom_records_pane):
+            records_pane.delete_selected_button.setEnabled(can_edit_records and has_selected_rows)
+            records_pane.delete_category_button.setEnabled(can_edit_records and has_measurement_groups)
+            records_pane.delete_all_button.setEnabled(can_edit_records and has_measurements)
         self.add_group_action.setEnabled(can_pixel_work)
         self.rename_group_action.setEnabled(
             has_editable_active_group and not preview_active and pixel_work_enabled
@@ -27671,31 +27361,33 @@ class MainWindow(QMainWindow):
             self._delete_preset_button.setEnabled(has_preset)
         if self._import_cu_preset_button is not None:
             self._import_cu_preset_button.setEnabled(_CU_SCALE_IMPORT_ERROR is None)
+        can_apply_scale = can_pixel_work and not self.project.is_read_only_compatible and not self.scale_preview.editing
+        if self._calibration_manager is not None and self._calibration_manager.isVisible() and (
+            not measurement_active or preview_active or self.scale_preview.editing
+            or document is not self._calibration_manager_document
+        ):
+            self._calibration_manager.reject()
         if self._apply_preset_button is not None:
-            self._apply_preset_button.setEnabled(
-                has_document
-                and has_preset
-                and not preview_active
-                and pixel_work_enabled
-            )
-        if self._area_auto_button is not None:
-            area_inference_available = "area-inference" in self._runtime_features
-            self._area_auto_button.setVisible(area_inference_available)
-            self._area_auto_button.setEnabled(
-                area_inference_available
-                and has_document
-                and bool(self._app_settings.area_model_mappings)
-                and not preview_active
-                and not (document is not None and document.is_digital_slide())
-                and not is_height_image
-            )
+            self._apply_preset_button.setEnabled(can_apply_scale and has_preset)
+        if self._calibration_bar is not None:
+            self._calibration_bar.choose.setEnabled(can_apply_scale)
+            self._calibration_bar.draw.setEnabled(can_apply_scale)
+        area_inference_available = "area-inference" in self._runtime_features
+        self._area_auto_action.setVisible(area_inference_available and measurement_active)
+        self._area_auto_action.setEnabled(
+            area_inference_available and has_document and not preview_active
+            and not self.project.is_read_only_compatible and bool(self._app_settings.area_model_mappings)
+            and (self._supports_area_inference(document) or any(
+                self._supports_area_inference(item) for item in self.project.documents
+            ))
+        )
         self._update_history_action_states()
         self.scale_preview.sync()
         capture_feature_available = _CAPTURE_IMPORT_ERROR is None
         self.switch_capture_device_action.setEnabled(capture_feature_available)
         self.live_preview_action.setEnabled(capture_feature_available)
         if self.digital_slide_action is not None:
-            self.digital_slide_action.setEnabled(capture_feature_available and not self._preview_analysis_finalizing)
+            self.digital_slide_action.setEnabled(not self._preview_analysis_finalizing)
             self.digital_slide_action.setToolTip("进入数字化切片采集工作台")
         can_optimize_signal = capture_feature_available and self._capture_manager.can_optimize_signal()
         analysis_active = self._preview_analysis_mode != "none"
@@ -27712,6 +27404,7 @@ class MainWindow(QMainWindow):
                 (mode == "select" and measurement_active)
                 or (not preview_active and mode_enabled and not (is_height_image and is_magic_toolbar_tool_mode(mode)))
             )
+        self._mode_actions["calibration"].setEnabled(can_apply_scale)
         self._mode_actions["professional"].setEnabled(
             has_document and not preview_active and pixel_work_enabled
             and not self.project.is_read_only_compatible

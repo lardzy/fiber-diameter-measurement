@@ -144,8 +144,10 @@ def test_editor_lifecycle_scope_and_independent_history(window):
         for document in window.project.documents
     ]
     assert not preview.visible
+    window._show_current_object_properties()
     window.scale_preview_action.trigger()
     assert preview.visible and preview.editing and preview.scope == "all"
+    assert window._inspector_pages.currentWidget() is window._scale_editor_page
     assert all(preview.is_visible(document) for document in window.project.documents)
     before = preview.spec
     preview.change(color="#000000")
@@ -155,6 +157,7 @@ def test_editor_lifecycle_scope_and_independent_history(window):
     assert preview.spec.color == "#000000"
     preview.cancel()
     assert preview.spec == before
+    assert window._inspector_pages.currentWidget() is window._properties_page
     preview.begin()
     preview.change(font_mode="custom", font_size=45)
     assert preview.finish() and preview.visible and not preview.editing
@@ -162,7 +165,9 @@ def test_editor_lifecycle_scope_and_independent_history(window):
     preview.set_scope("current")
     first, second = window.project.documents
     assert preview.is_visible(first) and not preview.is_visible(second)
+    preview.begin()
     window.tab_widget.setCurrentIndex(1)
+    assert not preview.editing and window._inspector_pages.currentWidget() is window._records_page
     assert not preview.is_visible(second)
     preview.set_scope("all")
     assert preview.is_visible(second)

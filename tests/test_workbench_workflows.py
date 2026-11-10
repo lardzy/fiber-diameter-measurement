@@ -127,45 +127,40 @@ def test_selection_summary_reserves_height_for_empty_single_and_multiple(window)
     controller = window._records_controller
     controller.select_measurement_id(None)
     settle()
-    panel = window._current_measurement_summary
-    geometry = (panel.height(), window._statistics_section.y(), window._records_section.y())
+    pane = window._inspector_records_pane
+    geometry = pane.table.geometry()
     for selection in ([first.id], [first.id, second.id], [], [second.id]):
         controller.select_measurement_id(selection[0] if selection else None)
         if len(selection) > 1:
             index = controller.proxy_model.index(1, 0)
             controller.selection_model.select(index, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
         settle()
-        assert (panel.height(), window._statistics_section.y(), window._records_section.y()) == geometry
-        assert panel.groupCombo.isVisible()
-        assert panel.groupCombo.isEnabled() == bool(selection)
-    assert Path(document.path).name in panel.sourceLabel.toolTip()
+        assert pane.table.geometry() == geometry
+        assert pane.properties_button.isEnabled() == bool(selection)
+        assert pane.batch_group_button.isVisible() == (len(selection) > 1)
 
 
-def test_current_object_properties_button_toggles_and_tracks_section(window):
-    mount(window, 1)
-    button = window._current_measurement_summary.editButton
-    section = window._object_properties_section
-    for expanded in (True, False, True):
-        QTest.mouseClick(button, Qt.MouseButton.LeftButton)
-        settle()
-        assert section.isExpanded() == expanded
-        assert section.isVisible() == expanded
-        assert button.isChecked() == expanded
-    section.toggleButton.click()
-    assert not button.isChecked()
+def test_current_object_properties_button_returns_to_same_record(window):
+    document = mount(window, 1)
+    pane = window._inspector_records_pane
+    window._records_controller.select_measurement_id(document.measurements[0].id)
+    QTest.mouseClick(pane.properties_button, Qt.MouseButton.LeftButton)
+    settle()
+    assert window._inspector_pages.currentWidget() is window._properties_page
+    window._return_to_records_button.click()
+    assert window._inspector_pages.currentWidget() is window._records_page
+    assert window._records_controller.selected_measurement_ids() == [document.measurements[0].id]
 
 
-def test_inspector_count_has_one_badge_and_keeps_filter_totals(window):
+def test_inspector_count_keeps_filter_totals(window):
     mount(window, 1)
     pane = window._inspector_records_pane
-    badge = window._records_section.summaryLabel
     settle()
-    assert not pane.count_label.isVisible()
-    assert badge.text() == "1 条"
-    assert badge.width() < 90
+    assert pane.count_label.isVisible()
+    assert pane.count_label.text().endswith("1 条")
     pane.search_edit.setText("没有匹配的测量")
     settle()
-    assert badge.text() == "0 / 1 条"
+    assert pane.count_label.text().endswith("0/1 条")
     assert pane.table.model().rowCount() == 0
     pane.search_edit.clear()
     assert pane.table.model().rowCount() == 1
@@ -308,7 +303,7 @@ def test_category_shortcuts_and_quick_selector_only_affect_new_measurements(wind
     window._measurement_context_bar.groupActivated.emit(group1.id)
     assert document.active_group_id == group1.id
     assert window.current_canvas().hasFocus()
-    window._current_measurement_summary.groupChangeRequested.emit(original.id, group2.id)
+    window._records_controller.groupChangeRequested.emit(original.id, group2.id)
     assert original.fiber_group_id == group2.id
     assert document.active_group_id == group1.id
 
