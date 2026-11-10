@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from fdm.settings import DEFAULT_MEASUREMENT_TOOL_SPLIT_RATIO
+from fdm.ui.icons import themed_icon
 from fdm.ui.layout_utils import detach_widget_from_layout
 
 
@@ -867,16 +868,18 @@ class _ToolScrollPane(QWidget):
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(0)
-        for button, arrow, name in (
-            (self.backButton, Qt.ArrowType.LeftArrow, f"向左滚动{label}"),
-            (self.forwardButton, Qt.ArrowType.RightArrow, f"向右滚动{label}"),
+        for button, name in (
+            (self.backButton, f"向左滚动{label}"),
+            (self.forwardButton, f"向右滚动{label}"),
         ):
-            button.setArrowType(arrow)
+            button.setProperty("toolStripScroll", True)
+            button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            button.setIconSize(QSize(16, 16))
             button.setToolTip(name)
             button.setAccessibleName(name)
             button.setAutoRaise(True)
             button.setAutoRepeat(True)
-            button.setFixedWidth(18)
+            button.setFixedWidth(24)
             button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         row.addWidget(self.backButton)
         row.addWidget(self.area, 1)
@@ -886,6 +889,10 @@ class _ToolScrollPane(QWidget):
         bar.rangeChanged.connect(self._update_arrows)
         bar.valueChanged.connect(self._update_arrows)
         QApplication.instance().focusChanged.connect(self._reveal_focus)
+
+    def refresh_icons(self) -> None:
+        self.backButton.setIcon(themed_icon("direction_left"))
+        self.forwardButton.setIcon(themed_icon("direction_right"))
 
     def _reveal_focus(self, _previous: QWidget | None, target: QWidget | None) -> None:
         content = self.area.widget()
@@ -1074,6 +1081,9 @@ class MeasurementToolStrip(QWidget):
                 width: 28px;
                 border: none;
             }}
+            QToolButton[toolStripScroll="true"] {{
+                padding: 0;
+            }}
             QSplitter#measurementToolSplitter::handle:horizontal {{
                 background: {handle_color};
                 margin: 3px 3px;
@@ -1109,6 +1119,10 @@ class MeasurementToolStrip(QWidget):
                 background: {context_tool_background};
                 color: {context_tool_text};
                 font-weight: 600;
+            }}
+            QToolButton[contextTool="true"]::menu-button {{
+                background: transparent;
+                border: none;
             }}
             QToolButton[contextTool="true"]:hover {{
                 background: {context_tool_hover};
@@ -1188,6 +1202,8 @@ class MeasurementToolStrip(QWidget):
         self._theme_updating = True
         try:
             self.setStyleSheet(self._build_stylesheet())
+            self._primary_scroll.refresh_icons()
+            self._context_scroll.refresh_icons()
             for button in self.findChildren(QToolButton):
                 self._apply_button_palette(button)
                 _repolish(button)

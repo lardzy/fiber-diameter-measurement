@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
-from PySide6.QtGui import QAction, QWheelEvent
+from PySide6.QtGui import QAction, QIcon, QWheelEvent
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QSpinBox, QToolButton, QWidget
 
+from fdm.ui.theme import apply_application_theme
 from fdm.ui.widgets import MeasurementToolStrip
 
 
@@ -45,6 +46,44 @@ def wheel(widget, *, pixels=QPoint(), angle=QPoint()):
         Qt.MouseButton.NoButton, Qt.KeyboardModifier.NoModifier,
         Qt.ScrollPhase.NoScrollPhase, False,
     ))
+
+
+def assert_visible_scroll_icon(button, *, dark):
+    # A non-null icon can still be clipped by the application's button padding.
+    icon = button.icon()
+    painted = button.grab().toImage()
+    button.setIcon(QIcon())
+    background = button.grab().toImage()
+    button.setIcon(icon)
+    assert painted.size() == background.size()
+    polarity = 1 if dark else -1
+    ink = 0
+    for y in range(painted.height() // 4, 3 * painted.height() // 4):
+        for x in range(painted.width() // 6, 5 * painted.width() // 6):
+            delta = painted.pixelColor(x, y).lightness() - background.pixelColor(x, y).lightness()
+            if polarity * delta > 20:
+                ink += 1
+    assert ink >= 12 * painted.devicePixelRatio() ** 2, button.accessibleName()
+
+
+def test_overflow_arrows_remain_visible_at_both_ends_across_theme_changes(strip, desktop_application):
+    original = desktop_application.property("fdmAppliedThemeMode") or "system"
+    try:
+        for mode in ("light", "dark", "warm", "navy"):
+            apply_application_theme(desktop_application, mode)
+            desktop_application.processEvents()
+            for pane in (strip._primary_scroll, strip._context_scroll):
+                bar = pane.area.horizontalScrollBar()
+                assert bar.maximum() > bar.minimum()
+                for at_start in (True, False):
+                    bar.setValue(bar.minimum() if at_start else bar.maximum())
+                    assert pane.backButton.isEnabled() == (not at_start)
+                    assert pane.forwardButton.isEnabled() == at_start
+                    for button in (pane.backButton, pane.forwardButton):
+                        assert button.isVisible()
+                        assert_visible_scroll_icon(button, dark=mode in ("dark", "navy"))
+    finally:
+        apply_application_theme(desktop_application, original)
 
 
 def test_arrows_wheel_and_keyboard_scroll_only_their_own_pane(strip):

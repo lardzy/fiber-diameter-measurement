@@ -7096,6 +7096,45 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_magic_subtract_menu_arrow_blends_with_button_in_each_theme(self) -> None:
+        from PySide6.QtWidgets import QStyle, QStyleOptionToolButton
+
+        window = self._window_with_open_image()
+        original_theme = window._app_settings.theme_mode
+        try:
+            window.resize(1600, 900)
+            window.show()
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            canvas = window.current_canvas()
+            canvas._magic_segment.primary_polygon = [Point(10, 10), Point(70, 10), Point(70, 50)]
+            canvas.cycle_magic_segment_operation_mode()
+            window._update_magic_segment_controls()
+            button = window._magic_subtract_mode_button
+            strip = window._measurement_tool_strip
+            for mode in (AppThemeMode.DARK, AppThemeMode.LIGHT, AppThemeMode.NAVY, AppThemeMode.WARM):
+                with self.subTest(theme=mode):
+                    window._app_settings.theme_mode = mode
+                    window._apply_theme_mode()
+                    self.app.processEvents()
+                    self.assertTrue(button.isVisible())
+                    option = QStyleOptionToolButton()
+                    button.initStyleOption(option)
+                    menu = button.style().subControlRect(
+                        QStyle.ComplexControl.CC_ToolButton, option, QStyle.SubControl.SC_ToolButtonMenu, button,
+                    )
+                    # Sample the composited toolbar so transparent subcontrols include their actual background.
+                    bounds = button.rect().translated(button.mapTo(strip, QPoint()))
+                    image = strip.grab(bounds).toImage().scaled(button.size())
+                    body_color = image.pixelColor(button.width() // 2, 6)
+                    self.assertEqual(image.pixelColor(menu.center().x(), 6), body_color)
+                    glyph = [image.pixelColor(x, y).lightness() for x in range(menu.left() + 1, menu.right())
+                             for y in range(menu.center().y() - 3, menu.center().y() + 4)]
+                    self.assertGreater(max(abs(value - body_color.lightness()) for value in glyph), 45)
+        finally:
+            window._app_settings.theme_mode = original_theme
+            window._apply_theme_mode()
+            window.close()
+
     def test_magic_prompt_visuals_and_canvas_hint_use_distinct_prompt_state(self) -> None:
         positive_visual = magic_prompt_visual("positive")
         negative_visual = magic_prompt_visual("negative")
