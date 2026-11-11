@@ -83,8 +83,8 @@ def prepare_trial_excel(host, session, *, parent=None):
     if host._trial_excel_force.get(session.id) == session.revision:
         return True
     accepted = _wait(parent or host,
-        lambda: "正在将本试验的最终数据写入 Excel。工作簿仍由您保存。\n\n" + manager.status(session.id).get("message", ""),
-        lambda: manager.flush(session), retry=lambda: manager.resync(session),
+        lambda: "正在将本试验的最终测量数据写入 Excel；报表计算和文件保存由 Excel 管理。\n\n" + manager.status(session.id).get("message", ""),
+        lambda: manager.flush(session), retry=lambda: manager.retry(session),
         force=lambda: host._trial_excel_force.__setitem__(session.id, session.revision))
     if not accepted:
         host._trial_excel_force.pop(session.id, None)
@@ -97,7 +97,7 @@ def detach_trial_excel(host, session, *, parent=None):
         return True
     force = getattr(host, "_trial_excel_force", {}).get(session.id) == session.revision
     if not _wait(parent or host,
-        lambda: "正在释放 Excel 输入区。工作簿将留在 Excel 中供您保存。\n\n" + manager.status(session.id).get("message", ""),
+        lambda: "正在解除 Excel 关联。工作簿将留在 Excel 中供您保存。\n\n" + manager.status(session.id).get("message", ""),
         lambda: manager.detach(session, force=force), cancellable=False):
         return False
     host._trial_excel_sessions.pop(session.id, None)

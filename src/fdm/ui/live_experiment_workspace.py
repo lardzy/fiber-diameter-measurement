@@ -1322,16 +1322,18 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 
     def _materials(self, *, suggested_id=None):
         from fdm.ui.material_catalog import TrialMaterialsDialog
-        dialog = TrialMaterialsDialog(self.session, self)
-        if suggested_id is not None:
-            dialog.available.setCurrentIndex(max(0, dialog.available.findData(suggested_id)))
+        operator_id, direction = self.session._owner(None, None)
+        in_use = lambda: self.controller.materials_in_use(operator_id=operator_id, direction=direction)
+        dialog = TrialMaterialsDialog(self.session, self, in_use=in_use, suggested_id=suggested_id)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         materials = dialog.materials()
         remaining = {material.id for material in materials}
-        if self.controller.materials_in_use() - remaining:
+        if in_use() - remaining:
             raise ValueError("待确认测量或正在计算的测量仍引用此类别，请先处理这些结果再移除。")
-        self.session.set_materials(materials, direction=self.session.active_direction)
+        if tuple(self.session.operators[operator_id].materials[direction]) == materials:
+            return
+        self.session.set_materials(materials, operator_id=operator_id, direction=direction)
         self._refresh_materials()
         self._changed()
         self._refresh_summary()

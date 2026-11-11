@@ -970,14 +970,16 @@ class LiveExperimentController(QObject):
         return {"material_id": target, "material_name": item.name if item is not None else target,
                 "available": available, "range_status": status}
 
-    def materials_in_use(self):
+    def materials_in_use(self, *, operator_id=None, direction=None):
         """IDs whose removal would orphan an unfinished computation/confirmation."""
         pairs = list(self._jobs) + list(self.pending_classification)
         if self._confirmation is not None:
             pairs.extend(self._confirmation["intents"])
         for request in self._candidate_queue:
             pairs.extend(request["intents"])
-        return {intent.material_id for intent, _ in pairs}
+        return {intent.material_id for intent, _ in pairs
+                if (operator_id is None or intent.operator_id == operator_id)
+                and (direction is None or intent.direction == direction)}
 
     def _validate_range_confirmation(self, intent, result):
         if intent.range_confirmation is not None:

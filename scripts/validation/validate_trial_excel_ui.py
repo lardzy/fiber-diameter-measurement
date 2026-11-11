@@ -31,7 +31,8 @@ def main():
     os.environ["QT_SCALE_FACTOR"] = str(args.scale / baseline)
     root = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(root / "src"))
-    from PySide6.QtCore import QPoint
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtWidgets import QDialogButtonBox
     from PySide6.QtTest import QTest
     from fdm.ui import live_excel
     from fdm.live_experiment import default_materials
@@ -47,7 +48,9 @@ def main():
     class Transport:
         def request(self, operation, sid, generation, revision, payload=None, **kwargs):
             calls.append({"operation": operation, "session": sid, "revision": revision, "payload": payload})
-            return {"ok": True, "status": "synced", "saved": False, "name": "试验工作簿"}
+            return {"ok": True, "status": "synced", "saved": False,
+                    "save_state": "never_saved", "input_written": operation in ("open", "sync"),
+                    "name": "试验工作簿"}
         def close(self):
             return None
 
@@ -98,11 +101,57 @@ def main():
         page = h.select(1)
         assert page.session.id == original
         assert sum(call["operation"] == "open" and call["session"] == original for call in calls) == 1
-        for name, dialog in (("fiber-library", MaterialCatalogDialog(window)),
-                             ("trial-materials", TrialMaterialsDialog(page.session, window))):
-            dialog.show()
-            snap(name, dialog)
-            dialog.close()
+        dialog = MaterialCatalogDialog(window)
+        dialog.show()
+        snap("fiber-library", dialog)
+        dialog.filter.setCurrentIndex(dialog.filter.findData("incomplete"))
+        snap("fiber-library-incomplete", dialog)
+        dialog.filter.setCurrentIndex(0)
+        dialog.resize(700, 560)
+        settle()
+        assert dialog.panes.narrow
+        dialog.panes.show_right()
+        assert dialog.buttons.isVisible()
+        snap("fiber-library-narrow", dialog)
+        dialog.reject()
+
+        dialog = TrialMaterialsDialog(page.session, window)
+        dialog.show()
+        snap("trial-materials", dialog)
+        dialog.focus_material("wool")
+        dialog.edit()
+        snap("trial-materials-parameters", dialog)
+        dialog._back()
+        dialog.resize(700, 560)
+        settle()
+        assert dialog.panes.narrow
+        assert dialog.buttons.isVisible()
+        snap("trial-materials-narrow", dialog)
+        dialog.reject()
+
+        # Three real mouse toggles plus one confirmation; no search/add modal.
+        from fdm.live_experiment import ExperimentSession
+        fresh = ExperimentSession(workspace_options={"mode": "content"})
+        fresh.add_operator("界面验证")
+        dialog = TrialMaterialsDialog(fresh, window)
+        dialog.show()
+        settle()
+        selected = []
+        for row in range(3):
+            item = dialog.table.item(row, 0)
+            dialog.table.scrollToItem(item)
+            rect = dialog.table.visualItemRect(item)
+            QTest.mouseClick(dialog.table.viewport(), Qt.MouseButton.LeftButton,
+                             pos=QPoint(rect.left() + 10, rect.center().y()))
+            item = dialog.table.item(row, 0)
+            assert item.checkState() == Qt.CheckState.Checked
+            selected.append(item.data(Qt.ItemDataRole.UserRole))
+        assert dialog.list.count() == 3
+        snap("three-click-selection", dialog)
+        QTest.mouseClick(dialog.buttons.button(QDialogButtonBox.StandardButton.Ok), Qt.MouseButton.LeftButton)
+        assert dialog.result() == dialog.DialogCode.Accepted
+        assert [m.id for m in dialog.materials()] == selected
+        report["selection_gestures"] = {"checkbox_clicks": 3, "confirm_clicks": 1}
         diameter_page = h.select(2)
         diameter_page.session.configure(diameter_range_policy=DiameterRangePolicy(10, 40))
         diameter_page._changed()

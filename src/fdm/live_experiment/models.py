@@ -487,6 +487,8 @@ class ExperimentSession:
         if len({m.name for m in items}) != len(items):
             raise ValueError("同一方向材料名称不能重复")
         old = self.operators[op].materials[direct]
+        if items == old:
+            return
         for material in old:
             aggregate = self._aggregates.get((op, direct, material.id))
             if aggregate and (aggregate.raw.count or aggregate.extra_count or aggregate.count_events) and material.id not in {m.id for m in items}:

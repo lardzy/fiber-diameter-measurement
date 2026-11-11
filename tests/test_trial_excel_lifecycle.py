@@ -16,6 +16,8 @@ class Manager:
         return self.state == "synced"
     def resync(self, session):
         self.state = "synced"
+    def retry(self, session):
+        self.state = "synced"
     def detach(self, session, *, force=False):
         self.detached.append((session.id, session.revision, force))
         return True
@@ -85,3 +87,16 @@ def test_committed_detach_does_not_offer_false_cancel(monkeypatch):
     assert lifecycle.detach_trial_excel(host, session)
     assert options == [{"cancellable": False}]
     assert manager.detached == [(session.id, 3, False)]
+
+
+def test_final_input_retry_does_not_force_report_rebuild(monkeypatch):
+    host, session, manager = fixture()
+    calls = []
+    manager.retry = lambda value: calls.append(('retry', value.id))
+    manager.resync = lambda value: (_ for _ in ()).throw(AssertionError('full reoutput is not final-input retry'))
+    def wait(parent, message, attempt, *, retry, **kwargs):
+        retry()
+        return False
+    monkeypatch.setattr(lifecycle, '_wait', wait)
+    assert not lifecycle.prepare_trial_excel(host, session)
+    assert calls == [('retry', session.id)]

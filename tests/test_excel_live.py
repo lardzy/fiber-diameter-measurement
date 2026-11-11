@@ -75,9 +75,9 @@ def test_empty_metadata_and_full_reset_cover_absent_participants():
     value = projection(session)
     patch = input_patch(None, value)
     assert {'sheet': '直径实验原始数据', 'range': 'K25:K65536'} in patch['clears']
-    assert {'sheet': '直径实验原始数据', 'range': 'K6'} in patch['clears']
-    assert {'sheet': '新报告-数据', 'range': 'F17'} in patch['managed_ranges']
-    assert all('password' not in str(item).lower() for item in patch['managed_ranges'])
+    assert {'sheet': '直径实验原始数据', 'range': 'K6'} not in patch['clears']
+    assert 'managed_ranges' not in patch
+    assert not any(item.get('sheet') == '新报告-数据' for item in patch['cells'])
 
 
 def test_diameter_input_aggregates_operator_records_without_content_formula():
@@ -122,8 +122,10 @@ class FakeTransport:
             return failure
         if progress and operation in ('open','sync'):
             progress({'event':'inputs_written','session_id':session_id,'generation':generation,
-                      'input_revision':input_revision, 'elapsed_ms': 3})
-        return {'ok':True, 'status':'synced', 'saved':False, 'name':'测试工作簿'}
+                      'input_revision':input_revision, 'elapsed_ms': 3,
+                      'batch_id':payload['batch_id'], 'input_written':True})
+        return {'ok':True, 'status':'synced', 'saved':False, 'save_state':'never_saved',
+                'input_written':operation in ('open','sync'), 'name':'测试工作簿'}
 
     def close(self):
         self.closed = True
@@ -361,6 +363,15 @@ def test_transport_timeout_invalidates_stream_and_does_not_resend(monkeypatch):
     assert process.terminated
 
 
+def test_transport_rejects_other_batch_even_when_session_and_revision_match(monkeypatch):
+    from fdm.live_experiment.excel_template import ExcelTemplateError
+    transport, process = transport_fixture(monkeypatch, [{'ok': True, 'input_written': True, 'batch_id': 'stale'}])
+    with pytest.raises(ExcelTemplateError) as failure:
+        transport.request('sync', 'trial-a', 5, 8, {'batch_id': 'current'})
+    assert failure.value.code == 'protocol_mismatch'
+    assert process.terminated
+
+
 @pytest.mark.parametrize('in_flight', [False, True])
 def test_parent_destruction_releases_worker_without_emitting_to_dead_qobject(tmp_path, monkeypatch, desktop_application, in_flight):
     from PySide6.QtCore import QCoreApplication, QEvent
@@ -385,7 +396,7 @@ def test_parent_destruction_releases_worker_without_emitting_to_dead_qobject(tmp
     assert transport.closed
 
 
-def test_excel_busy_automatically_retries_latest_snapshot(coordinator):
+def test_excel_busy_finishes_fixed_batch_then_writes_latest_snapshot(coordinator):
     manager, transport, app = coordinator
     session = trial()
     manager.ensure(session)
@@ -397,9 +408,11 @@ def test_excel_busy_automatically_retries_latest_snapshot(coordinator):
     session.add_measurement(18,'a')
     manager.update(session)
     wait_until(app, lambda: manager.flush(session))
-    request = [item for item in transport.requests if item[0] == 'sync'][-1]
-    assert request[4]['full_sync']
-    assert request[4]['blocks'][0]['values'] == [[12], [18]]
+    requests = [item for item in transport.requests if item[0] == 'sync']
+    assert requests[0][4] == requests[1][4]
+    assert not requests[-1][4]['full_sync']
+    assert requests[-1][4]['blocks'][0]['values'] == [[18]]
+    assert requests[-1][4]['blocks'][0]['cell'] == 'D26'
 
 
 def test_template_label_mapping_is_scoped_to_current_method(coordinator, monkeypatch):
@@ -412,13 +425,16 @@ def test_template_label_mapping_is_scoped_to_current_method(coordinator, monkeyp
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
     first = [item for item in transport.requests if item[0] in ('open','sync')][-1]
-    assert first[4]['method_label'] == '自定义 GB 标签'
+    assert first[4]['report_settings']['method_label'] == '自定义 GB 标签'
     session.method = 'iso17751'
     session.revision += 1
     manager.update(session)
     wait_until(app, lambda: manager.flush(session))
-    last = [item for item in transport.requests if item[0] in ('open','sync')][-1]
-    assert last[4]['method_label'] == 'ISO 17751-1:2016(E)'
+    assert len([item for item in transport.requests if item[0] in ('open','sync')]) == 1
+    manager.update_report(session, information=False, settings=True)
+    wait_until(app, lambda: any(item[0] == 'update_report' for item in transport.requests))
+    last = [item for item in transport.requests if item[0] == 'update_report'][-1]
+    assert last[4]['report_settings']['method_label'] == 'ISO 17751-1:2016(E)'
 
 
 def test_status_poll_does_not_erase_failed_calculation_state(coordinator):

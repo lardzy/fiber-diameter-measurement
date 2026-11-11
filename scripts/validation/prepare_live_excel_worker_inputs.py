@@ -15,7 +15,7 @@ import sys
 def build_inputs():
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
     from fdm.live_experiment import ExperimentSession, MaterialSnapshot
-    from fdm.live_experiment.excel_live import input_patch, project_inputs
+    from fdm.live_experiment.excel_live import input_patch, project_inputs, report_update
     from fdm.live_experiment.excel_template import ExportSnapshot, TemplateProfile
 
     result = {}
@@ -35,7 +35,11 @@ def build_inputs():
         # depending on today's date or the machine's timezone.
         snapshot = replace(ExportSnapshot.capture(session), created_at="2026-11-11T12:00:00")
         profile = TemplateProfile.load(trial_mode=mode)
-        payload = input_patch(None, project_inputs(snapshot, filename, profile))
+        projection = project_inputs(snapshot, filename, profile)
+        payload = input_patch(None, projection)
+        payload.update(report_update(projection, information=True, settings=True))
+        # Deterministic per synthetic case; worker binds it to a workbook generation.
+        payload['batch_id'] = 'validation-initialize-' + key
         # project_inputs resolves paths for production. The probes intentionally
         # resolve these three filenames beneath their private -Root instead.
         payload["template"] = filename

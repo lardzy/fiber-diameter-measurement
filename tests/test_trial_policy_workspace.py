@@ -67,8 +67,7 @@ def test_pending_suggestion_names_missing_target_then_adds_without_losing_measur
     assert "先配置" in workspace.pending_suggestion.text()
     from fdm.ui.material_catalog import TrialMaterialsDialog
     def add_target(dialog):
-        dialog.available.setCurrentIndex(dialog.available.findData("goat_hair"))
-        dialog.add()
+        dialog.set_selected("goat_hair", True)
         return QDialog.DialogCode.Accepted
     monkeypatch.setattr(TrialMaterialsDialog, "exec", add_target)
     workspace._materials()
@@ -114,6 +113,35 @@ def test_pending_material_cannot_be_removed_by_dialog_patch(workspace, monkeypat
         workspace._materials()
     assert workspace.controller.pending_classification[0][0] is intent
     assert workspace.session.material("cashmere")
+
+
+def test_materials_apply_to_captured_owner_after_active_owner_changes(workspace, monkeypatch):
+    from fdm.ui.material_catalog import TrialMaterialsDialog
+    session = workspace.session
+    original = session.active_operator_id
+    other = session.add_operator("另一位操作员")
+    session.active_operator_id = original
+    old_other = session.operators[other].materials["weft"]
+    def choose(dialog):
+        assert dialog.operator_id == original and dialog.direction == "warp"
+        dialog.set_selected("cotton", True)
+        session.active_operator_id, session.active_direction = other, "weft"
+        dialog.accept()
+        return dialog.result()
+    monkeypatch.setattr(TrialMaterialsDialog, "exec", choose)
+    workspace._materials()
+    assert session.operators[original].materials["warp"][-1].id == "cotton"
+    assert session.operators[other].materials["weft"] == old_other
+
+
+def test_materials_unchanged_confirmation_does_not_emit_domain_update(workspace, monkeypatch):
+    from fdm.ui.material_catalog import TrialMaterialsDialog
+    before = workspace.session.to_dict()
+    monkeypatch.setattr(TrialMaterialsDialog, "exec", lambda dialog: QDialog.DialogCode.Accepted)
+    with monkeypatch.context() as changes:
+        changes.setattr(workspace, "_changed", lambda: pytest.fail("unchanged selection updated Excel/project"))
+        workspace._materials()
+    assert workspace.session.to_dict() == before
 
 
 def test_diameter_candidates_use_trial_limits_and_consent_invalidates_when_changed():

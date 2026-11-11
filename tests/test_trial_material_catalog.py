@@ -191,6 +191,7 @@ def test_library_save_error_remains_visible_and_dialog_open(tmp_path, monkeypatc
         def fail(*args):
             raise OSError("只读目录")
         monkeypatch.setattr(dialog.catalog, "save", fail)
+        dialog.editor.density.setText("1.33")
         dialog.accept()
         assert dialog.result() == 0
         assert "未保存" in dialog.status.text() and "只读目录" in dialog.status.text()

@@ -1,12 +1,13 @@
 """Immutable Excel input projection and one long-lived STA worker transport.
 
-No Qt, COM or image evidence is part of this contract. A projection is confirmed
-only by the matching final acknowledgement, never by the input-written event.
+No Qt, COM or image evidence is part of this contract. Quantitative inputs are
+separate from report information/settings, which Excel owns after initialization.
 """
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 from queue import Empty, Queue
@@ -44,7 +45,20 @@ class InputProjection:
 
 
 def project_inputs(snapshot, template, profile, *, method_label=None):
-    request = template_request(snapshot, template, Path(template).with_suffix('.unused.xls'), profile, method_label=method_label)
+    # Deleting and undoing a record changes dict insertion order. Workbook rows
+    # follow the same stable timestamp/identity order as the measurement table.
+    def record_order(record):
+        try:
+            stamp = datetime.fromisoformat(str(record.created_at).replace('Z', '+00:00'))
+            stamp = (stamp.replace(tzinfo=timezone.utc) if stamp.tzinfo is None else stamp).astimezone(timezone.utc)
+            return True, stamp.isoformat(timespec='microseconds'), record.id
+        except (ValueError, TypeError, AttributeError, OverflowError):
+            return False, '', record.id
+    ordered = replace(snapshot, measurements=tuple(sorted(snapshot.measurements, key=record_order)))
+    # Capacity warnings describe both template ranges, regardless of which
+    # calculation controls the user currently selected in Excel.
+    request = template_request(replace(ordered, grouped=True), template,
+                               Path(template).with_suffix('.unused.xls'), profile, method_label=method_label)
     sheet, first = profile.data_sheet, profile.first_data_row
     columns = (profile.columns if isinstance(profile, DiameterTemplateProfile) else
                tuple(start + offset for pair in profile.column_starts for start in pair for offset in range(9)))
@@ -64,22 +78,34 @@ def project_inputs(snapshot, template, profile, *, method_label=None):
     for item in request['cells']:
         metadata[item['cell']] = item['value']
     raw = {column_name(column): [] for column in columns}
+    record_ids = {column: [] for column in raw}
+    if isinstance(profile, DiameterTemplateProfile):
+        destinations = {operator.id: column_name(profile.columns[index])
+                        for index, operator in enumerate(snapshot.operators)}
+        for record in ordered.measurements:
+            record_ids[destinations[record.operator_id]].append(record.id)
+    else:
+        destinations = {}
+        for index, operator in enumerate(snapshot.operators):
+            for direction, start in zip(('warp', 'weft'), profile.column_starts[index]):
+                for offset, material in enumerate(operator.materials[direction]):
+                    destinations[operator.id, direction, material.id] = column_name(start + offset)
+        for record in ordered.measurements:
+            record_ids[destinations[record.operator_id, record.direction, record.material_id]].append(record.id)
     for block in request['blocks']:
         column, row = _cell(block['cell'])
         if row != first:
             raise ValueError('原始数据首行与映射不一致')
         raw[column_name(column)] = [row[0] for row in block['values']]
-    managed = [{'sheet': sheet, 'range': f'{column}{first}:{column}65536'} for column in raw]
-    managed += [{'sheet': sheet, 'range': cell} for cell in metadata]
-    control_sheet = getattr(profile, 'group_width_sheet', getattr(profile, 'standard_sheet', sheet))
-    managed.append({'sheet': control_sheet, 'range': profile.group_width_cell})
-    if not isinstance(profile, DiameterTemplateProfile):
-        managed.append({'sheet': profile.standard_sheet, 'range': profile.method_index_cell})
+    report_addresses = {profile.date_cell, *profile.operator_cells,
+                        *profile.sample_name_cells, *profile.sample_number_cells}
+    report_cells = [{'sheet': sheet, 'cell': address, 'value': metadata.pop(address, None)}
+                    for address in sorted(report_addresses)]
     data = {'template': request['template'], 'trial_kind': request['trial_kind'],
-            'profile': request['profile'], 'metadata': metadata, 'raw': raw,
-            'checks': request['checks'], 'warnings': request['warnings'],
-            'group_width': request['group_width'], 'grouped': request['grouped'],
-            'method_label': request.get('method_label'), 'managed_ranges': managed}
+            'profile': request['profile'], 'metadata': metadata, 'raw': raw, 'record_ids': record_ids,
+            'warnings': request['warnings'], 'report_cells': report_cells,
+            'report_settings': {'group_width': snapshot.group_width, 'grouped': snapshot.grouped,
+                                'method_label': request.get('method_label')}}
     return InputProjection(json.dumps(data, ensure_ascii=False, sort_keys=True, allow_nan=False, separators=(',', ':')))
 
 
@@ -92,8 +118,7 @@ def input_patch(previous: InputProjection | None, current: InputProjection):
         return None
     sheet = now['profile']['data_sheet']
     first = now['profile']['first_data_row']
-    payload = {key: now[key] for key in ('template', 'trial_kind', 'profile', 'checks', 'warnings',
-                                         'group_width', 'grouped', 'method_label', 'managed_ranges')}
+    payload = {key: now[key] for key in ('template', 'trial_kind', 'profile', 'warnings')}
     cells, blocks, clears = [], [], []
     for address, value in now['metadata'].items():
         if reset or old['metadata'].get(address) != value:
@@ -110,7 +135,23 @@ def input_patch(previous: InputProjection | None, current: InputProjection):
             clears.append({'sheet': sheet, 'range': f'{column}{first}:{column}65536'})
         if not reset and before == values:
             continue
-        append = not reset and len(values) >= len(before) and values[:len(before)] == before
+        if (not reset and len(before) == len(values)
+                and old['record_ids'].get(column) == now['record_ids'].get(column)):
+            # A diameter edit preserves record identity and row placement.
+            # Group adjacent changed rows without rewriting unchanged values.
+            index = 0
+            while index < len(values):
+                if before[index] == values[index]:
+                    index += 1
+                    continue
+                begin = index
+                while index < len(values) and before[index] != values[index]:
+                    index += 1
+                blocks.append({'sheet': sheet, 'cell': f'{column}{first + begin}',
+                               'values': [[value] for value in values[begin:index]]})
+            continue
+        append = (not reset and len(values) >= len(before) and values[:len(before)] == before
+                  and now['record_ids'].get(column, [])[:len(before)] == old['record_ids'].get(column, []))
         offset = len(before) if append else 0
         if values[offset:]:
             blocks.append({'sheet': sheet, 'cell': f'{column}{first + offset}',
@@ -118,7 +159,15 @@ def input_patch(previous: InputProjection | None, current: InputProjection):
         if not reset and len(before) > len(values):
             clears.append({'sheet': sheet, 'range': f'{column}{first + len(values)}:{column}{first + len(before) - 1}'})
     payload.update(cells=cells, blocks=blocks, clears=clears, full_sync=reset)
-    return payload
+    return payload if reset or cells or blocks or clears else None
+
+
+def report_update(projection: InputProjection, *, information=True, settings=False):
+    """Explicitly selected Excel-owned fields; never part of a normal patch."""
+    data = projection.data()
+    return {'profile': data['profile'],
+            'report_cells': data['report_cells'] if information else [],
+            'report_settings': data['report_settings'] if settings else None}
 
 
 class PowerShellLiveTransport:
@@ -192,6 +241,9 @@ class PowerShellLiveTransport:
                         ('request_id', 'session_id', 'generation', 'input_revision')):
                     self.abort()
                     raise ExcelTemplateError('Excel 返回的试验身份或修订不匹配，未确认写入。', code='protocol_mismatch')
+                if payload and payload.get('batch_id') and reply.get('batch_id') != payload['batch_id']:
+                    self.abort()
+                    raise ExcelTemplateError('Excel 返回的批次身份不匹配，未确认写入。', code='protocol_mismatch')
                 if reply.get('event'):
                     if progress:
                         progress(reply)

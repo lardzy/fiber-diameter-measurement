@@ -1,4 +1,4 @@
-# Real desktop Excel modal-dialog and process-exit probes; private test PID only.
+﻿# Real desktop Excel modal-dialog and process-exit probes; private test PID only.
 param([Parameter(Mandatory=$true)][string]$Root,[uint32]$ModalPid=0)
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
@@ -62,12 +62,13 @@ try{
  $worker=[Diagnostics.Process]::Start($start)
  $payload=(Get-Content (Join-Path $Root 'requests.json') -Raw -Encoding UTF8|ConvertFrom-Json).diameter
  $payload.template=Join-Path $Root 'sheet_dia.xlt'
+ $payload|Add-Member -NotePropertyName batch_id -NotePropertyValue 'interruption-initialize' -Force
  Send 'open' 1 1 $payload;$reply=Read-Reply
  Check ($reply.ok -and $old -notcontains [int]$reply.excel_pid) 'opened independent test instance'
  $ownedId=[int]$reply.excel_pid;$ownedStarted=(Get-Process -Id $ownedId).StartTime
  $window=[FdmBusyProbe]::Window([uint32]$ownedId);$excel=$window.Application
  $book=$excel.Workbooks.Item([string]$reply.name);$sheet=$book.Worksheets.Item([string]$payload.profile.data_sheet)
- $cell=$sheet.Range('B2');Check (!$cell.Locked) 'editable non-input cell selected for F2 probe'
+ $cell=$sheet.Range('B2');Check (!$sheet.ProtectContents) 'unprotected non-input cell selected for F2 probe'
  [void]$book.Activate();[void]$sheet.Activate();[void]$cell.Select()
  $excelHwnd=[IntPtr]$excel.Hwnd
  [void][FdmBusyProbe]::SetForegroundWindow($excelHwnd)
@@ -77,14 +78,18 @@ try{
  do{$edit=[FdmBusyProbe]::State($excelHwnd);if([FdmBusyProbe]::Class($edit.Focus) -ne 'EXCEL6'){Start-Sleep -Milliseconds 50}}while([FdmBusyProbe]::Class($edit.Focus) -ne 'EXCEL6' -and $editWatch.ElapsedMilliseconds -lt 3000)
  $result.f2_state=@{before_ready=$beforeReady;before_caret=$beforeEdit.Caret.ToInt64();before_focus_class=[FdmBusyProbe]::Class($beforeEdit.Focus);before_flags=$beforeEdit.Flags;caret=$edit.Caret.ToInt64();focus_class=[FdmBusyProbe]::Class($edit.Focus);caret_class=[FdmBusyProbe]::Class($edit.Caret);flags=$edit.Flags;ready_during=$excel.Ready;caret_rectangle=$edit.CaretRect}
  Check ($beforeReady -and [FdmBusyProbe]::Class($beforeEdit.Focus) -eq 'EXCEL7' -and [FdmBusyProbe]::Class($edit.Focus) -eq 'EXCEL6' -and $edit.Caret -ne $beforeEdit.Caret -and $edit.CaretRect.Right-$edit.CaretRect.Left -eq 1) 'F2 switches the native grid to an Excel text editor with a one-pixel caret'
- Send 'sync' 1 2 $payload
+ Send 'status' 1 1
  $pending=$worker.StandardOutput.ReadLineAsync();$answered=$pending.Wait(1000)
  $result.f2_response_within_1000ms=$answered
  [void][FdmBusyProbe]::PostMessage($edit.Focus,0x100,[IntPtr]27,[IntPtr]::Zero)
  [void][FdmBusyProbe]::PostMessage($edit.Focus,0x101,[IntPtr]27,[IntPtr]::Zero)
  $reply=Read-Reply $pending
  $result.f2_outcome=@{ok=$reply.ok;code=$reply.code;workbook_connected=$reply.workbook_connected}
- Check (!$reply.ok -and $reply.code -eq 'excel_busy' -and $reply.workbook_connected) 'real F2 edit returns busy and keeps workbook association'
+ Check (!$reply.ok -and $reply.code -eq 'excel_busy' -and $reply.workbook_connected -and !$reply.needs_full_sync) 'real F2 status read returns busy without invalidating input'
+ Check ($reply.save_state -eq 'unknown' -and $null -eq $reply.saved) 'busy status does not fabricate unsaved state'
+ Send 'status' 1 1;$reply=Read-Reply
+ Check ($reply.ok -and $reply.synced_revision -eq 1) 'read-only busy recovery retains input revision'
+ $payload.batch_id='after-f2'
  Send 'sync' 1 3 $payload;$reply=Read-Reply
  Check ($reply.ok -and $reply.name -eq $book.Name) 'Esc allows complete sync to the same workbook'
  Check ([double]$sheet.Range('C8').Value2 -eq 3) 'post-edit raw count is complete'
@@ -94,16 +99,17 @@ try{
  $watch=[Diagnostics.Stopwatch]::StartNew()
  do{$dialog=[FdmBusyProbe]::Dialog([uint32]$ownedId);if($dialog -eq [IntPtr]::Zero){Start-Sleep -Milliseconds 50}}while($dialog -eq [IntPtr]::Zero -and $watch.ElapsedMilliseconds -lt 10000)
  Check ($dialog -ne [IntPtr]::Zero) 'real Excel InputBox modal observed'
+ $payload.batch_id='during-modal'
  Send 'sync' 1 4 $payload
  $pending=$worker.StandardOutput.ReadLineAsync();$answered=$pending.Wait(500)
  $result.modal_response_within_500ms=$answered
  [void][FdmBusyProbe]::PostMessage($dialog,0x10,[IntPtr]::Zero,[IntPtr]::Zero)
  Check ($modal.WaitForExit(10000)) 'owned modal closed and helper exited'
  $reply=Read-Reply $pending
- $result.modal_outcome=@{ok=$reply.ok;code=$reply.code;needs_full_sync=$reply.needs_full_sync}
- Check ($reply.ok -or $reply.code -in @('excel_busy','excel_failed')) 'modal reply classified without closing Excel'
- Send 'sync' 1 5 $payload;$reply=Read-Reply
- Check ($reply.ok) 'full sync recovered after real modal'
+ $result.modal_outcome=@{ok=$reply.ok;code=$reply.code;needs_full_sync=$reply.needs_full_sync;batch_id=$reply.batch_id;completed_ops=$reply.completed_ops}
+ Check ($reply.ok -or $reply.code -eq 'excel_busy') 'modal reply classified as busy or completed without false closure'
+ Send 'sync' 1 4 $payload;$reply=Read-Reply
+ Check ($reply.ok) 'same fixed batch resumes after real modal without reopening'
  $book=$excel.Workbooks.Item([string]$reply.name)
  Check ([double]$book.Worksheets.Item([string]$payload.profile.data_sheet).Range('C8').Value2 -eq 3) 'post-modal count is complete'
  # Only this probe-created instance is deliberately terminated, by identity.
@@ -116,6 +122,7 @@ try{
  Check (!$reply.ok -and $reply.code -eq 'workbook_closed') 'Excel process exit reports closed without success'
  Send 'open' 2 6 $payload;$reply=Read-Reply
  Check ($reply.ok -and [int]$reply.excel_pid -ne $ownedId) 'explicit reconnect creates new instance and rebuilds input'
+ $ownedId=[int]$reply.excel_pid;$ownedStarted=(Get-Process -Id $ownedId).StartTime
  $window=[FdmBusyProbe]::Window([uint32]$reply.excel_pid);$excel=$window.Application
  Send 'detach' 2 6;$reply=Read-Reply;Check ($reply.ok) 'reconnected workbook detaches'
  Send 'shutdown' 0 0;$reply=Read-Reply;Check ($reply.ok) 'worker shuts down'
@@ -125,7 +132,8 @@ try{
  if($excelHwnd){try{$edit=[FdmBusyProbe]::State($excelHwnd);if($edit.Caret -ne [IntPtr]::Zero){[void][FdmBusyProbe]::PostMessage($edit.Focus,0x100,[IntPtr]27,[IntPtr]::Zero);[void][FdmBusyProbe]::PostMessage($edit.Focus,0x101,[IntPtr]27,[IntPtr]::Zero)}}catch{}}
  if($modal -and !$modal.HasExited){$dialog=[FdmBusyProbe]::Dialog([uint32]$ownedId);if($dialog -ne [IntPtr]::Zero){[void][FdmBusyProbe]::PostMessage($dialog,0x10,[IntPtr]::Zero,[IntPtr]::Zero)}}
  if($worker -and !$worker.HasExited){$worker.StandardInput.Close();if(!$worker.WaitForExit(5000)){$worker.Kill()}}
- if($excel){$excel.DisplayAlerts=$false;while($excel.Workbooks.Count){$excel.Workbooks.Item(1).Close($false)};$excel.Quit();[void][Runtime.InteropServices.Marshal]::ReleaseComObject($excel)}
+ $ownedProcess=$(if($ownedId){Get-Process -Id $ownedId -ErrorAction SilentlyContinue}else{$null})
+ if($excel -and $ownedProcess -and $ownedProcess.StartTime -eq $ownedStarted){$excel.DisplayAlerts=$false;while($excel.Workbooks.Count){$excel.Workbooks.Item(1).Close($false)};$excel.Quit();[void][Runtime.InteropServices.Marshal]::ReleaseComObject($excel)}
  if($window){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($window)}
  [GC]::Collect();[GC]::WaitForPendingFinalizers()
  [IO.File]::WriteAllText((Join-Path $Root 'worker-interruptions.json'),($result|ConvertTo-Json -Depth 30),[Text.UTF8Encoding]::new($false))
