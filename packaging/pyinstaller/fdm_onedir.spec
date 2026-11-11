@@ -79,7 +79,7 @@ if sys.platform == "win32":
     hiddenimports.append("fdm._native._microview")
 datas += collect_data_files("fdm._native", includes=["licenses/*.txt"])
 datas += collect_data_files("fdm.ui", includes=["assets/fluent/*"])
-datas += collect_data_files("fdm.live_experiment", includes=["excel_template.ps1"])
+datas += collect_data_files("fdm.live_experiment", includes=["excel_template.ps1", "excel_live.ps1"])
 
 required_packages = set(resolved_profile.required_python_modules)
 collection_packages = set(required_packages)

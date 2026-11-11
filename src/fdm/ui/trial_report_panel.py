@@ -21,7 +21,8 @@ class TrialReportPanel(QObject):
     def __init__(self, workspace):
         super().__init__(workspace)
         self.workspace = workspace
-        self.preferences = template_preferences()
+        self.trial_mode = workspace.session.workspace_options["mode"]
+        self.preferences = template_preferences(self.trial_mode)
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-template-report")
         self.future = None
         self.cancel_event = threading.Event()
@@ -44,9 +45,11 @@ class TrialReportPanel(QObject):
             row.addWidget(button)
         layout.addLayout(row)
         self.method = NoWheelComboBox(workspace)
-        self.method.addItem("使用试验当前方法（按模板标签匹配）", None)
+        self.method.addItem("当前试验方法 → 自动匹配同名模板标准", None)
         self.method.currentIndexChanged.connect(self.method_changed)
         layout.addWidget(self.method)
+        self.method.setVisible(self.trial_mode == "content")
+        self.method.setToolTip("为当前试验方法指定模板中的同一标准标签；切换试验方法不会沿用其他方法的映射。")
         self.status = QLabel("生成后请复核报告方法与结果，再编辑或打印。", workspace)
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
@@ -89,20 +92,14 @@ class TrialReportPanel(QObject):
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.poll)
         self.refresh_path()
-        if hasattr(workspace, "report_status_label"):
-            workspace.report_status_label.installEventFilter(self)
         self._sync_actions()
 
     def _sync_actions(self):
         workspace = self.workspace
         if hasattr(workspace, "export_button"):
             workspace.export_button.setEnabled(self.future is None)
-            workspace.export_button.setText("正在导出…" if self.future is not None else "导出 Excel 报告")
-        label = getattr(workspace, "report_status_label", None)
-        if label is not None:
-            text = self.status.text().splitlines()[0] if self.status.text() else ""
-            label.setToolTip(self.status.text())
-            label.setText(label.fontMetrics().elidedText(text, Qt.TextElideMode.ElideRight, max(40, label.width())))
+            workspace.export_button.setText("导出中…" if self.future is not None else "导出")
+            workspace.export_button.setToolTip("另行导出一次性 Excel 报告；实时工作簿可在 Excel 中直接保存。")
         for name in ("open_report_button", "report_folder_button"):
             button = getattr(workspace, name, None)
             if button is not None:
@@ -118,7 +115,7 @@ class TrialReportPanel(QObject):
         return False
 
     def path(self, *, create=False):
-        return Path(self.preferences["template"]) if self.preferences.get("template") else working_template(create=create)
+        return Path(self.preferences["template"]) if self.preferences.get("template") else working_template(create=create, trial_mode=self.trial_mode)
 
     def refresh_path(self):
         self.path_label.setText("报告模板：" + str(self.path()))
@@ -129,10 +126,11 @@ class TrialReportPanel(QObject):
         if path:
             self.preferences["template"] = path
             self.preferences.pop("method_label", None)
-            save_template_preferences(self.preferences)
+            self.preferences.pop("method_labels", None)
+            save_template_preferences(self.preferences, trial_mode=self.trial_mode)
             self.method.blockSignals(True)
             self.method.clear()
-            self.method.addItem("使用试验当前方法（按模板标签匹配）", None)
+            self.method.addItem("当前试验方法 → 自动匹配同名模板标准", None)
             self.method.blockSignals(False)
             self.refresh_path()
             self.inspect()
@@ -142,7 +140,7 @@ class TrialReportPanel(QObject):
         if not path.is_file():
             raise FileNotFoundError("请先选择报告模板。")
         request = {"operation": "edit", "template": str(path),
-                   "profile": asdict(TemplateProfile.load(self.preferences.get("mapping")))}
+                   "profile": asdict(TemplateProfile.load(self.preferences.get("mapping"), trial_mode=self.trial_mode))}
         self.start(lambda: run_excel_request(request, cancel_event=self.cancel_event))
 
     def folder(self):
@@ -151,13 +149,16 @@ class TrialReportPanel(QObject):
     def choose_mapping(self):
         path, _ = QFileDialog.getOpenFileName(self.workspace, "选择 CU 模板输入映射", "", "JSON (*.json)")
         if path:
-            TemplateProfile.load(path)
+            TemplateProfile.load(path, trial_mode=self.trial_mode)
             self.preferences["mapping"] = path
-            save_template_preferences(self.preferences)
+            save_template_preferences(self.preferences, trial_mode=self.trial_mode)
 
     def method_changed(self, _):
-        self.preferences["method_label"] = self.method.currentData()
-        save_template_preferences(self.preferences)
+        self.preferences.pop("method_label", None)
+        mappings = dict(self.preferences.get("method_labels") or {})
+        mappings[self.workspace.session.method] = self.method.currentData()
+        self.preferences["method_labels"] = mappings
+        save_template_preferences(self.preferences, trial_mode=self.trial_mode)
 
     def start(self, function):
         if self.future is not None:
@@ -196,7 +197,7 @@ class TrialReportPanel(QObject):
 
     def inspect(self):
         request = {"operation": "inspect", "template": str(self.path(create=True)),
-                   "profile": asdict(TemplateProfile.load(self.preferences.get("mapping")))}
+                   "profile": asdict(TemplateProfile.load(self.preferences.get("mapping"), trial_mode=self.trial_mode))}
         self.start(lambda: run_excel_request(request, cancel_event=self.cancel_event))
 
     def export(self):
@@ -211,9 +212,9 @@ class TrialReportPanel(QObject):
                                              f"Excel (*{suffix})")
         if not path:
             return
-        profile = TemplateProfile.load(self.preferences.get("mapping"))
+        profile = TemplateProfile.load(self.preferences.get("mapping"), trial_mode=self.trial_mode)
         snapshot = ExportSnapshot.capture(self.workspace.session)
-        label = self.preferences.get("method_label")
+        label = (self.preferences.get("method_labels") or {}).get(snapshot.method)
         self.start(lambda: run_excel_request(template_request(snapshot, template, path, profile,
                                                               method_label=label), cancel_event=self.cancel_event))
 
@@ -236,10 +237,10 @@ class TrialReportPanel(QObject):
         if "methods" in result:
             self.method.blockSignals(True)
             self.method.clear()
-            self.method.addItem("使用试验当前方法（按模板标签匹配）", None)
+            self.method.addItem("当前试验方法 → 自动匹配同名模板标准", None)
             for item in result["methods"]:
                 self.method.addItem(item["label"], item["label"])
-            self.method.setCurrentIndex(max(0, self.method.findData(self.preferences.get("method_label"))))
+            self.method.setCurrentIndex(max(0, self.method.findData((self.preferences.get("method_labels") or {}).get(self.workspace.session.method))))
             self.method.blockSignals(False)
             self._set_status(f"已读取 {len(result['methods'])} 个模板方法；未改动模板文件。"
                                 + ("\n" + "\n".join(result["warnings"]) if result.get("warnings") else ""))

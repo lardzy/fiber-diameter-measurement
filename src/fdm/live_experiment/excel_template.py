@@ -7,6 +7,7 @@ from datetime import datetime
 import base64
 import json
 import locale
+import math
 import os
 from pathlib import Path
 import shutil
@@ -46,7 +47,11 @@ class TemplateProfile:
     method_labels: dict = field(default_factory=dict)
 
     @classmethod
-    def load(cls, path=None):
+    def load(cls, path=None, *, trial_mode="content"):
+        if trial_mode == "diameter":
+            return DiameterTemplateProfile.load(path)
+        if trial_mode != "content":
+            raise ValueError("未知试验模板类型")
         if not path:
             return cls()
         values = json.loads(Path(path).read_text(encoding="utf-8-sig"))
@@ -69,6 +74,46 @@ class TemplateProfile:
 
 
 @dataclass(frozen=True)
+class DiameterTemplateProfile:
+    trial_kind: str = "diameter"
+    data_sheet: str = "直径实验原始数据"
+    date_cell: str = "C3"
+    operator_cells: tuple = tuple(f"{c}6" for c in "CDEFGHIJK")
+    sample_name_cells: tuple = tuple(f"{c}4" for c in "CDEFGHIJK")
+    sample_number_cells: tuple = tuple(f"{c}5" for c in "CDEFGHIJK")
+    columns: tuple = tuple(range(3, 12))
+    first_data_row: int = 25
+    measured_count_row: int = 8
+    mean_row: int = 9
+    clear_last_row: int = 20000
+    statistical_capacity: int = 2976
+    # TWC/ASTM report formulas have a shorter range than the main statistics.
+    standard_report_capacity: int = 1988
+    group_width_sheet: str = "新报告-数据"
+    group_width_cell: str = "F17"
+    recalculate_macro: str = ""
+
+    @classmethod
+    def load(cls, path=None):
+        values = json.loads(Path(path).read_text(encoding="utf-8-sig")) if path else {}
+        if not isinstance(values, dict) or values.keys() - cls.__dataclass_fields__.keys():
+            raise ValueError("直径模板映射配置包含未知字段。")
+        profile = cls(**values)
+        if (profile.trial_kind != "diameter" or not profile.columns
+                or len(set(profile.columns)) != len(profile.columns)
+                or any(type(c) is not int or not 1 <= c <= 256 for c in profile.columns)
+                or any(len(getattr(profile, name)) != len(profile.columns) for name in
+                       ("operator_cells", "sample_name_cells", "sample_number_cells"))):
+            raise ValueError("直径模板映射的操作者输入位置无效。")
+        for name in ("first_data_row", "measured_count_row", "mean_row", "clear_last_row", "statistical_capacity", "standard_report_capacity"):
+            if type(getattr(profile, name)) is not int or not 1 <= getattr(profile, name) <= 65536:
+                raise ValueError(f"直径模板映射行号无效：{name}")
+        if profile.first_data_row <= max(profile.measured_count_row, profile.mean_row):
+            raise ValueError("原始直径输入区不能覆盖计算行。")
+        return profile
+
+
+@dataclass(frozen=True)
 class ExportSnapshot:
     id: str
     revision: int
@@ -82,6 +127,7 @@ class ExportSnapshot:
     measurements: tuple
     adjustments: tuple
     local_summary: dict
+    trial_mode: str = "content"
 
     @classmethod
     def capture(cls, session):
@@ -92,7 +138,7 @@ class ExportSnapshot:
             session.sample_number, session.method, session.group_width, session.grouped,
             tuple(deepcopy(operator) for operator in session.operators.values()),
             tuple(session.measurements.values()), tuple(session.count_adjustments.values()),
-            deepcopy(summarize(session)))
+            deepcopy(summarize(session)), session.workspace_options.get("mode", "content"))
 
 
 def column_name(value):
@@ -105,7 +151,11 @@ def column_name(value):
 
 def template_request(snapshot, template, destination, profile=None, *, method_label=None, show=True):
     from .statistics import resolve_method
-    profile = profile or TemplateProfile()
+    profile = profile or TemplateProfile.load(trial_mode=snapshot.trial_mode)
+    if (snapshot.trial_mode == "diameter") != isinstance(profile, DiameterTemplateProfile):
+        raise ValueError("模板映射类型与试验类型不一致")
+    if isinstance(profile, DiameterTemplateProfile):
+        return _diameter_template_request(snapshot, template, destination, profile, show=show)
     if len(snapshot.operators) > 3:
         raise ValueError("CU 模板只定义三位操作者，未截断额外操作者。")
     groups, counts = {}, {}
@@ -154,24 +204,76 @@ def template_request(snapshot, template, destination, profile=None, *, method_la
                     "content_cell": f"{col}{profile.content_row}", "operator": operator.name,
                     "direction": direction, "material": material.name,
                     "local_content": local_categories[material.id].get("content")})
+                if len(values) > 1500:
+                    warnings.append(f"{operator.name}／{direction}／{material.name} 共 {len(values)} 条："
+                                    f"超过原模板 1500 条统计范围 {len(values) - 1500} 条，请复核报告覆盖。")
                 if snapshot.grouped and len(values) > (profile.grouped_capacity or 1488):
                     warnings.append(f"{operator.name}／{direction}／{material.name} 共 {len(values)} 条："
                         + ("超过映射声明的分组容量。" if profile.grouped_capacity else
                            "超过原 CU 分组宏的 1488 条范围；自定义宏覆盖范围待核验。"))
     label = method_label or profile.method_labels.get(snapshot.method) or resolve_method(snapshot.method).label
-    return {"operation": "export", "template": str(Path(template).resolve()), "destination": str(Path(destination).resolve()),
+    return {"operation": "export", "trial_kind": "content", "template": str(Path(template).resolve()), "destination": str(Path(destination).resolve()),
         "profile": asdict(profile), "cells": cells, "blocks": blocks, "clears": clears, "checks": checks,
         "method_label": label, "group_width": snapshot.group_width, "grouped": snapshot.grouped,
         "snapshot_id": snapshot.id, "snapshot_revision": snapshot.revision, "show": show, "warnings": warnings}
 
 
-def template_preferences_path():
+def _diameter_template_request(snapshot, template, destination, profile, *, show):
+    if len(snapshot.operators) > len(profile.columns):
+        raise ValueError("直径模板没有足够的操作者数据列。")
+    cells = [{"cell": profile.date_cell,
+              "value": datetime.fromisoformat(snapshot.created_at).astimezone().date().isoformat()}]
+    clears, blocks, checks, warnings = [], [], [], []
+    by_operator = {}
+    for record in snapshot.measurements:
+        by_operator.setdefault(record.operator_id, []).append(record.diameter_um)
+    for slot, column in enumerate(profile.columns):
+        name = column_name(column)
+        clears.append(f"{name}{profile.first_data_row}:{name}{profile.clear_last_row}")
+        for mapping in (profile.operator_cells, profile.sample_name_cells, profile.sample_number_cells):
+            clears.append(mapping[slot])
+        if slot >= len(snapshot.operators):
+            continue
+        operator = snapshot.operators[slot]
+        values = by_operator.get(operator.id, [])
+        if len(values) + profile.first_data_row - 1 > 65536:
+            raise ValueError("完整原始数据超过 XLS 行数，未截断导出。")
+        cells.extend({"cell": cell, "value": value} for cell, value in (
+            (profile.operator_cells[slot], operator.name),
+            (profile.sample_name_cells[slot], snapshot.name),
+            (profile.sample_number_cells[slot], snapshot.number)))
+        if values:
+            blocks.append({"cell": f"{name}{profile.first_data_row}", "values": [[value] for value in values]})
+        checks.append({"count_cell": f"{name}{profile.measured_count_row}", "expected": len(values),
+                       "operator": operator.name, "direction": "all", "material": "", "local_content": None,
+                       "mean_cell": f"{name}{profile.mean_row}", "mean_semantics": "grouped",
+                       "raw_range": (f"{name}{profile.first_data_row}:{name}{profile.first_data_row + len(values) - 1}"
+                                     if values else None),
+                       "local_mean": math.fsum(values) / len(values) if values else None})
+        if len(values) > profile.standard_report_capacity:
+            warnings.append(f"{operator.name} 共 {len(values)} 条：TWC-TM24-2009／ASTM-D-2130 "
+                            f"部分标准报告仅覆盖 {profile.standard_report_capacity} 条，"
+                            f"这些报告可能少计 {len(values) - profile.standard_report_capacity} 条；"
+                            "全部原始数据仍完整写入，请复核所用报告。")
+        if len(values) > profile.statistical_capacity:
+            warnings.append(f"{operator.name} 共 {len(values)} 条，超过直径模板统计范围 {profile.statistical_capacity} 条，"
+                            f"报告可能少计 {len(values) - profile.statistical_capacity} 条。")
+    return {"operation": "export", "trial_kind": "diameter", "template": str(Path(template).resolve()),
+            "destination": str(Path(destination).resolve()), "profile": asdict(profile), "cells": cells,
+            "blocks": blocks, "clears": clears, "checks": checks, "warnings": warnings,
+            "group_width": snapshot.group_width, "grouped": snapshot.grouped,
+            "snapshot_id": snapshot.id, "snapshot_revision": snapshot.revision, "show": show}
+
+
+def template_preferences_path(trial_mode="content"):
     from fdm.settings import settings_directory
-    return settings_directory() / "content-template.json"
+    if trial_mode not in ("content", "diameter"):
+        raise ValueError("未知试验模板类型")
+    return settings_directory() / f"{trial_mode}-template.json"
 
 
-def template_preferences():
-    path = template_preferences_path()
+def template_preferences(trial_mode="content"):
+    path = template_preferences_path(trial_mode)
     try:
         result = json.loads(path.read_text(encoding="utf-8"))
         return result if isinstance(result, dict) else {}
@@ -179,20 +281,21 @@ def template_preferences():
         return {}
 
 
-def save_template_preferences(values):
-    path = template_preferences_path()
+def save_template_preferences(values, trial_mode="content"):
+    path = template_preferences_path(trial_mode)
     path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(path, json.dumps(values, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
 
 
-def working_template(*, create=False):
+def working_template(*, create=False, trial_mode="content"):
     """Seed once; upgrades/new defaults never overwrite the user's working copy."""
     from fdm.settings import runtime_directory, settings_directory
-    preferences = template_preferences()
+    preferences = template_preferences(trial_mode)
     if preferences.get("template"):
         return Path(preferences["template"])
-    source = runtime_directory() / "content-templates" / "sheet.xlt"
-    target = settings_directory() / "templates" / "sheet.xlt"
+    filename = "sheet_dia.xlt" if trial_mode == "diameter" else "sheet.xlt"
+    source = runtime_directory() / "content-templates" / filename
+    target = settings_directory() / "templates" / filename
     if create and not target.exists() and source.is_file():
         target.parent.mkdir(parents=True, exist_ok=True)
         # Exclusive creation prevents overwriting a concurrently edited copy.

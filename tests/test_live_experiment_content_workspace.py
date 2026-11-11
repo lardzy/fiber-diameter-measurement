@@ -261,10 +261,9 @@ def test_current_summary_labels_actual_grouped_mean(workspace):
 def test_material_editor_initial_values_and_stable_identity(workspace, monkeypatch):
     before = workspace.session.operators[workspace.session.active_operator_id].materials["warp"]
     def accept(dialog):
-        table = dialog.findChild(QTableWidget)
-        assert table.cellWidget(0, 1).text() == "绵羊毛"
-        assert table.cellWidget(1, 4).value() == 30
-        table.cellWidget(0, 2).setValue(1.32)
+        assert dialog.materials()[0].name == "绵羊毛"
+        assert dialog.materials()[1].upper_limit == 30
+        dialog._materials[0] = replace(dialog.materials()[0], density=1.32)
         return QDialog.DialogCode.Accepted
     monkeypatch.setattr(QDialog, "exec", accept)
     workspace._materials()
@@ -1037,7 +1036,11 @@ def test_retiring_source_blocks_all_replacements_until_confirmed_stopped(workspa
     workspace.source = old
     new = SimpleNamespace(start=lambda: None, stop=lambda: True)
     constructed = []
-    monkeypatch.setattr(sources, "CameraFrameSource", lambda *_: constructed.append("camera") or new)
+    class ReplacementCamera:
+        def __new__(cls, *_):
+            constructed.append("camera")
+            return new
+    monkeypatch.setattr(sources, "CameraFrameSource", ReplacementCamera)
     generation = workspace._static_generation
     try:
         assert workspace._start_camera() is False

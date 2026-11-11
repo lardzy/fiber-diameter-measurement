@@ -2692,6 +2692,9 @@ class MainWindow(QMainWindow):
         self.live_experiment_action = QAction("实时试验", self)
         self.live_experiment_action.setToolTip("实时贴边测径、全图候选和含量试验")
         self.live_experiment_action.triggered.connect(self._open_live_experiment)
+        self.trial_material_catalog_action = QAction("纤维类别库…", self)
+        self.trial_material_catalog_action.setToolTip("管理含量试验与直径试验共用的纤维种类及默认参数")
+        self.trial_material_catalog_action.triggered.connect(self._open_trial_material_catalog)
         self.live_preview_action.setCheckable(True)
         self.live_preview_action.setIcon(themed_icon("live_preview", color="#7BD389"))
         self.live_preview_action.triggered.connect(self.toggle_live_preview)
@@ -3497,6 +3500,7 @@ class MainWindow(QMainWindow):
 
         experiment_menu = self.menuBar().addMenu("试验")
         experiment_menu.addAction(self.live_experiment_action)
+        experiment_menu.addAction(self.trial_material_catalog_action)
 
         view_menu = self.menuBar().addMenu("视图")
         view_menu.addAction(self.scale_preview_action)
@@ -3569,7 +3573,17 @@ class MainWindow(QMainWindow):
     def _open_live_experiment(self) -> None:
         self._open_acquisition_workbench(trial_index=1)
 
+    def _open_trial_material_catalog(self) -> None:
+        from fdm.ui.material_catalog import MaterialCatalogDialog
+        try:
+            MaterialCatalogDialog(self).exec()
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, "纤维类别库", f"类别库无法打开，现有试验参数不变：{exc}")
+
     def _close_live_experiment(self, *, preserve_snapshot=False) -> bool:
+        from fdm.ui.trial_excel_lifecycle import prepare_all_trial_excel, detach_all_trial_excel
+        if not prepare_all_trial_excel(self):
+            return False
         windows = list(getattr(self, "_live_experiment_workspaces", {}).values())
         current = getattr(self, "_live_experiment_workspace", None)
         if current is not None and current not in windows:
@@ -3588,7 +3602,7 @@ class MainWindow(QMainWindow):
         if windows and self._acquisition_workbench is not None:
             self._acquisition_workbench.clear_trial_pages()
             self._sync_workspace_mode()
-        return True
+        return detach_all_trial_excel(self)
 
     def _prepare_live_experiment_close(self) -> bool:
         windows = list(getattr(self, "_live_experiment_workspaces", {}).values())
@@ -29481,6 +29495,8 @@ class MainWindow(QMainWindow):
         if not self._close_live_experiment(preserve_snapshot=True):
             event.ignore()
             return
+        from fdm.ui.trial_excel_lifecycle import close_trial_excel_service
+        close_trial_excel_service(self)
         if self._acquisition_workbench is not None:
             self._acquisition_workbench.retire_entry()
         transition = self._prepare_transition(intent, disposition=disposition)

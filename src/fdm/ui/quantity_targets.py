@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QFormLayout
     QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget, QHBoxLayout, QToolButton, QSizePolicy)
 
 from fdm.live_experiment.reminders import ReminderPolicy, reminder_progress
+from fdm.live_experiment.trial_defaults import save_reminder_defaults
 from fdm.ui.icons import themed_icon
 from fdm.ui.widgets import NoWheelSpinBox
 
@@ -59,9 +60,10 @@ class QuantityTargets(QWidget):
 
 
 class QuantityTargetDialog(QDialog):
-    def __init__(self, session, parent=None):
+    def __init__(self, session, parent=None, *, defaults_file=None):
         super().__init__(parent)
         self.session = session
+        self.defaults_file = defaults_file
         self.setWindowTitle("数量目标")
         self.resize(450, 460)
         layout = QVBoxLayout(self)
@@ -125,6 +127,13 @@ class QuantityTargetDialog(QDialog):
 
         self.enable_new.toggled.connect(update_rows)
         update_rows()
+        mode_label = "直径" if session.workspace_options["mode"] == "diameter" else "含量"
+        self.save_default = QPushButton(f"设为新{mode_label}试验默认", self)
+        self.save_default.clicked.connect(self._save_default)
+        layout.addWidget(self.save_default)
+        self.default_status = QLabel(self)
+        self.default_status.setWordWrap(True)
+        layout.addWidget(self.default_status)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -145,3 +154,16 @@ class QuantityTargetDialog(QDialog):
             policy = replace(self.policy, content_measured_target=self.default.value(),
                              content_total_target=self.total.value(), material_targets=targets)
         return {"reminder_policy": policy}
+
+    def _save_default(self):
+        mode = self.session.workspace_options["mode"]
+        changes = self.changes()
+        policy = changes.get("reminder_policy") or replace(self.policy,
+            content_measured_target=self.legacy_measured.value(),
+            content_total_target=self.legacy_total.value(),
+            diameter_measured_target=self.legacy_measured.value())
+        try:
+            save_reminder_defaults(mode, policy, path=self.defaults_file)
+            self.default_status.setText("已保存为新试验默认，其他已有试验不改变。")
+        except (OSError, ValueError) as error:
+            self.default_status.setText(f"默认值未保存：{error}")

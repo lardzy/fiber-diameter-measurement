@@ -60,3 +60,13 @@ def isolated_desktop_profile(tmp_path, monkeypatch):
     for thread in threads():
         if thread.name.startswith("fdm-slide-diagnostic-"):
             thread.join(timeout=1)
+
+
+@pytest.fixture(autouse=True)
+def no_desktop_excel_side_effects(monkeypatch):
+    """Unit/UI tests use injected transports; native Excel has a separate probe."""
+    from fdm.live_experiment.excel_live import PowerShellLiveTransport
+    from fdm.live_experiment.excel_template import ExcelTemplateError
+    def unavailable(*args, **kwargs):
+        raise ExcelTemplateError("单元测试未连接桌面 Excel", code="unsupported_platform")
+    monkeypatch.setattr(PowerShellLiveTransport, "request", unavailable)

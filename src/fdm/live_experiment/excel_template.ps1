@@ -83,13 +83,16 @@ try {
         return
     }
     $profile = $request.profile
+    $diameter = ($request.trial_kind -eq 'diameter' -or $profile.trial_kind -eq 'diameter')
     $data = $book.Worksheets.Item([string]$profile.data_sheet)
-    $standard = $book.Worksheets.Item([string]$profile.standard_sheet)
-    $methods = $book.Worksheets.Item([string]$profile.method_sheet).Range([string]$profile.method_range).Value2
     $labels = @()
-    for ($r = 1; $r -le $methods.GetLength(0); $r++) {
-        $label = [string]$methods[$r,1]
-        if ($label) { $labels += @{index=$r; label=$label} }
+    if (!$diameter) {
+        $standard = $book.Worksheets.Item([string]$profile.standard_sheet)
+        $methods = $book.Worksheets.Item([string]$profile.method_sheet).Range([string]$profile.method_range).Value2
+        for ($r = 1; $r -le $methods.GetLength(0); $r++) {
+            $label = [string]$methods[$r,1]
+            if ($label) { $labels += @{index=$r; label=$label} }
+        }
     }
     if ($request.operation -eq 'inspect') {
         $result = @{ok=$true; methods=$labels; sheets=@($book.Worksheets | ForEach-Object {$_.Name});
@@ -98,8 +101,11 @@ try {
         if ([IO.Path]::GetFullPath($request.destination) -eq [IO.Path]::GetFullPath($request.template)) {
             throw 'The report must not overwrite its template.'
         }
-        $selected = @($labels | Where-Object { ($_.label -replace '\s','') -eq ($request.method_label -replace '\s','') })
-        if ($selected.Count -ne 1) { throw ('Template standard is missing or ambiguous: ' + $request.method_label) }
+        $selected = @()
+        if (!$diameter) {
+            $selected = @($labels | Where-Object { ($_.label -replace '\s','') -eq ($request.method_label -replace '\s','') })
+            if ($selected.Count -ne 1) { throw ('Template standard is missing or ambiguous: ' + $request.method_label) }
+        }
         $excel.Calculation = -4135 # manual while writing all input blocks
         Stage '清理原始输入区'
         foreach ($range in $request.clears) { $data.Range([string]$range).ClearContents() | Out-Null }
@@ -111,8 +117,13 @@ try {
             for ($r=0; $r -lt $rows.Count; $r++) { $matrix.SetValue([double]$rows[$r][0], $r, 0) }
             $data.Range([string]$block.cell).Resize($rows.Count,1).Value2 = $matrix
         }
-        SetCell $standard ([string]$profile.method_index_cell) ([double]$selected[0].index)
-        SetCell $standard ([string]$profile.group_width_cell) $(if ($request.grouped) { [double]$request.group_width } else { '不分组' })
+        if ($diameter) {
+            $groupSheet = $book.Worksheets.Item([string]$profile.group_width_sheet)
+            SetCell $groupSheet ([string]$profile.group_width_cell) ([double]$request.group_width)
+        } else {
+            SetCell $standard ([string]$profile.method_index_cell) ([double]$selected[0].index)
+            SetCell $standard ([string]$profile.group_width_cell) $(if ($request.grouped) { [double]$request.group_width } else { '不分组' })
+        }
         # The CU macro reads C10 and row-9 counts. Refresh those formulas before
         # invoking it; manual calculation must not expose stale template values.
         Stage '更新输入公式'
@@ -134,9 +145,26 @@ try {
                 $warnings.Add(('Measured count mismatch at {0}!{1}: expected {2}, template {3}' -f
                     $profile.data_sheet, $check.count_cell, $check.expected, $actual))
             }
-            $value = $data.Range([string]$check.content_cell).Value2
-            $comparisons.Add(@{operator=$check.operator; direction=$check.direction; material=$check.material;
-                local_content=$check.local_content; template_content=$value})
+            $comparison = @{operator=$check.operator; expected_count=$check.expected; template_count=$actual}
+            if ($check.content_cell) {
+                $comparison.direction=$check.direction; $comparison.material=$check.material
+                $comparison.local_content=$check.local_content
+                $comparison.template_content=$data.Range([string]$check.content_cell).Value2
+            }
+            if ($check.mean_cell) {
+                $comparison.local_mean=$check.local_mean
+                $comparison.template_mean=$data.Range([string]$check.mean_cell).Value2
+                $comparison.template_mean_semantics='grouped'
+            }
+            if ($check.raw_range) {
+                $comparison.raw_mean=[double]$excel.WorksheetFunction.Average($data.Range([string]$check.raw_range))
+                $expectedMean=[double]$check.local_mean
+                if ([Math]::Abs($comparison.raw_mean-$expectedMean) -gt [Math]::Max(1.0,[Math]::Abs($expectedMean))*1.0e-9) {
+                    $warnings.Add(('Raw mean mismatch at {0}!{1}: expected {2}, actual {3}' -f
+                        $profile.data_sheet,$check.raw_range,$expectedMean,$comparison.raw_mean))
+                }
+            }
+            $comparisons.Add($comparison)
         }
         $data.Activate()
         $destination = [IO.Path]::GetFullPath($request.destination)
@@ -155,7 +183,7 @@ try {
         $excel.DisplayAlerts = $true
         $result = @{ok=$true; status=$(if($warnings.Count){'review_required'}else{'ready'});
             destination=$destination; warnings=@($warnings.ToArray()); comparisons=@($comparisons.ToArray());
-            method=[string]$selected[0].label; snapshot_id=$request.snapshot_id; snapshot_revision=$request.snapshot_revision;
+            method=$(if($diameter){''}else{[string]$selected[0].label}); snapshot_id=$request.snapshot_id; snapshot_revision=$request.snapshot_revision;
             sheets=@($book.Worksheets | ForEach-Object {$_.Name})}
         if ($request.show) {
             $excel.Visible=$true; $handedOff=$true

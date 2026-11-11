@@ -63,6 +63,7 @@ class MaterialSnapshot:
     lower_suggestion_id: str | None = None
     upper_suggestion_id: str | None = None
     provenance: dict[str, Any] = field(default_factory=dict)
+    aliases: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.id or not self.name.strip():
@@ -83,6 +84,10 @@ class MaterialSnapshot:
         if self.lower_limit is not None and self.upper_limit is not None and self.lower_limit > self.upper_limit:
             raise ValueError("直径下限不能大于上限")
         object.__setattr__(self, "provenance", deepcopy(self.provenance))
+        if isinstance(self.aliases, str) or not all(isinstance(alias, str) for alias in self.aliases):
+            raise ValueError("类别别名必须是文本列表")
+        object.__setattr__(self, "aliases", tuple(dict.fromkeys(
+            alias.strip() for alias in self.aliases if alias.strip() and alias.strip() != self.name)))
 
     def range_status(self, diameter_um: float) -> str:
         value = _finite(diameter_um, "直径", positive=True)
@@ -170,6 +175,43 @@ def built_in_materials(profile: str = "all") -> tuple[MaterialSnapshot, ...]:
 
 def default_materials() -> tuple[MaterialSnapshot, ...]:
     return built_in_materials("normal")[:2]
+
+
+@dataclass(frozen=True)
+class DiameterRangePolicy:
+    """Inclusive allowed diameter range for an entire diameter trial, in µm."""
+
+    lower_limit_um: float | None = None
+    upper_limit_um: float | None = None
+
+    def __post_init__(self) -> None:
+        for key in ("lower_limit_um", "upper_limit_um"):
+            if getattr(self, key) is not None:
+                object.__setattr__(self, key, _finite(getattr(self, key), "直径限值", positive=True))
+        if (self.lower_limit_um is not None and self.upper_limit_um is not None
+                and self.lower_limit_um > self.upper_limit_um):
+            raise ValueError("直径下限不能大于上限")
+
+    def range_status(self, diameter_um: float) -> str:
+        value = _finite(diameter_um, "直径", positive=True)
+        if self.lower_limit_um is not None and value < self.lower_limit_um:
+            return "below"
+        if self.upper_limit_um is not None and value > self.upper_limit_um:
+            return "above"
+        return "within"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_value(cls, value: "DiameterRangePolicy | dict[str, Any] | None") -> "DiameterRangePolicy":
+        if value is None:
+            return cls()
+        if isinstance(value, cls):
+            return value
+        if not isinstance(value, dict) or value.keys() - {"lower_limit_um", "upper_limit_um"}:
+            raise ValueError("直径试验范围配置无效")
+        return cls(**value)
 
 
 @dataclass
@@ -340,6 +382,7 @@ class ExperimentSession:
                  grouped: bool = True, profile: str = "normal", save_images: bool = False,
                  workspace_options: dict[str, str] | None = None,
                  evidence_options: dict[str, Any] | None = None,
+                 diameter_range_policy: DiameterRangePolicy | dict[str, Any] | None = None,
                  reminder_policy: ReminderPolicy | dict[str, Any] | None = ReminderPolicy()) -> None:
         from .statistics import resolve_method, resolve_profile
         self.id = id or _id()
@@ -362,6 +405,7 @@ class ExperimentSession:
         self.measured_reminder = 300
         self.total_reminder = 1500
         self.reminder_policy = normalize_policy(reminder_policy)
+        self.diameter_range_policy = DiameterRangePolicy.from_value(diameter_range_policy)
         # Runtime history origin is not project content or notification history.
         self._reminder_mutation_origin = "load"
         self.revision = 0
@@ -401,6 +445,15 @@ class ExperimentSession:
             if item.id == material_id:
                 return item
         raise ValueError("当前操作者和方向未配置此材料")
+
+    def measurement_range(self, material_id: str, *, operator_id: str | None = None,
+                          direction: str | None = None) -> dict[str, Any]:
+        """Fresh snapshot for validation and provenance; never reads library defaults."""
+        material = self.material(material_id, operator_id=operator_id, direction=direction)
+        if self.workspace_options["mode"] == "diameter":
+            return {"scope": "diameter_trial", **self.diameter_range_policy.to_dict()}
+        return {"material_id": material.id, "material_name": material.name,
+                "lower_limit_um": material.lower_limit, "upper_limit_um": material.upper_limit}
 
     def add_operator(self, name: str, *, id: str | None = None) -> str:
         name = name.strip()
@@ -473,10 +526,13 @@ class ExperimentSession:
         """
         from .statistics import resolve_method, resolve_profile
         allowed = {"method", "group_width", "grouped", "profile", "save_images", "measured_reminder", "total_reminder",
-                   "name", "sample_name", "sample_number", "workspace_options", "reminder_policy", "evidence_options"}
+                   "name", "sample_name", "sample_number", "workspace_options", "reminder_policy", "evidence_options",
+                   "diameter_range_policy"}
         if changes.keys() - allowed:
             raise ValueError("未知试验配置")
         new = dict(changes)
+        if "diameter_range_policy" in new:
+            new["diameter_range_policy"] = DiameterRangePolicy.from_value(new["diameter_range_policy"])
         if "evidence_options" in new:
             new["evidence_options"] = normalize_evidence_options(new["evidence_options"])
             if new["evidence_options"] is not None:
@@ -672,6 +728,27 @@ class ExperimentSession:
             self.fields[field_id] = value
             self._touch()
 
+    def revised_measurement_provenance(self, record: MeasurementRecord, *, diameter_um: float,
+                                       material_id: str, keep_outside: bool = False,
+                                       operation: str = "manual_revision") -> dict[str, Any]:
+        """Record the new decision without rewriting the original acceptance evidence."""
+        value = self._validate_diameter(diameter_um, self.group_width)
+        limits = self.measurement_range(material_id, operator_id=record.operator_id, direction=record.direction)
+        lower, upper = limits["lower_limit_um"], limits["upper_limit_um"]
+        outside = ((lower is not None and value < lower) or (upper is not None and value > upper))
+        if outside and not keep_outside:
+            raise ValueError("修订结果超出允许范围，请明确确认保留后再修改。")
+        provenance = deepcopy(record.provenance)
+        history = list(provenance.get("range_revisions", []))
+        current = {**limits, "diameter_um": value}
+        history.append({"previous_diameter_um": record.diameter_um, "previous_material_id": record.material_id,
+                        "measurement_range": current, "material_id": material_id,
+                        "decision": "keep_outside" if outside else "within", "operation": operation,
+                        "changed_at": _now()})
+        provenance["range_revisions"] = history
+        provenance["current_measurement_range"] = current
+        return provenance
+
     def edit_measurement(self, record_id: str, *, diameter_um: float | None = None,
                          material_id: str | None = None, evidence: dict[str, Any] | None = None,
                          provenance: dict[str, Any] | None = None) -> MeasurementRecord:
@@ -811,6 +888,7 @@ class ExperimentSession:
                 "method": self.method, "group_width": self.group_width, "grouped": self.grouped,
                 "profile": self.profile, "save_images": self.save_images, "created_at": self.created_at,
                 "workspace_options": dict(self.workspace_options),
+                "diameter_range_policy": self.diameter_range_policy.to_dict(),
                 "active_operator_id": self.active_operator_id, "active_direction": self.active_direction,
                 "measured_reminder": self.measured_reminder, "total_reminder": self.total_reminder,
                 "revision": self.revision, "operators": [op.to_dict() for op in self.operators.values()],
@@ -829,7 +907,8 @@ class ExperimentSession:
             raise ValueError("不支持的实时试验格式版本")
         session = cls(reminder_policy=payload.get("reminder_policy"),
                       **{key: payload[key] for key in ("id", "name", "sample_number", "sample_name", "method",
-                        "group_width", "grouped", "profile", "save_images", "workspace_options", "evidence_options") if key in payload})
+                        "group_width", "grouped", "profile", "save_images", "workspace_options", "evidence_options",
+                        "diameter_range_policy") if key in payload})
         for item in payload.get("operators", []):
             if item["id"] in session.operators or any(op.name == item["name"] for op in session.operators.values()):
                 raise ValueError("重复操作者")

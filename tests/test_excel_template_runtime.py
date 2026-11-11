@@ -261,9 +261,11 @@ def test_diagnostics_panel_copy_export_and_failed_retry_preserve_last_report(tmp
     from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
     from fdm.ui import trial_report_panel as ui
 
-    monkeypatch.setattr(ui, "template_preferences", lambda: {})
+    monkeypatch.setattr(ui, "template_preferences", lambda *args, **kwargs: {})
     monkeypatch.setattr(ui, "working_template", lambda **kwargs: tmp_path / "sheet.xlt")
     window = QMainWindow()
+    from fdm.live_experiment import ExperimentSession
+    window.session = ExperimentSession()
     central = QWidget(window)
     window.setCentralWidget(central)
     window.report_layout = QVBoxLayout(central)

@@ -198,15 +198,21 @@ class CandidatesModel(QAbstractTableModel):
         if material is None:
             return "未赋类"
         width = self.candidates[row]["width_px"] * self.scale
-        if ((material.lower_limit is not None and width < material.lower_limit) or
-                (material.upper_limit is not None and width > material.upper_limit)):
+        lower, upper = self._range_limits(material)
+        if ((lower is not None and width < lower) or (upper is not None and width > upper)):
             return "越限，需核对"
         return "范围内"
 
     def range_signature(self, row):
         material = self.assigned_material(row)
-        return None if material is None else (material.id, material.name, material.lower_limit,
-            material.upper_limit, self.candidates[row]["width_px"] * self.scale)
+        return None if material is None else (material.id, material.name, *self._range_limits(material),
+            self.candidates[row]["width_px"] * self.scale)
+
+    def _range_limits(self, material):
+        if self.session is not None and self.session.workspace_options["mode"] == "diameter":
+            policy = self.session.diameter_range_policy
+            return policy.lower_limit_um, policy.upper_limit_um
+        return material.lower_limit, material.upper_limit
 
     def range_confirmed(self, row):
         return self.range_status(row) == "越限，需核对" and self.range_confirmations.get(row) == self.range_signature(row)
@@ -215,8 +221,9 @@ class CandidatesModel(QAbstractTableModel):
         material = self.assigned_material(row)
         if material is None:
             return "未赋类"
-        lower = "不限" if material.lower_limit is None else f"{material.lower_limit:g}"
-        upper = "不限" if material.upper_limit is None else f"{material.upper_limit:g}"
+        low, high = self._range_limits(material)
+        lower = "不限" if low is None else f"{low:g}"
+        upper = "不限" if high is None else f"{high:g}"
         return f"{self.range_status(row)} · {lower}～{upper} μm"
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
@@ -398,6 +405,14 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self._refresh_ruler_choices()
         from fdm.ui.trial_report_panel import TrialReportPanel
         self.report_panel = TrialReportPanel(self)
+        from fdm.ui.trial_excel_lifecycle import live_excel_manager
+        from fdm.ui.live_excel import LiveExcelControls
+        self.live_excel = live_excel_manager(host)
+        self.live_excel_controls = LiveExcelControls(self.live_excel, session, self,
+            compact=True, status_label=self.report_status_label)
+        self.live_excel_layout.addWidget(self.live_excel_controls)
+        if getattr(session, "_defaults_error", None):
+            self.statusBar().showMessage(session._defaults_error, 15000)
         self.live_state_label = QLabel(self)
         self.live_state_label.setMaximumWidth(360)
         self.statusBar().addPermanentWidget(self.live_state_label)
@@ -600,8 +615,18 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         elif self._confirm_trial_navigation():
             self.close()
 
+    def ensure_live_excel(self):
+        if (self._closed or id(self.host.project) != self.project_identity or not self.isVisible()):
+            return
+        hub = getattr(self.host, "_acquisition_workbench", None)
+        if self.embedded and (hub is None or not hub._entered or hub.pages.currentWidget() is not self):
+            return
+        from fdm.ui.trial_excel_lifecycle import ensure_live_excel
+        ensure_live_excel(self.host, self.session)
+
     def showEvent(self, event):
         super().showEvent(event)
+        QTimer.singleShot(0, self, self.ensure_live_excel)
         if hasattr(self, "evidence_review"):
             self.evidence_review.resume()
             self._refresh_assistance_state()
@@ -1295,69 +1320,45 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self._guard(lambda: self.session.set_weights(*values))
             self._changed()
 
-    def _materials(self):
-        from fdm.live_experiment import MaterialSnapshot, built_in_materials
-        current = self.session.operators[self.session.active_operator_id].materials[self.session.active_direction]
-        catalog = {m.id: m for m in built_in_materials()}
-        catalog.update({m.id: m for m in current})
-        dialog = QDialog(self)
-        dialog.setWindowTitle("本方向类别 · 材料参数保存在本试验内")
-        dialog.resize(830, 470)
-        layout = QVBoxLayout(dialog)
-        note = QLabel("最多九类。范围只用于越限提醒，不用于自动认定材料；密度为 0 时含量将显示待完善。")
-        note.setWordWrap(True)
-        layout.addWidget(note)
-        table = QTableWidget(9, 5)
-        table.setHorizontalHeaderLabels(["材料", "名称", "密度 g/cm³", "下限 μm", "上限 μm"])
-        table.horizontalHeader().setStretchLastSection(True)
-        layout.addWidget(table)
-        rows = []
-        for row in range(9):
-            selected = current[row] if row < len(current) else None
-            choice = QComboBox()
-            choice.addItem("不使用", None)
-            for material in catalog.values():
-                choice.addItem(material.name, material.id)
-            choice.addItem("自定义材料", "__custom__")
-            name = QLineEdit()
-            density, low, high = QDoubleSpinBox(), QDoubleSpinBox(), QDoubleSpinBox()
-            for spin in (density, low, high):
-                spin.setDecimals(6)
-                spin.setRange(0, 1000000)
-            low.setSpecialValueText("不限")
-            high.setSpecialValueText("不限")
-            density.setMaximum(100)
-            def load(index, choice=choice, name=name, density=density, low=low, high=high):
-                material = catalog.get(choice.currentData())
-                name.setText(material.name if material else "")
-                density.setValue((material.density or 0) if material else 0)
-                low.setValue((material.lower_limit or 0) if material else 0)
-                high.setValue((material.upper_limit or 0) if material else 0)
-            choice.currentIndexChanged.connect(load)
-            choice.setCurrentIndex(max(0, choice.findData(selected.id if selected else None)))
-            for col, widget in enumerate((choice, name, density, low, high)):
-                table.setCellWidget(row, col, widget)
-            rows.append((choice, name, density, low, high))
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        layout.addWidget(buttons)
-        if not dialog.exec():
+    def _materials(self, *, suggested_id=None):
+        from fdm.ui.material_catalog import TrialMaterialsDialog
+        dialog = TrialMaterialsDialog(self.session, self)
+        if suggested_id is not None:
+            dialog.available.setCurrentIndex(max(0, dialog.available.findData(suggested_id)))
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
-        materials = []
-        for choice, name, density, low, high in rows:
-            key = choice.currentData()
-            if key is None:
-                continue
-            base = catalog.get(key)
-            values = dict(name=name.text().strip(), density=density.value(),
-                          lower_limit=low.value() or None, upper_limit=high.value() or None)
-            material = replace(base, **values) if base else MaterialSnapshot(id=uuid.uuid4().hex, family="other", **values)
-            materials.append(material)
+        materials = dialog.materials()
+        remaining = {material.id for material in materials}
+        if self.controller.materials_in_use() - remaining:
+            raise ValueError("待确认测量或正在计算的测量仍引用此类别，请先处理这些结果再移除。")
         self.session.set_materials(materials, direction=self.session.active_direction)
-        self.controller.end_field("类别设置已变化")
         self._refresh_materials()
         self._changed()
+        self._refresh_summary()
+
+    def _material_catalog(self):
+        from fdm.ui.material_catalog import MaterialCatalogDialog
+        MaterialCatalogDialog(self).exec()
+        self._suggestion_catalog = None
+
+    def _diameter_range(self):
+        from fdm.ui.material_catalog import DiameterRangeDialog
+        dialog = DiameterRangeDialog(self.session, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._configure(diameter_range_policy=dialog.policy())
+            self._refresh_summary()
+
+    def _accept_suggested_material(self):
+        pending = self.controller.pending_classification
+        if not pending or pending[0][0].id != self._pending_display_id:
+            raise ValueError("待确认测量已变化，请重新核对。")
+        suggestion = self.controller.pending_suggestion(*pending[0], catalog=getattr(self, "_suggestion_catalog", None))
+        if suggestion is None:
+            raise ValueError("本条测量没有建议类别。")
+        if not suggestion["available"]:
+            self._materials(suggested_id=suggestion["material_id"])
+            return
+        self._resolve_displayed_pending(material_id=suggestion["material_id"])
 
     def _statistics_settings(self):
         if self._statistics_job is not None:
@@ -1572,6 +1573,8 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
                 self.host.project.mark_extension_changed()
             self._last_dirty_state = state
         self._refresh_persistence_state()
+        if hasattr(self, "live_excel"):
+            self.live_excel.update(self.session)
         if hasattr(self, "display_binding"):
             self.display_binding.apply()
         ui_state = (*state, self.controller.field_epoch)
@@ -1624,8 +1627,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         if pending:
             intent, result = pending[0]
             material = self.session.material(intent.material_id, operator_id=intent.operator_id, direction=intent.direction)
-            lower = "不限" if material.lower_limit is None else f"{material.lower_limit:g}"
-            upper = "不限" if material.upper_limit is None else f"{material.upper_limit:g}"
+            limits = self.session.measurement_range(intent.material_id, operator_id=intent.operator_id, direction=intent.direction)
+            lower = "不限" if limits["lower_limit_um"] is None else f"{limits['lower_limit_um']:g}"
+            upper = "不限" if limits["upper_limit_um"] is None else f"{limits['upper_limit_um']:g}"
             text = (f"待确认 1/{len(pending)} · 测量 #{intent.measurement_number or intent.id[:6]}\n"
                     f"{material.name} · {result['diameter_um']:.4f} μm · 范围 {lower}–{upper} μm\n"
                     "下方操作仅作用于此条；橙色虚线表示尚未入账。")
@@ -1633,7 +1637,20 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             if self.after_select.isChecked() and target and target["id"] != intent.id:
                 text += f"\n后选当前作用于最新测量 #{target['number']}，与首条待确认不同。"
             self.pending_label.setText(text)
+            if getattr(self, "_suggestion_catalog", None) is None:
+                from fdm.live_experiment.material_catalog import MaterialCatalog
+                try:
+                    self._suggestion_catalog = MaterialCatalog.load()
+                except (OSError, ValueError):
+                    pass  # Trial snapshots remain usable when public defaults cannot be read.
+            suggestion = self.controller.pending_suggestion(intent, result, catalog=getattr(self, "_suggestion_catalog", None))
+            self.pending_suggestion.setVisible(suggestion is not None)
+            if suggestion:
+                self.pending_suggestion.setText("改为“" + suggestion["material_name"] + "”" if suggestion["available"]
+                    else "先配置建议类别：“" + suggestion["material_name"] + "”")
+                self.pending_suggestion.setEnabled(self.controller._confirmation is None)
         else:
+            self.pending_suggestion.hide()
             request = self.controller._confirmation
             self.pending_label.setText("确认正在核验最新视场，尚未入账。" if request else "")
         self.pending_panel.setVisible(bool(pending or (self.controller._confirmation
@@ -1644,6 +1661,11 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             QTimer.singleShot(0, self, lambda: scroll.ensureWidgetVisible(self.pending_panel, 0, 12))
         for button in self.pending_buttons:
             button.setEnabled(bool(self.controller.pending_classification) and self.controller._confirmation is None)
+        if self.session.workspace_options["mode"] == "diameter":
+            policy = self.session.diameter_range_policy
+            low = "不限" if policy.lower_limit_um is None else f"{policy.lower_limit_um:g}"
+            high = "不限" if policy.upper_limit_um is None else f"{policy.upper_limit_um:g}"
+            self.diameter_range_button.setText(f"本场直径范围：{low} ～ {high} μm")
         if self.session.revision == self._last_summary_revision:
             return
         self.candidate_model.notify_accepted_records()
@@ -1810,15 +1832,42 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         if not record:
             return
         value, ok = QInputDialog.getDouble(self, "修订测量", "直径 μm（原始算法结果保留在来源信息中）", record.diameter_um, 0.000001, 1000000, 6)
-        if ok:
+        if not ok:
+            return
+        material_id = record.material_id
+        if self.session.workspace_options["mode"] == "content":
             materials = self.session.operators[record.operator_id].materials[record.direction]
             choices = [f"{index + 1} · {material.name}" for index, material in enumerate(materials)]
             selected, accepted = QInputDialog.getItem(self, "修订分类", "记录所属操作者／方向的类别", choices,
                 next((i for i, m in enumerate(materials) if m.id == record.material_id), 0), False)
             if not accepted:
                 return
-            self.session.edit_measurement(record.id, diameter_um=value, material_id=materials[choices.index(selected)].id)
-            self._rebuild_records()
+            material_id = materials[choices.index(selected)].id
+        if value == record.diameter_um and material_id == record.material_id:
+            return
+        limits = self.session.measurement_range(material_id, operator_id=record.operator_id, direction=record.direction)
+        low, high = limits["lower_limit_um"], limits["upper_limit_um"]
+        outside = ((low is not None and value < low) or (high is not None and value > high))
+        if outside:
+            low_text, high_text = "不限" if low is None else f"{low:g}", "不限" if high is None else f"{high:g}"
+            owner = self.session.operators[record.operator_id].name
+            name = self.session.material(material_id, operator_id=record.operator_id, direction=record.direction).name
+            if QMessageBox.question(self, "修订结果超出允许范围",
+                    f"记录 {record.id[:8]} · {owner}／{'经向' if record.direction == 'warp' else '纬向'}／{name}\n"
+                    f"修订直径 {value:g} μm，允许范围 {low_text}～{high_text} μm。\n"
+                    "是否明确保留这个越限修订？选择“否”将保留原记录，可重新修订或改类。",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
+        # Recheck after the modal decision, since callbacks can update the trial.
+        if self.session.measurements.get(record.id) != record:
+            raise ValueError("记录已变化，请重新选择后修订。")
+        if limits != self.session.measurement_range(material_id, operator_id=record.operator_id, direction=record.direction):
+            raise ValueError("允许范围已变化，请重新核对修订。")
+        provenance = self.session.revised_measurement_provenance(record, diameter_um=value,
+            material_id=material_id, keep_outside=outside)
+        self.session.edit_measurement(record.id, diameter_um=value, material_id=material_id, provenance=provenance)
+        self._rebuild_records()
 
     def _review_record(self):
         record = self._selected_record()
@@ -1979,6 +2028,11 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         mode = target.workspace_options["mode"]
         project = self.host.project
         hub = self.host._acquisition_workbench if self.embedded else None
+        if remove_current:
+            self.commit_pending_edits()
+            from fdm.ui.trial_excel_lifecycle import prepare_trial_excel
+            if not prepare_trial_excel(self.host, self.session, parent=self):
+                return
         # Build the destination and attach to the existing camera session while
         # the old page and its records can still be retained if either fails.
         window = LiveExperimentWorkspace(self.host, target, embedded=self.embedded)
@@ -1996,18 +2050,27 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             if hub is not None:
                 hub.records.bind(window)
                 hub.apply_sidebar_width()
+            if remove_current:
+                # This trial is being removed. Its final Excel projection has
+                # already been approved; do not append unrelated field metadata
+                # that could invalidate an explicit unsynced-exit decision.
+                self._close_record_end = False
             if not self.close():
+                self._close_record_end = True
                 return
             transferred = True
         finally:
             self._gallery_rebinding = False
             if not transferred:
+                getattr(self.host, "_trial_excel_force", {}).pop(self.session.id, None)
                 if hub is not None:
                     hub.pages.removeWidget(window)
                     if hub.records.workspace is not self:
                         hub.records.bind(self)
                 window.close()
         if remove_current:
+            from fdm.ui.trial_excel_lifecycle import detach_trial_excel
+            detach_trial_excel(self.host, self.session, parent=self.host)
             window._sample_removal_unsaved = project.remove_live_trial(self.session)
         self.host._live_experiment_workspace = window
         self.host._live_experiment_workspaces[mode] = window
@@ -2236,12 +2299,27 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 def _new_trial_session(mode):
     """Content categories are explicit user input; diameter keeps its defaults."""
     from fdm.live_experiment import ExperimentSession, default_materials
+    from fdm.live_experiment.trial_defaults import new_trial_defaults
+    error = None
+    try:
+        defaults = new_trial_defaults(mode)
+    except (OSError, ValueError) as exc:
+        defaults = {}
+        error = f"无法读取新试验默认参数，当前使用出厂值；原配置未覆盖：{exc}"
     session = ExperimentSession(workspace_options={"mode": mode},
-        evidence_options={"version": 1, "mode": "crop_jpeg"})
+        evidence_options={"version": 1, "mode": "crop_jpeg"}, **defaults)
+    session._defaults_error = error
     session.add_operator("操作者 A")
     if mode == "diameter":
-        session.set_materials(default_materials(), direction="warp")
-        session.set_materials(default_materials(), direction="weft")
+        from fdm.live_experiment.material_catalog import MaterialCatalog
+        try:
+            catalog = MaterialCatalog.load()
+            materials = tuple(item for base in default_materials() if (item := catalog.get(base.id)) is not None)
+        except (OSError, ValueError) as exc:
+            materials = default_materials()
+            session._defaults_error = f"类别库无法读取，本次使用内置类别副本，原库未覆盖：{exc}"
+        session.set_materials(materials, direction="warp")
+        session.set_materials(materials, direction="weft")
     session.establish_history_baseline()
     return session
 

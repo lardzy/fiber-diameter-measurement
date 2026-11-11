@@ -157,6 +157,7 @@ class AcquisitionWorkbench(QWidget):
         trial = self.pages.currentWidget()
         if trial is not self.capture_page:
             self.records.bind(trial)
+            QTimer.singleShot(0, trial, trial.ensure_live_excel)
         if first_entry and auto_start:
             self.request_start()
 
@@ -283,6 +284,8 @@ class AcquisitionWorkbench(QWidget):
             self.apply_sidebar_width()
             QTimer.singleShot(0, self, self.apply_sidebar_width)
             self._save_page()
+            if index and self._entered:
+                QTimer.singleShot(0, trial, trial.ensure_live_excel)
         finally:
             self._switching = False
 

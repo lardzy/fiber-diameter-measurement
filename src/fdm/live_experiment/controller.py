@@ -73,6 +73,7 @@ class MeasurementIntent:
     submission_barrier_previous_sequence: int | None = None
     measurement_number: int | None = None
     classification_generation: int = 0
+    range_reclassifications: list = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -638,6 +639,12 @@ class LiveExperimentController(QObject):
                 for intent, result in pairs:
                     if intent.id != target["id"]:
                         continue
+                    if intent.material_id != material_id:
+                        original_range = self.session.measurement_range(intent.material_id,
+                            operator_id=intent.operator_id, direction=intent.direction)
+                        if isinstance(result, dict):
+                            original_range["diameter_um"] = result["diameter_um"]
+                        intent.range_reclassifications.append({"from": original_range, "to_material_id": material_id})
                     intent.material_id = material_id
                     intent.range_confirmation = None
                     if request and request["kind"] == "manual" and request["intents"][0][0] is intent:
@@ -662,14 +669,19 @@ class LiveExperimentController(QObject):
                 or record.operator_id != self.session.active_operator_id
                 or record.direction != self.session.active_direction):
             return None
-        if ((material.lower_limit is not None and record.diameter_um < material.lower_limit)
-                or (material.upper_limit is not None and record.diameter_um > material.upper_limit)):
-            lower = "不限" if material.lower_limit is None else f"{material.lower_limit:g}"
-            upper = "不限" if material.upper_limit is None else f"{material.upper_limit:g}"
+        limits = self.session.measurement_range(material_id, operator_id=record.operator_id, direction=record.direction)
+        low, high = limits["lower_limit_um"], limits["upper_limit_um"]
+        if ((low is not None and record.diameter_um < low) or (high is not None and record.diameter_um > high)):
+            lower = "不限" if low is None else f"{low:g}"
+            upper = "不限" if high is None else f"{high:g}"
             self.statusChanged.emit(f"直径 {record.diameter_um:g} μm 超出 {material.name} 的范围 {lower}–{upper} μm；"
                                     "原记录类别已保留。如确认需要修订，请使用‘改径／改类’明确修改。")
             return None
-        self.session.edit_measurement(record.id, material_id=material_id)
+        if record.material_id == material_id:
+            return record.id
+        provenance = self.session.revised_measurement_provenance(record,
+            diameter_um=record.diameter_um, material_id=material_id, operation="post_classification")
+        self.session.edit_measurement(record.id, material_id=material_id, provenance=provenance)
         self.changed.emit()
         return record.id
 
@@ -903,7 +915,8 @@ class LiveExperimentController(QObject):
                 if self._out_of_range(intent, result):
                     self.pending_classification.append((intent, result))
                     keep_lease = True
-                    self.statusChanged.emit("测量超出类别范围，请在待确认项中保留、改类或放弃。")
+                    self.statusChanged.emit("测量超出本场允许范围，请保留或放弃。" if self.session.workspace_options["mode"] == "diameter"
+                                            else "测量超出类别范围，请在待确认项中保留、改类或放弃。")
                     self.changed.emit()
                 else:
                     self._accept(intent, result)
@@ -929,21 +942,42 @@ class LiveExperimentController(QObject):
             self.changed.emit()
 
     def _out_of_range(self, intent, result):
-        operator = self.session.operators[intent.operator_id]
-        material = next((m for m in operator.materials[intent.direction] if m.id == intent.material_id), None)
-        if material is None:
-            raise ValueError("请选择有效纤维类别。")
-        lower = material.lower_limit
-        upper = material.upper_limit
+        limits = self.session.measurement_range(intent.material_id, operator_id=intent.operator_id, direction=intent.direction)
+        lower = limits["lower_limit_um"]
+        upper = limits["upper_limit_um"]
         value = result["diameter_um"]
         return ((lower is not None and lower >= 0 and value < lower) or
                 (upper is not None and upper >= 0 and value > upper))
 
     def _range_signature(self, intent, result):
-        material = self.session.material(intent.material_id, operator_id=intent.operator_id, direction=intent.direction)
-        return {"material_id": material.id, "material_name": material.name,
-                "lower_limit_um": material.lower_limit, "upper_limit_um": material.upper_limit,
+        return {**self.session.measurement_range(intent.material_id, operator_id=intent.operator_id, direction=intent.direction),
                 "diameter_um": result["diameter_um"]}
+
+    def pending_suggestion(self, intent, result, *, catalog=None):
+        """Named advice only. Never silently reclassify or load preferences in a frame job."""
+        if self.session.workspace_options["mode"] == "diameter":
+            return None
+        material = self.session.material(intent.material_id, operator_id=intent.operator_id, direction=intent.direction)
+        status = material.range_status(result["diameter_um"])
+        target = material.lower_suggestion_id if status == "below" else material.upper_suggestion_id if status == "above" else None
+        if target is None:
+            return None
+        configured = self.session.operators[intent.operator_id].materials[intent.direction]
+        item = next((item for item in configured if item.id == target), None)
+        available = item is not None
+        if item is None and catalog is not None:
+            item = catalog.get(target)
+        return {"material_id": target, "material_name": item.name if item is not None else target,
+                "available": available, "range_status": status}
+
+    def materials_in_use(self):
+        """IDs whose removal would orphan an unfinished computation/confirmation."""
+        pairs = list(self._jobs) + list(self.pending_classification)
+        if self._confirmation is not None:
+            pairs.extend(self._confirmation["intents"])
+        for request in self._candidate_queue:
+            pairs.extend(request["intents"])
+        return {intent.material_id for intent, _ in pairs}
 
     def _validate_range_confirmation(self, intent, result):
         if intent.range_confirmation is not None:
@@ -1008,6 +1042,9 @@ class LiveExperimentController(QObject):
                 "measurement_operation_id": intent.id,
                 "measurement_number": intent.measurement_number,
                 "range_confirmation": deepcopy(intent.range_confirmation),
+                "measurement_range": self._range_signature(intent, result),
+                "range_decision": "keep_outside" if intent.range_confirmation is not None else "reclassified" if intent.range_reclassifications else "within",
+                "range_reclassifications": deepcopy(intent.range_reclassifications),
                 "latency_ms": (time.perf_counter() - intent.submitted_at) * 1000})
 
     def resolve_pending(self, *, material_id=None, discard=False, intent_id=None):
@@ -1021,7 +1058,12 @@ class LiveExperimentController(QObject):
         if intent_id is not None and intent.id != intent_id:
             raise ValueError("待确认项已变化，本次操作未应用；请核对当前提示后重试。")
         if material_id and material_id != intent.material_id:
+            if self.session.workspace_options["mode"] == "diameter":
+                raise ValueError("直径试验使用整场范围，请选择保留或放弃。")
+            self.session.material(material_id, operator_id=intent.operator_id, direction=intent.direction)
+            intent.range_reclassifications.append({"from": self._range_signature(intent, result), "to_material_id": material_id})
             intent.material_id = material_id
+            intent.range_confirmation = None
             if self._out_of_range(intent, result):
                 self.statusChanged.emit("仍超出新类别范围；如确认无误，请再次选择保留。")
                 self.changed.emit()
@@ -1099,9 +1141,18 @@ class LiveExperimentController(QObject):
         # Remove the pending request before synchronous UI callbacks run. Its
         # lease remains held until the complete domain transaction has finished.
         self._confirmation = None
+        keep_pending = False
         try:
             if request["kind"] == "manual":
-                self._accept(*request["intents"][0])
+                intent, result = request["intents"][0]
+                if intent.range_confirmation != self._range_signature(intent, result):
+                    intent.range_confirmation = None
+                    if self._out_of_range(intent, result):
+                        self.pending_classification.appendleft((intent, result))
+                        self.statusChanged.emit("允许范围已变化，请重新核对本次越限结果。")
+                        keep_pending = True
+                if not keep_pending:
+                    self._accept(intent, result)
             else:
                 self._commit_candidates(request["context"], request["intents"], request["candidates"])
         except Exception as exc:
@@ -1109,10 +1160,10 @@ class LiveExperimentController(QObject):
                 self._set_classification_state(request["intents"][0][0], "failed")
             self._reject(str(exc), intent=request["intents"][0][0], severity="error")
         finally:
-            if request["kind"] == "manual":
+            if request["kind"] == "manual" and not keep_pending:
                 for intent, _ in request["intents"]:
                     self.budget.release(intent.lease)
-            else:
+            elif request["kind"] != "manual":
                 self._release_candidate_request(request)
             self.changed.emit()
 
