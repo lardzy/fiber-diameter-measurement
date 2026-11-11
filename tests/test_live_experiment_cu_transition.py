@@ -83,8 +83,8 @@ def test_count_key_mode_is_visible_and_minus_never_removes_measurements(workspac
     assert workspace.material_rows["wool"]["extra_count"].text() == "0"
     QTest.keyClick(workspace.canvas, Qt.Key.Key_Minus)
     assert workspace.session.measurements[record.id].diameter_um == 20
-    workspace.advanced_toggle.setChecked(True)
-    workspace.settings_dialog.activateWindow()
+    workspace.sample_details_toggle.setChecked(True)
+    workspace.activateWindow()
     QApplication.processEvents()
     workspace.sample.setFocus()
     workspace.sample.clear()

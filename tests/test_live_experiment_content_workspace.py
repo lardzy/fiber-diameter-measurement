@@ -178,8 +178,8 @@ def test_numeric_count_works_from_combo_but_not_records_text_or_diameter(workspa
     workspace.history_table.setFocus()
     QTest.keyClick(workspace.history_table, Qt.Key.Key_1)
     assert len(workspace.session.count_adjustments) == 1
-    workspace.advanced_toggle.setChecked(True)
-    workspace.settings_dialog.activateWindow()
+    workspace.sample_details_toggle.setChecked(True)
+    workspace.activateWindow()
     QApplication.processEvents()
     workspace.sample.setFocus()
     QTest.keyClicks(workspace.sample, "2")
@@ -192,15 +192,20 @@ def test_numeric_count_works_from_combo_but_not_records_text_or_diameter(workspa
     assert workspace.count_add_button.isHidden() and workspace.weights_button.isHidden()
 
 
-def test_direction_and_undo_settings_restore_visible_controls(workspace):
+def test_global_gesture_and_business_undo_restore_visible_controls(workspace):
     workspace.session.active_direction = "weft"
     workspace._refresh_operators()
     assert workspace.direction.currentData() == "weft"
+    record = workspace.session.add_measurement(20, "wool", direction="weft")
+    snapshot = workspace.session.to_dict()
     workspace.gesture.setCurrentIndex(1)
-    assert workspace.session.workspace_options["gesture"] == "drag"
+    assert workspace._trial_preferences.preferences.gesture == "drag"
+    assert workspace.session.to_dict() == snapshot
     workspace._history_action("undo")
-    assert workspace.gesture.currentIndex() == 0
+    assert record.id not in workspace.session.measurements
+    assert workspace.gesture.currentIndex() == 1
     workspace._history_action("redo")
+    assert record.id in workspace.session.measurements
     assert workspace.gesture.currentIndex() == 1
     assert workspace.direction.currentData() == "weft"
 
@@ -375,8 +380,8 @@ def test_unavailable_source_releases_canvas_reference(workspace):
 
 def test_text_undo_does_not_undo_measurement(workspace):
     record = workspace.session.add_measurement(20, "wool")
-    workspace.advanced_toggle.setChecked(True)
-    workspace.settings_dialog.activateWindow()
+    workspace.sample_details_toggle.setChecked(True)
+    workspace.activateWindow()
     QApplication.processEvents()
     workspace.sample.setFocus()
     QTest.keyClicks(workspace.sample, "abc")
@@ -984,7 +989,7 @@ def test_after_selection_does_not_cross_field_operator_or_direction(workspace):
 
 
 def test_classification_and_sample_number_roundtrip_and_undo(workspace):
-    workspace.advanced_toggle.setChecked(True)
+    workspace.sample_details_toggle.setChecked(True)
     workspace.sample_number.setText("CU-2026-015")
     workspace.sample_number.editingFinished.emit()
     workspace.classification_mode.setCurrentIndex(1)
@@ -1191,7 +1196,8 @@ def test_rebuild_stale_result_and_second_setting_do_not_change_committed_control
         old_images = workspace.session.save_images
         workspace.keep_images.setChecked(not old_images)
         assert workspace.session.save_images == old_images
-        assert workspace.keep_images.isChecked() == old_images
+        assert workspace.keep_images.isChecked() == (not old_images)
+        assert workspace._trial_preferences.preferences.evidence_enabled == (not old_images)
         with pytest.raises(ValueError, match="重算尚未结束"):
             workspace._history_action("undo")
         workspace.session.add_measurement(22, "wool")
@@ -1296,7 +1302,7 @@ def test_pending_rebuild_cannot_open_stale_second_settings_dialog(workspace, mon
 
 
 @pytest.mark.parametrize("control", ["gesture", "classification_mode", "mode"])
-def test_busy_configuration_rejects_mode_switch_without_cancelling_draft(workspace, monkeypatch, control):
+def test_busy_trial_configuration_is_guarded_but_global_gesture_is_independent(workspace, monkeypatch, control):
     from fdm.live_experiment.models import AggregateRebuildRequest
     started, release = threading.Event(), threading.Event()
     build = AggregateRebuildRequest.build
@@ -1317,10 +1323,15 @@ def test_busy_configuration_rejects_mode_switch_without_cancelling_draft(workspa
         assert draft is not None
         before = dict(workspace.session.workspace_options)
         getattr(workspace, control).setCurrentIndex(1)
-        assert workspace.controller.draft is draft
-        assert workspace.controller._classification_target is target
         assert workspace.session.workspace_options == before
-        assert getattr(workspace, control).currentIndex() == 0
+        if control == "gesture":
+            assert workspace.controller.draft is None
+            assert workspace._trial_preferences.preferences.gesture == "drag"
+            assert workspace.gesture.currentIndex() == 1
+        else:
+            assert workspace.controller.draft is draft
+            assert workspace.controller._classification_target is target
+            assert getattr(workspace, control).currentIndex() == 0
         assert not workspace.after_select.isChecked()
         assert workspace.direction.isVisible()
     finally:
@@ -1335,6 +1346,6 @@ def test_accepted_gesture_switch_still_cancels_previous_draft(workspace):
     workspace.controller.start((30, 30))
     assert workspace.controller.draft is not None
     workspace.gesture.setCurrentIndex(1)
-    assert workspace.session.workspace_options["gesture"] == "drag"
+    assert workspace._trial_preferences.preferences.gesture == "drag"
     assert workspace.gesture.currentIndex() == 1
     assert workspace.controller.draft is None

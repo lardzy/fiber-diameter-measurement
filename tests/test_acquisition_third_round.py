@@ -92,7 +92,7 @@ def test_switch_new_path_and_cancel_category_selection_leave_empty_draft(harness
         dialog.reject()
     QTimer.singleShot(0, cancel_categories)
     QTest.mouseClick(page.choose_categories_button, Qt.MouseButton.LeftButton)
-    assert dialogs and "类别" in dialogs[0]
+    assert dialogs == ["选择本次纤维"]
     assert page.session.to_dict() == before
     assert not harness.window.project.live_experiments
 
@@ -365,4 +365,7 @@ def test_fixed_export_flushes_metadata_and_takes_full_snapshot(harness, tmp_path
     page.report_panel.future.result(timeout=10)
     page.report_panel.poll()
     assert page.export_button.isEnabled() and page.open_report_button.isEnabled()
-    assert "报告已生成" in page.report_status_label.toolTip()
+    # The compact status now belongs to live Excel synchronization. The
+    # independent export keeps its own completion and destination details.
+    assert page.report_panel.last_report["destination"] == str(destination)
+    assert "报告已生成" in page.statusBar().currentMessage()

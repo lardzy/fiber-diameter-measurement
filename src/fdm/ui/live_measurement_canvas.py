@@ -14,6 +14,10 @@ from fdm.live_experiment.frames import PresentedFrameToken
 from fdm.live_experiment.presentation import category_color
 from fdm.ui.live_measurement_annotations import Annotation, layout_annotations, segment_distance
 from fdm.ui.acquisition_alignment import aligned_offset, validate_alignment
+from fdm.trial_preferences import TrialPreferences
+from fdm.ui.trial_label_style import (
+    draw_trial_label, trial_label_font, trial_label_size, trial_label_text,
+)
 
 
 class LiveMeasurementCanvas(QWidget):
@@ -61,6 +65,7 @@ class LiveMeasurementCanvas(QWidget):
         self._label_placements = {}
         self._record_ordinals = {}
         self._next_record_ordinal = 1
+        self.trial_preferences = TrialPreferences()
         self.setMinimumSize(400, 300)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -72,6 +77,17 @@ class LiveMeasurementCanvas(QWidget):
         controller.candidateStateChanged.connect(self._candidate_state_changed)
         if hasattr(controller, "retainedSelectionsChanged"):
             controller.retainedSelectionsChanged.connect(self.update)
+
+    def set_trial_preferences(self, preferences):
+        """Apply presentation without changing frame identity or trial data."""
+        preferences = preferences.normalized_copy()
+        if preferences == self.trial_preferences:
+            return
+        self.trial_preferences = preferences
+        self._annotation_cache_key = None
+        self._annotation_layout_cache.clear()
+        self._label_placements = {}
+        self.update()
 
     def _controller_changed(self):
         revision = self.controller.session.revision
@@ -325,35 +341,53 @@ class LiveMeasurementCanvas(QWidget):
     def fit_view(self):
         self.set_display_mode("fit")
 
+    def _record_label(self, record, number=None):
+        session = self.controller.session
+        if number is None:
+            number = (record.provenance or {}).get("measurement_number")
+        if number is None:
+            if record.id not in self._record_ordinals:
+                self._record_ordinals[record.id] = self._next_record_ordinal
+                self._next_record_ordinal += 1
+            number = self._record_ordinals[record.id]
+        elif isinstance(number, int):
+            self._next_record_ordinal = max(self._next_record_ordinal, number + 1)
+        try:
+            name = session.material(record.material_id, operator_id=record.operator_id,
+                                    direction=record.direction).name
+        except ValueError:
+            name = "未知类别"
+        label = trial_label_text(self.trial_preferences,
+                                 mode=session.workspace_options.get("mode", "content"),
+                                 number=number, material_name=name, diameter_um=record.diameter_um)
+        return label, f"测量 #{number} · {name} · {record.diameter_um:.2f} μm"
+
     def _overlay_items(self):
         """Snapshot overlay geometry in screen space; no source pixels are edited."""
         scale, offset = self._transform()
         def point(value):
             return (value[0] * scale + offset[0], value[1] * scale + offset[1])
         items = []
+        session = self.controller.session
         retention = getattr(self.controller, "selection_retention", None)
         if retention is not None:
             for mark in retention.visible_marks():
+                record = session.measurements.get(mark["record_id"])
+                if record is None:
+                    continue
+                label, tooltip = self._record_label(record, mark.get("number"))
                 items.append(dict(key="retained:" + mark["record_id"], start=point(mark["start"]),
-                                  end=point(mark["end"]), label=f"#{mark['number']}", kind="retained",
-                                  color=mark["color"], priority=-100))
-        session = self.controller.session
+                                  end=point(mark["end"]), label=label, tooltip=tooltip, kind="retained",
+                                  color=category_color(session, record.operator_id, record.direction,
+                                                       record.material_id), priority=-100))
         for record_id in self.controller.current_records:
             record = session.measurements.get(record_id)
             endpoints = getattr(record, "endpoints", None) if record else None
             if not endpoints or len(endpoints) != 2:
                 continue
-            provenance = record.provenance or {}
-            number = provenance.get("measurement_number")
-            if number is None:
-                if record_id not in self._record_ordinals:
-                    self._record_ordinals[record_id] = self._next_record_ordinal
-                    self._next_record_ordinal += 1
-                number = self._record_ordinals[record_id]
-            elif isinstance(number, int):
-                self._next_record_ordinal = max(self._next_record_ordinal, number + 1)
+            label, tooltip = self._record_label(record)
             items.append(dict(key="record:" + record_id, start=point(endpoints[0]),
-                              end=point(endpoints[1]), label=f"#{number}", kind="record",
+                              end=point(endpoints[1]), label=label, tooltip=tooltip, kind="record",
                               color=category_color(session, record.operator_id, record.direction, record.material_id),
                               priority=180 if record_id == self._hovered_record_id else
                                   120 if record_id == self.controller.current_records[-1] else 0))
@@ -389,11 +423,14 @@ class LiveMeasurementCanvas(QWidget):
         return items, protected
 
     def _arrange_labels(self, items, protected):
-        metrics = self.fontMetrics()
-        annotations = [Annotation(item["key"], item["start"], item["end"],
-                                  metrics.horizontalAdvance(item["label"]) + 10.,
-                                  metrics.height() + 4., item["priority"]) for item in items]
         viewport = self._visible_viewport()
+        font = trial_label_font(self.trial_preferences, self.font())
+        max_width = min(240., max(1., viewport.width() - 8.))
+        annotations = []
+        for item in items:
+            size = trial_label_size(item["label"], font, max_width)
+            annotations.append(Annotation(item["key"], item["start"], item["end"],
+                                          size.width(), size.height(), item["priority"]))
         key = (tuple((a.key, a.start, a.end, a.width, a.height, a.priority) for a in annotations),
                tuple(protected), (viewport.x(), viewport.y(), viewport.width(), viewport.height()))
         if key != self._annotation_cache_key:
@@ -502,19 +539,16 @@ class LiveMeasurementCanvas(QWidget):
             painter.setPen(QPen(QColor(color), 2.))
             painter.drawLine(QPointF(*start), QPointF(*end))
             painter.drawEllipse(QPointF(*start), 3., 3.)
+        label_font = trial_label_font(self.trial_preferences, self.font())
+        label_max_width = min(240., max(1., self._visible_viewport().width() - 8.))
         for item in items:
             placement = placements.get(item["key"])
             if placement is None:
                 continue
-            rect = placement.rect
-            painter.save()
-            if item["kind"] == "retained":
-                painter.setOpacity(.7)
-            painter.fillRect(rect, QColor(255, 255, 255, 232))
-            painter.fillRect(QRectF(rect.left(), rect.top(), 3., rect.height()), QColor(item["color"]))
-            painter.setPen(QColor("#111820"))
-            painter.drawText(rect.adjusted(5., 0., -2., 0.), Qt.AlignmentFlag.AlignVCenter, item["label"])
-            painter.restore()
+            draw_trial_label(painter, placement.rect, item["label"], item["color"], self.trial_preferences,
+                             opacity=.7 if item["kind"] == "retained" else 1., base_font=self.font(),
+                             semantic_color=item["kind"] in {"candidate", "pending"},
+                             max_width=label_max_width, font=label_font)
         painter.end()
         # This snapshot is updated only after a paint, never from asynchronous
         # candidate notifications. Stale visible geometry blocks an accidental
@@ -809,13 +843,15 @@ class LiveMeasurementCanvas(QWidget):
         point = (event.position().x(), event.position().y())
         record_hits = []
         for item in self._overlay_items()[0]:
-            if item["kind"] != "record":
+            if item["kind"] not in {"record", "retained"}:
                 continue
             distance = segment_distance(point, item["start"], item["end"])
             placement = self._label_placements.get(item["key"])
             if distance <= 8. or placement is not None and placement.rect.contains(event.position()):
-                record_hits.append((distance, item["key"].removeprefix("record:")))
-        hovered_record = min(record_hits)[1] if record_hits else None
+                record_hits.append((distance, item["key"].split(":", 1)[1], item["tooltip"]))
+        hovered = min(record_hits) if record_hits else None
+        hovered_record = hovered[1] if hovered is not None else None
+        self.setToolTip(hovered[2] if hovered is not None else "")
         if hovered_record != self._hovered_record_id:
             self._hovered_record_id = hovered_record
             self.update()
@@ -825,6 +861,7 @@ class LiveMeasurementCanvas(QWidget):
     def leaveEvent(self, event):
         self._set_hovered_candidate(None)
         self._hovered_record_id = None
+        self.setToolTip("")
         self.update()
         super().leaveEvent(event)
 

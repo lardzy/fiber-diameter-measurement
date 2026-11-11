@@ -1,0 +1,29 @@
+{
+  "scripts/validation/benchmark_trial_cleanup.py": "261f7cfab093805c64309539491ab39575732be357dbc402f5998780ead447a2",
+  "scripts/validation/collect_trial_settings.py": "a007d8bf4eb86fb54f845e4be0a790246e8797eec63e21889d7abf962d7a4053",
+  "src/fdm/live_experiment/controller.py": "09b0ef36cf23b490d8dd6378ef6741ffc2d8820124f58bbd6f7d9133887b6e43",
+  "src/fdm/live_experiment/evidence.py": "5ae386f41873413022d8697e97ec9f60676c6c816614392d80a7a6a2645db636",
+  "src/fdm/live_experiment/evidence_resources.py": "a3838c30a5a4f8d706b85ebd27efa6ae6c8d92194907ca9be10839fc9e565d6b",
+  "src/fdm/live_experiment/project_assets.py": "88a05e78efa6499697e36b040ea6e1a8cf3f46462ff813e3fe4a920577c86da2",
+  "src/fdm/settings.py": "60cffa7dfe152fc485a250c9d81f5895eea9eb135c9d800ffa685ab35f0789e9",
+  "src/fdm/trial_preferences.py": "7e8d7b1c75c341a45e4132b4e33c5e7cb8fa5789ad5fb8002de807577fb8c24e",
+  "src/fdm/ui/acquisition_workbench.py": "13528258f8a50597fe771e5fc214edfdde5b473d09ef4859fcff599fd689214b",
+  "src/fdm/ui/dialogs.py": "277978d7d5762c240b2db8013d2a433615e8f278823cce3b9e6a5f8a665cf904",
+  "src/fdm/ui/live_experiment_view.py": "10a36fcfc0f5afc2ce466fd750ffd122f5f76e0e85a9d8b31ec004271ed5db9f",
+  "src/fdm/ui/live_experiment_workspace.py": "f2c15e66068d7c0160ed79167b9a2c0c60464959316a73522d98f9932c06ec98",
+  "src/fdm/ui/live_measurement_canvas.py": "75bd71d1048de6f298769905a80bce9c5201495b912f928566923fe0b755ab64",
+  "src/fdm/ui/measurement_evidence_gallery.py": "e8f7f0be1346b43c0e0822fb2dc2c7ffcb046cf1780f9e63f4af865da153c59a",
+  "src/fdm/ui/measurement_evidence_view.py": "2165ffe1903ea5db73083f5c9d92069b983be57f650d6485bd9e29d67daa9dd7",
+  "src/fdm/ui/optical_settings_dialog.py": "23164865c0428c54119d67132ad46f48e9142e27e791a321ab4f20dd6b14a898",
+  "src/fdm/ui/project_session_controller.py": "c19cd24984f6371aa6e4e9c6cc2d97ed564a889574cc7b3ee29d92273cc1f5a8",
+  "src/fdm/ui/trial_assistance.py": "7ec19b37f6307850436304bdb44a7245aa582f42cf7000fea73efcfd1cf836ab",
+  "src/fdm/ui/trial_evidence_lifecycle.py": "06aae0ea3cdd640812ebbcfed4cbec5ec6844294f53b1e32781bdac991fa61fb",
+  "src/fdm/ui/trial_label_style.py": "eaa104f92834bee5caed28a5ec71fde2c6143e8a298ba17071689c666103ee7d",
+  "src/fdm/ui/trial_preferences_binding.py": "04de26ae5c8ff54139bb3ae75a8015d0eceddd64bf309df221b2c5fcc6296cb5",
+  "src/fdm/ui/trial_settings_page.py": "43da0670cc1d57715e34466e6219f975446ed3a1d9133419c38291961ab7cc30",
+  "src/fdm/ui/main_window.py": {
+    "workspace_sha256": "7fb7868c2651be2e803bb9aacb7e900996daf353ff53a3190ab6dec94d00bef2",
+    "windows_task_only_sha256": "3c872eab7df940c2c2be21f2d6dd5c765f6d47a9bbc842a9c1d9ac18ea6dbe6c",
+    "note": "Windows copy removes pre-existing unrelated DSX hunks; original workspace preserves them."
+  }
+}

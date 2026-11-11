@@ -168,7 +168,8 @@ def test_expanded_metadata_stays_visible_and_review_report_tabs_do_not_shrink_im
         image_rect = view.image_scroll.rect().translated(view.image_scroll.mapTo(view, QPoint()))
         side_rect = view.trial_sidebar.rect().translated(view.trial_sidebar.mapTo(view, QPoint()))
         assert not image_rect.intersects(side_rect)
-    assert not view.settings_dialog.isAncestorOf(view.sample)
+    assert view.trial_sidebar.isAncestorOf(view.sample)
+    assert not hasattr(view, "settings_dialog")
 
 
 def test_category_rebuild_never_shows_a_parentless_label(trial_host):

@@ -18,6 +18,7 @@ from fdm.models import (
 )
 from fdm.watermark import WatermarkSpec
 from fdm.scale_overlay import ScaleOverlaySpec
+from fdm.trial_preferences import TrialPreferences
 
 
 DEFAULT_MEASUREMENT_LABEL_COLOR = "#FF0000"
@@ -722,6 +723,7 @@ class WorkspaceLayoutSettings:
 @dataclass(slots=True)
 class AppSettings:
     theme_mode: str = AppThemeMode.DARK
+    trial_preferences: TrialPreferences = field(default_factory=lambda: TrialPreferences().normalized_copy())
     measurement_text_size_space: str = OverlayTextSizeSpace.IMAGE_PX
     length_measurement_label_style: MeasurementLabelStyleSettings = field(
         default=_MEASUREMENT_LABEL_STYLE_UNSET  # type: ignore[arg-type]
@@ -944,6 +946,7 @@ class AppSettings:
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
+        normalized.trial_preferences = TrialPreferences.from_dict(self.trial_preferences)
         normalized.workspace_layout = self.workspace_layout.normalized_copy()
         normalized.theme_mode = normalize_theme_mode(self.theme_mode)
         normalized.measurement_text_size_space = OverlayTextSizeSpace.normalize(
@@ -1578,6 +1581,7 @@ class AppSettings:
         return {
             "version": 3,
             "theme_mode": normalized.theme_mode,
+            "trial_preferences": normalized.trial_preferences.to_dict(),
             "measurement_text_size_space": normalized.measurement_text_size_space,
             "length_measurement_label_style": normalized.length_measurement_label_style.to_dict(),
             "area_measurement_label_style": normalized.area_measurement_label_style.to_dict(),
@@ -1702,6 +1706,7 @@ class AppSettings:
     @classmethod
     def from_dict(cls, payload: dict[str, object]) -> "AppSettings":
         settings = cls()
+        settings.trial_preferences = TrialPreferences.from_dict(payload.get("trial_preferences"))
         try:
             settings.last_scale_overlay = ScaleOverlaySpec.from_dict(payload.get("last_scale_overlay"))
         except (TypeError, ValueError, OverflowError) as exc:
@@ -2277,7 +2282,7 @@ class AppSettingsIO:
     def load(path: str | Path | None = None) -> AppSettings:
         target_path = Path(path) if path is not None else settings_file_path()
         if not target_path.exists():
-            return AppSettings()
+            return AppSettingsIO._migrate_trial_preferences(AppSettings(), {}, target_path)
         try:
             # Legacy settings may contain non-standard numeric constants. Load
             # them only so individual invalid presets can be quarantined by
@@ -2287,7 +2292,19 @@ class AppSettingsIO:
             return AppSettings()
         if not isinstance(payload, dict):
             return AppSettings()
-        return AppSettings.from_dict(payload)
+        return AppSettingsIO._migrate_trial_preferences(AppSettings.from_dict(payload), payload, target_path)
+
+    @staticmethod
+    def _migrate_trial_preferences(settings: AppSettings, payload: dict, target_path: Path) -> AppSettings:
+        # Migration is read-only until the next explicit settings save. Keep the
+        # layout file intact; only its formerly shared assistance block is read.
+        if "trial_preferences" not in payload:
+            try:
+                previous = json.loads((target_path.parent / "trial-workbench.json").read_text(encoding="utf-8"))
+                settings.trial_preferences = TrialPreferences.from_legacy_assistance(previous.get("assistance"))
+            except (OSError, ValueError, TypeError, AttributeError):
+                pass
+        return settings
 
     @staticmethod
     def save(settings: AppSettings, path: str | Path | None = None) -> Path:

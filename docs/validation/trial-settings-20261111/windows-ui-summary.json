@@ -1,0 +1,826 @@
+[
+  {
+    "created_utc": "2026-11-11T08:36:23.750471+00:00",
+    "version": "0.4.14",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "qt_platform": "windows",
+    "requested_dpr": 1.0,
+    "native_dpr": 2.0,
+    "actual_dpr": 1.0,
+    "window_dpr": 1.0,
+    "theme": "dark",
+    "source_only": true,
+    "hardware_validated": false,
+    "physical_camera_started": false,
+    "desktop_excel_started": false,
+    "checks": {
+      "no_qt_slot_errors": true,
+      "no_unexpected_modal_messages": true,
+      "requested_window_dpr": true,
+      "requested_raster_dpr": true,
+      "all_captured_windows_visible": true,
+      "settings_footer_visible": true,
+      "settings_preview_reachable": true,
+      "cleanup_button_reachable": true,
+      "content_native_hover": true,
+      "diameter_native_hover": true,
+      "image_storage_default_off": true
+    },
+    "passed": true,
+    "sources": {
+      "scripts/validation/collect_trial_settings.py": "a007d8bf4eb86fb54f845e4be0a790246e8797eec63e21889d7abf962d7a4053",
+      "src/fdm/settings.py": "60cffa7dfe152fc485a250c9d81f5895eea9eb135c9d800ffa685ab35f0789e9",
+      "src/fdm/trial_preferences.py": "7e8d7b1c75c341a45e4132b4e33c5e7cb8fa5789ad5fb8002de807577fb8c24e",
+      "src/fdm/ui/trial_settings_page.py": "43da0670cc1d57715e34466e6219f975446ed3a1d9133419c38291961ab7cc30",
+      "src/fdm/ui/trial_label_style.py": "eaa104f92834bee5caed28a5ec71fde2c6143e8a298ba17071689c666103ee7d",
+      "src/fdm/ui/live_measurement_canvas.py": "75bd71d1048de6f298769905a80bce9c5201495b912f928566923fe0b755ab64",
+      "src/fdm/ui/live_experiment_workspace.py": "f2c15e66068d7c0160ed79167b9a2c0c60464959316a73522d98f9932c06ec98",
+      "src/fdm/ui/trial_assistance.py": "7ec19b37f6307850436304bdb44a7245aa582f42cf7000fea73efcfd1cf836ab"
+    },
+    "native_hover": {
+      "content": {
+        "delivery": "native_windows",
+        "active_before": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "passed": true,
+        "expected_record_id": "ff5b599b8ddd4461948f47dc244159a8",
+        "expected_number": 1,
+        "target_label": "绵羊毛",
+        "target_position": [
+          250,
+          129
+        ],
+        "active_after": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "move_events": 1,
+        "spontaneous_move_events": 1,
+        "last_event_position": [
+          250.0,
+          129.0
+        ],
+        "cursor_position": [
+          250,
+          129
+        ],
+        "hovered_record_id": "ff5b599b8ddd4461948f47dc244159a8",
+        "tooltip": "测量 #1 · 绵羊毛 · 18.25 μm",
+        "elapsed_ms": 90.42391700131702,
+        "event_delivery_verified": true
+      },
+      "diameter": {
+        "delivery": "native_windows",
+        "active_before": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "passed": true,
+        "expected_record_id": "42d3304e9f4d4b31a95741777fbe64f1",
+        "expected_number": 1,
+        "target_label": "18.25 μm",
+        "target_position": [
+          247,
+          142
+        ],
+        "active_after": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "move_events": 1,
+        "spontaneous_move_events": 1,
+        "last_event_position": [
+          247.0,
+          142.0
+        ],
+        "cursor_position": [
+          247,
+          142
+        ],
+        "hovered_record_id": "42d3304e9f4d4b31a95741777fbe64f1",
+        "tooltip": "测量 #1 · 绵羊毛 · 18.25 μm",
+        "elapsed_ms": 99.57037500134902,
+        "event_delivery_verified": true
+      }
+    },
+    "screenshots": [
+      {
+        "file": "content-default.png",
+        "sha256": "ffcab1dd2067a284356b63b6c571585b9ab323b8eae4d8898c440707d8902017",
+        "logical_size": [
+          1366,
+          768
+        ],
+        "raster_size": [
+          1366,
+          768
+        ],
+        "dpr": 1.0,
+        "widget_dpr": 1.0,
+        "window_dpr": 1.0,
+        "fully_visible": true
+      },
+      {
+        "file": "diameter-default.png",
+        "sha256": "35869499930e3cda0524a05adff1c8280917a64dc65e290d4bcf40fcabdb8257",
+        "logical_size": [
+          1366,
+          768
+        ],
+        "raster_size": [
+          1366,
+          768
+        ],
+        "dpr": 1.0,
+        "widget_dpr": 1.0,
+        "window_dpr": 1.0,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-display.png",
+        "sha256": "121d2cec49e453dc5712160dee89bdbcbb25ec54902ae47569fa0086c947c17d",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          900,
+          640
+        ],
+        "dpr": 1.0,
+        "widget_dpr": 1.0,
+        "window_dpr": 1.0,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-evidence.png",
+        "sha256": "e3c0e4c540d5c1cfd67bb6351768819826eb0da351f7c61e168d79ff67bc08e6",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          900,
+          640
+        ],
+        "dpr": 1.0,
+        "widget_dpr": 1.0,
+        "window_dpr": 1.0,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-analysis.png",
+        "sha256": "fddc6c343d36895d5139378a9c0afd7b17a7ea8f10eec123bb61ae9ca2e8eaf6",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          900,
+          640
+        ],
+        "dpr": 1.0,
+        "widget_dpr": 1.0,
+        "window_dpr": 1.0,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-display-preview.png",
+        "sha256": "e96928eabd48393b703484b83927d090d445dd89fd25df18d97957917b665c20",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          900,
+          640
+        ],
+        "dpr": 1.0,
+        "widget_dpr": 1.0,
+        "window_dpr": 1.0,
+        "fully_visible": true
+      }
+    ],
+    "report_sha256": "9b8fb32f7b57f2753349fb8b465a8be00f069642a0d71abf91da06660c5a9e7a"
+  },
+  {
+    "created_utc": "2026-11-11T08:36:36.561147+00:00",
+    "version": "0.4.14",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "qt_platform": "windows",
+    "requested_dpr": 1.5,
+    "native_dpr": 2.0,
+    "actual_dpr": 1.5,
+    "window_dpr": 1.5,
+    "theme": "dark",
+    "source_only": true,
+    "hardware_validated": false,
+    "physical_camera_started": false,
+    "desktop_excel_started": false,
+    "checks": {
+      "no_qt_slot_errors": true,
+      "no_unexpected_modal_messages": true,
+      "requested_window_dpr": true,
+      "requested_raster_dpr": true,
+      "all_captured_windows_visible": true,
+      "settings_footer_visible": true,
+      "settings_preview_reachable": true,
+      "cleanup_button_reachable": true,
+      "content_native_hover": true,
+      "diameter_native_hover": true,
+      "image_storage_default_off": true
+    },
+    "passed": true,
+    "sources": {
+      "scripts/validation/collect_trial_settings.py": "a007d8bf4eb86fb54f845e4be0a790246e8797eec63e21889d7abf962d7a4053",
+      "src/fdm/settings.py": "60cffa7dfe152fc485a250c9d81f5895eea9eb135c9d800ffa685ab35f0789e9",
+      "src/fdm/trial_preferences.py": "7e8d7b1c75c341a45e4132b4e33c5e7cb8fa5789ad5fb8002de807577fb8c24e",
+      "src/fdm/ui/trial_settings_page.py": "43da0670cc1d57715e34466e6219f975446ed3a1d9133419c38291961ab7cc30",
+      "src/fdm/ui/trial_label_style.py": "eaa104f92834bee5caed28a5ec71fde2c6143e8a298ba17071689c666103ee7d",
+      "src/fdm/ui/live_measurement_canvas.py": "75bd71d1048de6f298769905a80bce9c5201495b912f928566923fe0b755ab64",
+      "src/fdm/ui/live_experiment_workspace.py": "f2c15e66068d7c0160ed79167b9a2c0c60464959316a73522d98f9932c06ec98",
+      "src/fdm/ui/trial_assistance.py": "7ec19b37f6307850436304bdb44a7245aa582f42cf7000fea73efcfd1cf836ab"
+    },
+    "native_hover": {
+      "content": {
+        "delivery": "native_windows",
+        "active_before": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "passed": true,
+        "expected_record_id": "35275414a4af4457b7a0b90ec507ca86",
+        "expected_number": 1,
+        "target_label": "绵羊毛",
+        "target_position": [
+          321,
+          170
+        ],
+        "active_after": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "move_events": 1,
+        "spontaneous_move_events": 1,
+        "last_event_position": [
+          320.66666666666663,
+          170.0
+        ],
+        "cursor_position": [
+          321,
+          170
+        ],
+        "hovered_record_id": "35275414a4af4457b7a0b90ec507ca86",
+        "tooltip": "测量 #1 · 绵羊毛 · 18.25 μm",
+        "elapsed_ms": 87.6614589978999,
+        "event_delivery_verified": true
+      },
+      "diameter": {
+        "delivery": "native_windows",
+        "active_before": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "passed": true,
+        "expected_record_id": "2bc96a639a9045b9a67b0bd0b63ae105",
+        "expected_number": 1,
+        "target_label": "18.25 μm",
+        "target_position": [
+          322,
+          167
+        ],
+        "active_after": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "move_events": 1,
+        "spontaneous_move_events": 1,
+        "last_event_position": [
+          322.0,
+          167.33333333333331
+        ],
+        "cursor_position": [
+          322,
+          167
+        ],
+        "hovered_record_id": "2bc96a639a9045b9a67b0bd0b63ae105",
+        "tooltip": "测量 #1 · 绵羊毛 · 18.25 μm",
+        "elapsed_ms": 96.3904169984744,
+        "event_delivery_verified": true
+      }
+    },
+    "screenshots": [
+      {
+        "file": "content-default.png",
+        "sha256": "668805db0ad04190e0518671c9647c5847701ae484de5db26b9ebbf864495ceb",
+        "logical_size": [
+          1366,
+          768
+        ],
+        "raster_size": [
+          2049,
+          1152
+        ],
+        "dpr": 1.5,
+        "widget_dpr": 1.5,
+        "window_dpr": 1.5,
+        "fully_visible": true
+      },
+      {
+        "file": "diameter-default.png",
+        "sha256": "bb30ab53d7d9cc4bc6e3727521d541698af47fa7270b4f2b2a0f779d8a8d56ef",
+        "logical_size": [
+          1366,
+          768
+        ],
+        "raster_size": [
+          2049,
+          1152
+        ],
+        "dpr": 1.5,
+        "widget_dpr": 1.5,
+        "window_dpr": 1.5,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-display.png",
+        "sha256": "50c3f014a2eb0dee02e9e4cba6ad5741feeeb1408ca06ac6305b8481429fbeff",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1350,
+          960
+        ],
+        "dpr": 1.5,
+        "widget_dpr": 1.5,
+        "window_dpr": 1.5,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-evidence.png",
+        "sha256": "2a9ebf7ecda59a0467faf0be4098f795ad987d5d3f7d8683c9627ac59667c237",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1350,
+          960
+        ],
+        "dpr": 1.5,
+        "widget_dpr": 1.5,
+        "window_dpr": 1.5,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-analysis.png",
+        "sha256": "893b47c0e355fb36f00c69da2570dd042a50c3c2f76dd1a4d8a974250fb1d14e",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1350,
+          960
+        ],
+        "dpr": 1.5,
+        "widget_dpr": 1.5,
+        "window_dpr": 1.5,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-display-preview.png",
+        "sha256": "ef3a314b4256ec93757c8cbd7e1d8555e689ad979a62957dbf8514e494c58a32",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1350,
+          960
+        ],
+        "dpr": 1.5,
+        "widget_dpr": 1.5,
+        "window_dpr": 1.5,
+        "fully_visible": true
+      }
+    ],
+    "report_sha256": "5969ba395c6b6314f3f9def7bdc10e09eb62b425de96e2800f497a524931cb70"
+  },
+  {
+    "created_utc": "2026-11-11T08:36:30.472866+00:00",
+    "version": "0.4.14",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "qt_platform": "windows",
+    "requested_dpr": 1.25,
+    "native_dpr": 2.0,
+    "actual_dpr": 1.25,
+    "window_dpr": 1.25,
+    "theme": "light",
+    "source_only": true,
+    "hardware_validated": false,
+    "physical_camera_started": false,
+    "desktop_excel_started": false,
+    "checks": {
+      "no_qt_slot_errors": true,
+      "no_unexpected_modal_messages": true,
+      "requested_window_dpr": true,
+      "requested_raster_dpr": true,
+      "all_captured_windows_visible": true,
+      "settings_footer_visible": true,
+      "settings_preview_reachable": true,
+      "cleanup_button_reachable": true,
+      "content_native_hover": true,
+      "diameter_native_hover": true,
+      "image_storage_default_off": true
+    },
+    "passed": true,
+    "sources": {
+      "scripts/validation/collect_trial_settings.py": "a007d8bf4eb86fb54f845e4be0a790246e8797eec63e21889d7abf962d7a4053",
+      "src/fdm/settings.py": "60cffa7dfe152fc485a250c9d81f5895eea9eb135c9d800ffa685ab35f0789e9",
+      "src/fdm/trial_preferences.py": "7e8d7b1c75c341a45e4132b4e33c5e7cb8fa5789ad5fb8002de807577fb8c24e",
+      "src/fdm/ui/trial_settings_page.py": "43da0670cc1d57715e34466e6219f975446ed3a1d9133419c38291961ab7cc30",
+      "src/fdm/ui/trial_label_style.py": "eaa104f92834bee5caed28a5ec71fde2c6143e8a298ba17071689c666103ee7d",
+      "src/fdm/ui/live_measurement_canvas.py": "75bd71d1048de6f298769905a80bce9c5201495b912f928566923fe0b755ab64",
+      "src/fdm/ui/live_experiment_workspace.py": "f2c15e66068d7c0160ed79167b9a2c0c60464959316a73522d98f9932c06ec98",
+      "src/fdm/ui/trial_assistance.py": "7ec19b37f6307850436304bdb44a7245aa582f42cf7000fea73efcfd1cf836ab"
+    },
+    "native_hover": {
+      "content": {
+        "delivery": "native_windows",
+        "active_before": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "passed": true,
+        "expected_record_id": "f7cb182cb4ad47638822a872b05406a4",
+        "expected_number": 1,
+        "target_label": "绵羊毛",
+        "target_position": [
+          294,
+          156
+        ],
+        "active_after": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "move_events": 1,
+        "spontaneous_move_events": 1,
+        "last_event_position": [
+          294.40000000000003,
+          156.0
+        ],
+        "cursor_position": [
+          294,
+          156
+        ],
+        "hovered_record_id": "f7cb182cb4ad47638822a872b05406a4",
+        "tooltip": "测量 #1 · 绵羊毛 · 18.25 μm",
+        "elapsed_ms": 81.76962500147056,
+        "event_delivery_verified": true
+      },
+      "diameter": {
+        "delivery": "native_windows",
+        "active_before": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "passed": true,
+        "expected_record_id": "5dbe8ba63ff64ec2aa17aa9374049fa4",
+        "expected_number": 1,
+        "target_label": "18.25 μm",
+        "target_position": [
+          295,
+          153
+        ],
+        "active_after": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "move_events": 1,
+        "spontaneous_move_events": 1,
+        "last_event_position": [
+          295.20000000000005,
+          153.60000000000002
+        ],
+        "cursor_position": [
+          295,
+          153
+        ],
+        "hovered_record_id": "5dbe8ba63ff64ec2aa17aa9374049fa4",
+        "tooltip": "测量 #1 · 绵羊毛 · 18.25 μm",
+        "elapsed_ms": 93.00175000316813,
+        "event_delivery_verified": true
+      }
+    },
+    "screenshots": [
+      {
+        "file": "content-default.png",
+        "sha256": "91b7f1c57598ddb244e2fbc6fa24b87e5904a465ce95bd7512c4a97d69f75449",
+        "logical_size": [
+          1366,
+          768
+        ],
+        "raster_size": [
+          1708,
+          960
+        ],
+        "dpr": 1.25,
+        "widget_dpr": 1.25,
+        "window_dpr": 1.25,
+        "fully_visible": true
+      },
+      {
+        "file": "diameter-default.png",
+        "sha256": "1698c1505d3a0082be09325785b6ea3ba4bf0efcafc1bdae5787246bf34df2e1",
+        "logical_size": [
+          1366,
+          768
+        ],
+        "raster_size": [
+          1708,
+          960
+        ],
+        "dpr": 1.25,
+        "widget_dpr": 1.25,
+        "window_dpr": 1.25,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-display.png",
+        "sha256": "aa684d877e40130730faa53e966014dce9543878ab2c6e36b7a82fe58b760bd0",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1125,
+          800
+        ],
+        "dpr": 1.25,
+        "widget_dpr": 1.25,
+        "window_dpr": 1.25,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-evidence.png",
+        "sha256": "f6a4b0a2691ee20be5dc1193cd86008a45913f31a9564b4bc4a91fdbebd68d10",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1125,
+          800
+        ],
+        "dpr": 1.25,
+        "widget_dpr": 1.25,
+        "window_dpr": 1.25,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-analysis.png",
+        "sha256": "4f393088146974daae64d45cf5f5ba63d44729609e6c18b564097f4ce3af33c6",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1125,
+          800
+        ],
+        "dpr": 1.25,
+        "widget_dpr": 1.25,
+        "window_dpr": 1.25,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-display-preview.png",
+        "sha256": "2d0e7c64481d8a1db4d2a7d10912f30e7ae9e9e6178bdda51e99b6ca81bfda52",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1125,
+          800
+        ],
+        "dpr": 1.25,
+        "widget_dpr": 1.25,
+        "window_dpr": 1.25,
+        "fully_visible": true
+      }
+    ],
+    "report_sha256": "be28cabd8d0538266a13a386d3e2b756b4813860f59add355e8578301e57400e"
+  },
+  {
+    "created_utc": "2026-11-11T08:36:42.577349+00:00",
+    "version": "0.4.14",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "qt_platform": "windows",
+    "requested_dpr": 2.0,
+    "native_dpr": 2.0,
+    "actual_dpr": 2.0,
+    "window_dpr": 2.0,
+    "theme": "light",
+    "source_only": true,
+    "hardware_validated": false,
+    "physical_camera_started": false,
+    "desktop_excel_started": false,
+    "checks": {
+      "no_qt_slot_errors": true,
+      "no_unexpected_modal_messages": true,
+      "requested_window_dpr": true,
+      "requested_raster_dpr": true,
+      "all_captured_windows_visible": true,
+      "settings_footer_visible": true,
+      "settings_preview_reachable": true,
+      "cleanup_button_reachable": true,
+      "content_native_hover": true,
+      "diameter_native_hover": true,
+      "image_storage_default_off": true
+    },
+    "passed": true,
+    "sources": {
+      "scripts/validation/collect_trial_settings.py": "a007d8bf4eb86fb54f845e4be0a790246e8797eec63e21889d7abf962d7a4053",
+      "src/fdm/settings.py": "60cffa7dfe152fc485a250c9d81f5895eea9eb135c9d800ffa685ab35f0789e9",
+      "src/fdm/trial_preferences.py": "7e8d7b1c75c341a45e4132b4e33c5e7cb8fa5789ad5fb8002de807577fb8c24e",
+      "src/fdm/ui/trial_settings_page.py": "43da0670cc1d57715e34466e6219f975446ed3a1d9133419c38291961ab7cc30",
+      "src/fdm/ui/trial_label_style.py": "eaa104f92834bee5caed28a5ec71fde2c6143e8a298ba17071689c666103ee7d",
+      "src/fdm/ui/live_measurement_canvas.py": "75bd71d1048de6f298769905a80bce9c5201495b912f928566923fe0b755ab64",
+      "src/fdm/ui/live_experiment_workspace.py": "f2c15e66068d7c0160ed79167b9a2c0c60464959316a73522d98f9932c06ec98",
+      "src/fdm/ui/trial_assistance.py": "7ec19b37f6307850436304bdb44a7245aa582f42cf7000fea73efcfd1cf836ab"
+    },
+    "native_hover": {
+      "content": {
+        "delivery": "native_windows",
+        "active_before": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "passed": true,
+        "expected_record_id": "7f1da8274d5f491a8edc3ca851ea7c7e",
+        "expected_number": 1,
+        "target_label": "绵羊毛",
+        "target_position": [
+          355,
+          188
+        ],
+        "active_after": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "move_events": 1,
+        "spontaneous_move_events": 1,
+        "last_event_position": [
+          355.0,
+          188.0
+        ],
+        "cursor_position": [
+          355,
+          188
+        ],
+        "hovered_record_id": "7f1da8274d5f491a8edc3ca851ea7c7e",
+        "tooltip": "测量 #1 · 绵羊毛 · 18.25 μm",
+        "elapsed_ms": 82.70116700077779,
+        "event_delivery_verified": true
+      },
+      "diameter": {
+        "delivery": "native_windows",
+        "active_before": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "passed": true,
+        "expected_record_id": "b25e9bab162b450b80090ddf0be27441",
+        "expected_number": 1,
+        "target_label": "18.25 μm",
+        "target_position": [
+          356,
+          185
+        ],
+        "active_after": {
+          "qt_active": true,
+          "native_foreground_matches": true
+        },
+        "move_events": 1,
+        "spontaneous_move_events": 1,
+        "last_event_position": [
+          356.0,
+          185.0
+        ],
+        "cursor_position": [
+          356,
+          185
+        ],
+        "hovered_record_id": "b25e9bab162b450b80090ddf0be27441",
+        "tooltip": "测量 #1 · 绵羊毛 · 18.25 μm",
+        "elapsed_ms": 89.52175000013085,
+        "event_delivery_verified": true
+      }
+    },
+    "screenshots": [
+      {
+        "file": "content-default.png",
+        "sha256": "6cba6ceaf42c082689c6146ac98a407fe61a2ed3f418581b1e51c956afba65bb",
+        "logical_size": [
+          1366,
+          768
+        ],
+        "raster_size": [
+          2732,
+          1536
+        ],
+        "dpr": 2.0,
+        "widget_dpr": 2.0,
+        "window_dpr": 2.0,
+        "fully_visible": true
+      },
+      {
+        "file": "diameter-default.png",
+        "sha256": "f3192da4db4bdecb4024b5d5e2aad8566c3d00fb9ebbb95e472e5b78b337042c",
+        "logical_size": [
+          1366,
+          768
+        ],
+        "raster_size": [
+          2732,
+          1536
+        ],
+        "dpr": 2.0,
+        "widget_dpr": 2.0,
+        "window_dpr": 2.0,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-display.png",
+        "sha256": "54003d9d2af24fdbba3dc2b6099ff1b5db7efc44007fc050cab958d0d41364b0",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1800,
+          1280
+        ],
+        "dpr": 2.0,
+        "widget_dpr": 2.0,
+        "window_dpr": 2.0,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-evidence.png",
+        "sha256": "6a21ba60762723fb0786c949b74dc6b5b8a0c141ed6e87a34f16d47859f1f2b0",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1800,
+          1280
+        ],
+        "dpr": 2.0,
+        "widget_dpr": 2.0,
+        "window_dpr": 2.0,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-analysis.png",
+        "sha256": "e68f72dbc3913c1f898d85d1b2796fe5eff37e1af59f60e9bb1350390346ccaa",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1800,
+          1280
+        ],
+        "dpr": 2.0,
+        "widget_dpr": 2.0,
+        "window_dpr": 2.0,
+        "fully_visible": true
+      },
+      {
+        "file": "settings-display-preview.png",
+        "sha256": "12d6876e356e7ef67926304621fd73143197486ebaf9b3778c9ac01563d3937d",
+        "logical_size": [
+          900,
+          640
+        ],
+        "raster_size": [
+          1800,
+          1280
+        ],
+        "dpr": 2.0,
+        "widget_dpr": 2.0,
+        "window_dpr": 2.0,
+        "fully_visible": true
+      }
+    ],
+    "report_sha256": "52e593c6655013fc492567f294dc21a07fda18708c970120a916359e713e0374"
+  }
+]

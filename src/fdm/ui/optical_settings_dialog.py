@@ -25,10 +25,11 @@ def _json(value):
 
 
 class OpticalSettingsDialog(QDialog):
-    def __init__(self, workspace):
+    def __init__(self, workspace, *, diagnostics_only=False):
         super().__init__(workspace)
         self.workspace = workspace
         self.controller = workspace.controller
+        self._diagnostics_only = diagnostics_only
         self.setWindowTitle("普通光学设置与光照检查")
         self.setObjectName("opticalSettingsDialog")
         self.resize(640, 560)
@@ -121,6 +122,14 @@ class OpticalSettingsDialog(QDialog):
         self._timer = QTimer(self)
         self._timer.setInterval(100)
         self._timer.timeout.connect(self._tick)
+        if diagnostics_only:
+            self.setWindowTitle("光照检查与空白参考")
+            self.tabs.setTabText(0, "空白参考")
+            self.imaging_mode.hide()
+            form.labelForField(self.imaging_mode).hide()
+            self.flat_enabled.hide()
+            self.save_button.hide()
+            self.refresh_button.hide()
         self._refresh_reference_label()
 
     def _raw_frame(self):
@@ -457,9 +466,20 @@ class OpticalSettingsDialog(QDialog):
                 self.status.setText(self.status.text() + "\n参考不可用，已记录原因；未附加无效图片。")
         elif kind == "capture":
             if result.get("status") == "ok" and result.get("reference"):
-                self._config["flat_reference"] = result["reference"]
+                if self._diagnostics_only:
+                    # This window no longer owns a settings draft or a Save
+                    # button. Publish only the new resource identity, merging
+                    # into the latest global choices rather than this dialog's
+                    # potentially older copy of flat_enabled/imaging_mode.
+                    self._config = self.workspace._publish_trial_flat_reference(result["reference"])
+                    self.reload_config()
+                else:
+                    self._config["flat_reference"] = result["reference"]
                 self._refresh_reference_label()
-                self.status.setText("空白参考已采集。可查看参考，再启用并保存设置；不会自动改变当前候选。")
+                self.status.setText(
+                    "空白参考已更新，平场开关保持原状。可在“设置 → 采集与试验 → 全图分析”中调整启用状态。"
+                    if self._diagnostics_only else
+                    "空白参考已采集。可查看参考，再启用并保存设置；不会自动改变当前候选。")
                 suggestions = (result.get("diagnostics") or {}).get("suggestions") or []
                 if suggestions:
                     self.status.setText(self.status.text() + "\n" + "\n".join(suggestions[:3]))

@@ -46,14 +46,26 @@ def wheel(widget, delta=-120):
 
 
 def test_settings_wheel_never_changes_value_even_when_focused(workspace):
-    workspace.advanced_toggle.setChecked(True)
-    workspace.settings_dialog.activateWindow(); QApplication.processEvents()
-    for widget in workspace.settings_dialog.findChildren(QComboBox):
-        previous=widget.currentIndex(); widget.setFocus(); wheel(widget)
-        assert widget.currentIndex()==previous
-    for widget in workspace.settings_dialog.findChildren(QAbstractSpinBox):
-        previous=widget.value(); widget.setFocus(); wheel(widget)
-        assert widget.value()==previous
+    from fdm.ui.dialogs import SettingsDialog
+    dialog = SettingsDialog(workspace.host._app_settings, document=None, parent=workspace.host)
+    dialog.select_page("trial")
+    dialog.show(); dialog.activateWindow(); QApplication.processEvents()
+    page = dialog._trial_settings_widget
+    try:
+        for tab in range(page.tabs.count()):
+            page.tabs.setCurrentIndex(tab)
+            QApplication.processEvents()
+            for widget in page.tabs.currentWidget().findChildren(QComboBox):
+                previous=widget.currentIndex(); widget.setFocus(); wheel(widget)
+                assert widget.currentIndex()==previous
+            for widget in page.tabs.currentWidget().findChildren(QAbstractSpinBox):
+                previous=widget.value(); widget.setFocus(); wheel(widget)
+                assert widget.value()==previous
+    finally:
+        dialog.reject()
+        dialog.deleteLater()
+    workspace.sample_details_toggle.setChecked(True)
+    workspace.activateWindow(); QApplication.processEvents()
     workspace.sample.setFocus(); QTest.keyClicks(workspace.sample,'123')
     QTest.keyClick(workspace.sample,Qt.Key.Key_Control)
     assert workspace.sample.text()=='123' and workspace.keyboard_mode.currentIndex()==1

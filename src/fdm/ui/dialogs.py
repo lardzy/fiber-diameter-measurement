@@ -1875,10 +1875,11 @@ class _SettingsTabsCompatibility:
 class SettingsDialog(QDialog):
     screenshotCu5DiagnosticRequested = Signal()
     screenshotCu5CandidateSelectionRequested = Signal(object)
+    trialEvidenceCleanupRequested = Signal()
 
     _PAGE_KEYS = (
         "general", "measurement", "professional", "annotation", "image_processing",
-        "area_models", "digital_slide", "screenshot", "export",
+        "area_models", "digital_slide", "trial", "screenshot", "export",
     )
     _NAVIGATION_DEFINITIONS = (
         ("常规", "主题与默认视图", "主题 深色 浅色 系统 打开 图片 默认 视图"),
@@ -1888,6 +1889,7 @@ class SettingsDialog(QDialog):
         ("图像与智能分析", "景深合成、魔棒和快速测径", "图像 景深 合成 锐化 魔棒 EdgeSAM ROI 快速测径"),
         ("面积识别", "面积模型、权重和推理设备", "面积 模型 权重 Python CPU CUDA 推理"),
         ("采集与数字切片", "预览、运动控制和切片参数", "采集 预览 数字化切片 电机 运动 焦层"),
+        ("采集与试验", "含量与直径试验交互、标记与图片存档", "试验 含量 直径 高级 视场 稳定 字体 字号 颜色 类别 标记 原图 图片 存档 清理 算法"),
         ("截图工具", "常驻截图、全局快捷键和 CU 系列实时预览", "截图 常驻 托盘 快捷键 开机启动 CU 系列 CU-5 CU-6 Microview 窗口 区域"),
         ("导出与模板", "原始记录模板和导出规则", "导出 原始记录 模板 规则 Excel 工作表"),
     )
@@ -1942,6 +1944,9 @@ class SettingsDialog(QDialog):
         image_processing_page = self._build_image_processing_tab(settings)
         area_models_page = self._build_area_models_tab(settings)
         digital_slide_page = self._build_digital_slide_tab(settings, locked=digital_slide_locked)
+        from fdm.ui.trial_settings_page import TrialSettingsPage
+        self._trial_settings_widget = TrialSettingsPage(settings.trial_preferences, self)
+        self._trial_settings_widget.cleanupRequested.connect(self.trialEvidenceCleanupRequested)
         self._screenshot_settings_widget = ScreenshotSettingsPage(
             screenshot_settings or ScreenshotSettings(),
             self,
@@ -1966,6 +1971,7 @@ class SettingsDialog(QDialog):
             image_processing_page,
             area_models_page,
             digital_slide_page,
+            self._trial_settings_widget,
             screenshot_page,
             raw_record_page,
         ]
@@ -2127,6 +2133,18 @@ class SettingsDialog(QDialog):
     def screenshot_settings(self) -> ScreenshotSettings:
         return self._screenshot_settings_widget.settings()
 
+    def set_trial_cleanup_status(self, text: str, busy: bool = False) -> None:
+        self._trial_settings_widget.set_cleanup_status(text, busy=busy)
+
+    def update_trial_optical_resources(self, preferences) -> None:
+        self._trial_settings_widget.update_optical_resources(preferences)
+
+    def select_trial_section(self, section: str) -> None:
+        self.select_page("trial")
+        self._trial_settings_widget.tabs.setCurrentIndex(
+            {"display": 0, "evidence": 1, "analysis": 2}.get(section, 0)
+        )
+
     def _update_settings_navigation_item_sizes(self) -> None:
         """Keep navigation rows readable for the active system UI font."""
 
@@ -2277,6 +2295,8 @@ class SettingsDialog(QDialog):
                 self._update_offline_engine_summary()
             elif page_key == "screenshot":
                 self._screenshot_settings_widget.restore_defaults()
+            elif page_key == "trial":
+                self._trial_settings_widget.restore_defaults()
             elif page_key == "export":
                 self._raw_record_templates_data = []
                 self._raw_record_current_template_index = -1
@@ -2357,6 +2377,7 @@ class SettingsDialog(QDialog):
         )
         return AppSettings(
             theme_mode=self._theme_mode_combo.currentData(),
+            trial_preferences=self._trial_settings_widget.preferences(),
             measurement_text_size_space=self._measurement_text_size_space_combo.currentData(),
             length_measurement_label_style=length_label_style,
             area_measurement_label_style=area_label_style,

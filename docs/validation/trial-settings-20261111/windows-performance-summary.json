@@ -1,0 +1,229 @@
+{
+  "version": "0.4.14",
+  "hardware_validated": false,
+  "formal_three_round_comparison": true,
+  "environment": {
+    "python": "3.12.13 (main, Mar 24 2026, 22:57:53) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "machine": "ARM64",
+    "qt_binding": "6.10.2",
+    "qt_platform": "windows",
+    "frame_size": [
+      1024,
+      768
+    ],
+    "frame_interval_ms": 33,
+    "frame_sha256": "54088fe645645803d9c059e2e17099843e441c150b282e805ffc30e09cfd6e96",
+    "samples": 300,
+    "warmup": 20,
+    "rounds": 3,
+    "files_per_round": 4096,
+    "source_sha256_at_import": {
+      "src/fdm/live_experiment/evidence_resources.py": "a3838c30a5a4f8d706b85ebd27efa6ae6c8d92194907ca9be10839fc9e565d6b",
+      "src/fdm/live_experiment/controller.py": "09b0ef36cf23b490d8dd6378ef6741ffc2d8820124f58bbd6f7d9133887b6e43",
+      "src/fdm/ui/live_measurement_canvas.py": "75bd71d1048de6f298769905a80bce9c5201495b912f928566923fe0b755ab64",
+      "src/fdm/ui/trial_label_style.py": "eaa104f92834bee5caed28a5ec71fde2c6143e8a298ba17071689c666103ee7d",
+      "scripts/validation/benchmark_trial_cleanup.py": "261f7cfab093805c64309539491ab39575732be357dbc402f5998780ead447a2"
+    }
+  },
+  "aggregate": {
+    "off": {
+      "accept_latency": {
+        "count": 900,
+        "p50_ms": 15.717375001258915,
+        "p95_ms": 21.44393719918298,
+        "max_ms": 30.619332999776816
+      },
+      "visible_latency": {
+        "count": 900,
+        "p50_ms": 30.99199949974718,
+        "p95_ms": 42.01345625169779,
+        "max_ms": 52.10804099988309
+      },
+      "frame_interval": {
+        "count": 426,
+        "p50_ms": 33.97345850135025,
+        "p95_ms": 43.173093749828695,
+        "max_ms": 53.78525000196532
+      },
+      "callback": {
+        "count": 3127,
+        "p50_ms": 0.1809999994293321,
+        "p95_ms": 18.467829299333964,
+        "max_ms": 29.60358299969812
+      },
+      "frame_delivery": {
+        "count": 429,
+        "p50_ms": 0.960833000135608,
+        "p95_ms": 1.0963164000713732,
+        "max_ms": 1.422166998963803
+      },
+      "paint": {
+        "count": 898,
+        "p50_ms": 14.580270999431377,
+        "p95_ms": 20.26104380038305,
+        "max_ms": 29.60358299969812
+      },
+      "cleanup_overlap_records": 0
+    },
+    "on": {
+      "accept_latency": {
+        "count": 900,
+        "p50_ms": 16.2938954999845,
+        "p95_ms": 22.3896812482053,
+        "max_ms": 125.090416000603
+      },
+      "visible_latency": {
+        "count": 900,
+        "p50_ms": 32.893458499529515,
+        "p95_ms": 44.369350001034036,
+        "max_ms": 155.48054100145237
+      },
+      "frame_interval": {
+        "count": 450,
+        "p50_ms": 34.01772950201121,
+        "p95_ms": 44.08501479865663,
+        "max_ms": 126.35025000054156
+      },
+      "callback": {
+        "count": 3141,
+        "p50_ms": 0.1903750016936101,
+        "p95_ms": 19.28333300020313,
+        "max_ms": 123.4888749968377
+      },
+      "frame_delivery": {
+        "count": 453,
+        "p50_ms": 0.9702920033305418,
+        "p95_ms": 1.1420920003729407,
+        "max_ms": 1.8698749991017394
+      },
+      "paint": {
+        "count": 888,
+        "p50_ms": 15.499791499678395,
+        "p95_ms": 21.526170497600106,
+        "max_ms": 123.4888749968377
+      },
+      "cleanup_overlap_records": 900
+    }
+  },
+  "ratios_p95": {
+    "accept_latency": 1.0441030973108032,
+    "visible_latency": 1.0560747427020134,
+    "frame_interval": 1.0211224392236555,
+    "callback": 1.0441580701040254,
+    "frame_delivery": 1.04175400486446,
+    "paint": 1.0624413386438234
+  },
+  "within_10_percent": {
+    "accept_latency": true,
+    "visible_latency": true,
+    "frame_interval": true,
+    "callback": true,
+    "frame_delivery": true,
+    "paint": true
+  },
+  "round_ratios_p95": [
+    {
+      "round": 1,
+      "ratios": {
+        "accept_latency": 1.0735132031180314,
+        "visible_latency": 1.0617166731583838,
+        "frame_interval": 1.0334225462927114,
+        "callback": 1.0583491093107475
+      },
+      "within_10_percent": {
+        "accept_latency": true,
+        "visible_latency": true,
+        "frame_interval": true,
+        "callback": true
+      }
+    },
+    {
+      "round": 2,
+      "ratios": {
+        "accept_latency": 1.033033447212849,
+        "visible_latency": 1.0504526384896369,
+        "frame_interval": 1.0147096299743048,
+        "callback": 1.0428685843953975
+      },
+      "within_10_percent": {
+        "accept_latency": true,
+        "visible_latency": true,
+        "frame_interval": true,
+        "callback": true
+      }
+    },
+    {
+      "round": 3,
+      "ratios": {
+        "accept_latency": 1.0277070729480924,
+        "visible_latency": 1.0367943437458518,
+        "frame_interval": 1.0224879778855473,
+        "callback": 1.029147961615458
+      },
+      "within_10_percent": {
+        "accept_latency": true,
+        "visible_latency": true,
+        "frame_interval": true,
+        "callback": true
+      }
+    }
+  ],
+  "correctness_passed": true,
+  "enough_overlap": true,
+  "boundaries": [
+    "Controller and real canvas only; no sidebar, Excel, physical camera or monitor scan-out.",
+    "Sequential free-line measurements run as fast as accepted; no harness sleep or processEvents in timing.",
+    "Frames are delivered by a precise Qt timer; frame intervals measure GUI delivery, not camera sensor timing.",
+    "Production collector batching and delays are unchanged; overlap is measured and reported explicitly.",
+    "The initial child fixture preparation and window warmup are outside the measured interval."
+  ],
+  "raw_report_sha256": "93f7120c536ea14df854122ccea1795470b34187162c27bba49b2374651cff68",
+  "cleanup_cases": [
+    {
+      "round": 1,
+      "cleanup": {
+        "deleted_files": 4096,
+        "deleted_bytes": 278528,
+        "in_use": 0,
+        "skipped": 0,
+        "deferred": false,
+        "errors": []
+      },
+      "cleanup_worker_ms": 100562.62320899987,
+      "cleanup_overlap_records": 300,
+      "unlink_overlap_records": 262,
+      "deleted_during_measurements": 178
+    },
+    {
+      "round": 2,
+      "cleanup": {
+        "deleted_files": 4096,
+        "deleted_bytes": 278528,
+        "in_use": 0,
+        "skipped": 0,
+        "deferred": false,
+        "errors": []
+      },
+      "cleanup_worker_ms": 101245.72329099828,
+      "cleanup_overlap_records": 300,
+      "unlink_overlap_records": 263,
+      "deleted_during_measurements": 177
+    },
+    {
+      "round": 3,
+      "cleanup": {
+        "deleted_files": 4096,
+        "deleted_bytes": 278528,
+        "in_use": 0,
+        "skipped": 0,
+        "deferred": false,
+        "errors": []
+      },
+      "cleanup_worker_ms": 101915.72754200024,
+      "cleanup_overlap_records": 300,
+      "unlink_overlap_records": 270,
+      "deleted_during_measurements": 181
+    }
+  ]
+}

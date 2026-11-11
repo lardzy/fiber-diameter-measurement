@@ -358,6 +358,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         # Preview never waits for field detection. The controller still checks
         # the latest painted frame before accepting a measurement into history.
         self.controller = LiveExperimentController(session, parent=self, verify_before_present=False)
+        self.controller.evidence.attach_owner(host.project, session)
         self.canvas = LiveMeasurementCanvas(self.controller)
         self.controller.frameReady.connect(self.canvas.set_frame)
         self._last_summary_revision = -1
@@ -437,6 +438,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.controller.fieldChanged.connect(lambda *_: self.current_model.reset_ids([]))
         self.controller.fieldChanged.connect(self._clear_latest_value)
         self.controller.statusChanged.connect(self._status_changed)
+        self.controller.routineStatusChanged.connect(self._routine_status_changed)
         self.controller.resultRejected.connect(lambda text: self.statusBar().showMessage(text, 8000))
         self.controller.measurementFeedback.connect(self._measurement_feedback_received)
         self.controller.feedbackInvalidated.connect(self.measurement_feedback.dismiss)
@@ -529,8 +531,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
                 "sidebar_width": max(390, min(520, self.trial_sidebar.width())),
                 "metadata_expanded": self.sample_details_toggle.isChecked(),
             }
-            if hasattr(self, "auto_analysis"):
-                preferences["assistance"] = self._assistance_preferences()
+            # Keep legacy shared preferences until (and harmlessly after) the
+            # migrated application settings are saved; layout-only navigation
+            # must not delete the sole persistent copy during first upgrade.
             preferences["version"] = 3
             self._view_preferences_path.parent.mkdir(parents=True, exist_ok=True)
             atomic_write_text(self._view_preferences_path, json.dumps(preferences, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
@@ -671,6 +674,24 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         except Exception as exc:
             self.statusBar().showMessage(str(exc), 10000)
             return None
+
+    def _routine_status_changed(self, message):
+        self._last_routine_status = message
+        if self._applied_trial_preferences.show_stability_status:
+            self.statusBar().showMessage(message)
+
+    def _restore_current_routine_status(self):
+        # Enabling the optional hint must not replace an operation/error
+        # message or replay "stable" from a source/field already left behind.
+        if self.statusBar().currentMessage():
+            return
+        controller = self.controller
+        token, frame = controller.presented, controller.latest_frame
+        if (controller.state != "ready" or token is None or frame is None or
+                token.field_epoch != controller.field_epoch or
+                token.frame.source_id != frame.source_id):
+            return
+        self._routine_status_changed("视场稳定，可以测量")
 
     def _status_changed(self, message):
         self.statusBar().showMessage(message)
@@ -1461,20 +1482,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.sample_title.setText(self.session.sample_name or "未命名样品")
 
     def _gesture_changed(self, index):
-        if self._statistics_job is not None:
-            self.statusBar().showMessage("组距重算尚未结束，未改变测量方式或草稿；请等待或取消后再切换。", 8000)
-            self._sync_configuration_controls()
-            return
-        before = self.session.workspace_options["gesture"]
-        desired = "drag" if index else "click"
-        self._configure(workspace_options={"gesture": desired})
-        # Cancel only after a real, accepted change. A rejected configuration
-        # must not silently discard the measurement the user is still drawing.
-        if before != desired and self.session.workspace_options["gesture"] == desired:
-            self.controller.cancel_draft()
-            if hasattr(self, "auto_analysis"):
-                self._apply_assistance_controls()
-            self._update_operation_help()
+        self._set_trial_preferences(gesture="drag" if index else "click")
 
     def _mode_changed(self, index, persist=True):
         content = index == 0
@@ -1622,7 +1630,8 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         ruler = ("未标定" if calibration is None else
                  f"{calibration.x_um:.6g} μm/px" if calibration.isotropic else
                  f"X {calibration.x_um:.6g} / Y {calibration.y_um:.6g} μm/px")
-        self.live_state_label.setText(f"{source} · {state} · {ruler}")
+        show_state = self._applied_trial_preferences.show_stability_status or self.controller.state == "unavailable"
+        self.live_state_label.setText(" · ".join([source, *([state] if show_state else []), ruler]))
         pending = self.controller.pending_classification
         previous_pending_id = self._pending_display_id
         self._pending_display_id = pending[0][0].id if pending else None
@@ -1740,12 +1749,10 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         for widget, setter, value in (
                 (self.sample, "setText", self.session.sample_name),
                 (self.sample_number, "setText", self.session.sample_number),
-                (self.keep_images, "setChecked", self.session.save_images),
-                (self.evidence_storage, "setCurrentIndex", self.evidence_storage.findData(self.session.effective_evidence_options["mode"])),
                 (self.after_select, "setChecked", self.session.workspace_options["classification"] == "after"),
                 (self.classification_mode, "setCurrentIndex", int(self.session.workspace_options["classification"] == "after")),
                 (self.mode, "setCurrentIndex", int(self.session.workspace_options["mode"] == "diameter")),
-                (self.gesture, "setCurrentIndex", int(self.session.workspace_options["gesture"] == "drag"))):
+                (self.gesture, "setCurrentIndex", int(self._trial_preferences.preferences.gesture == "drag"))):
             widget.blockSignals(True)
             getattr(widget, setter)(value)
             widget.blockSignals(False)
@@ -2074,6 +2081,8 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             from fdm.ui.trial_excel_lifecycle import detach_trial_excel
             detach_trial_excel(self.host, self.session, parent=self.host)
             window._sample_removal_unsaved = project.remove_live_trial(self.session)
+            from fdm.live_experiment.evidence_resources import get_evidence_resources
+            get_evidence_resources().discard_session(self.session)
         self.host._live_experiment_workspace = window
         self.host._live_experiment_workspaces[mode] = window
         if hub is not None:
@@ -2253,6 +2262,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self._start_camera(preserve_field=True)
 
     def closeEvent(self, event):
+        if self._closed:
+            event.accept()
+            return
         if not self.prepare_close():
             event.ignore()
             return
@@ -2262,7 +2274,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self._view_preferences_timer.stop()
         self.display_binding.store.changed.disconnect(self._sync_display_controls)
         self.display_binding.close()
-        self.settings_dialog.close()
+        self._trial_preferences.changed.disconnect(self.apply_trial_preferences)
+        if self._trial_preferences._timer.isActive():
+            self._trial_preferences.flush()
         optical_dialog = getattr(self, "optical_settings_dialog", None)
         if optical_dialog is not None:
             optical_dialog.close()
@@ -2309,7 +2323,7 @@ def _new_trial_session(mode):
         defaults = {}
         error = f"无法读取新试验默认参数，当前使用出厂值；原配置未覆盖：{exc}"
     session = ExperimentSession(workspace_options={"mode": mode},
-        evidence_options={"version": 1, "mode": "crop_jpeg"}, **defaults)
+        evidence_options={"version": 1, "mode": "disabled"}, **defaults)
     session._defaults_error = error
     session.add_operator("操作者 A")
     if mode == "diameter":

@@ -686,7 +686,8 @@ class EvidenceGalleryController(QObject):
                 continue
             self._reserve(self.HEADER_RESERVATION)
             self._job = (self._generation, key, "header", None)
-            self._future = self._decoder.submit(_probe_thumbnail, key[4], key[5], key[6])
+            from fdm.ui.trial_evidence_lifecycle import submit_evidence_read
+            self._future = submit_evidence_read(self._decoder, _probe_thumbnail, key[4], key[5], key[6], path=key[4])
             break
 
     def _tick(self):
@@ -705,7 +706,8 @@ class EvidenceGalleryController(QObject):
             if current and stage == "header" and value is not None:
                 if self._reserve(value.reserved_bytes):
                     self._job = (generation, key, "decode", value)
-                    self._future = self._decoder.submit(_decode_thumbnail, value)
+                    from fdm.ui.trial_evidence_lifecycle import submit_evidence_read
+                    self._future = submit_evidence_read(self._decoder, _decode_thumbnail, value, path=value.path)
                     self.decode_count += 1
                 else:
                     self._cache_result(key, None, "图像较大，双击打开单图复核", read_error=False)

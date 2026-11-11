@@ -173,7 +173,7 @@ class TrialAssistanceMixin:
             action = evidence_menu.addAction(title)
             action.setCheckable(True)
             group.addAction(action)
-            action.triggered.connect(lambda checked=False, name=mode: self._guard(lambda: self._configure(evidence_options={"version": 1, "mode": name})))
+            action.triggered.connect(lambda checked=False, name=mode: self._guard(lambda: self._set_evidence_mode(name)))
             self.evidence_mode_actions[mode] = action
         self.evidence_button.setMenu(evidence_menu)
         # Reuse the existing outcome row, rather than consuming category space.
@@ -204,14 +204,10 @@ class TrialAssistanceMixin:
         self.show_candidates_action.toggled.connect(self._assistance_preferences_changed)
         self.candidate_opacity.valueChanged.connect(self._assistance_preferences_changed)
         self.selection_retention_seconds.valueChanged.connect(self._assistance_preferences_changed)
-        try:
-            preferences = json.loads(self._view_preferences_path.read_text(encoding="utf-8")).get("assistance", {})
-        except (OSError, ValueError, TypeError, AttributeError):
-            preferences = {}
-        # A second trial can be constructed before the 250ms preference write.
-        # Use the host's shared current choice, not a stale disk snapshot.
-        preferences = getattr(self.host, "_trial_assistance_preferences", preferences)
-        self._apply_assistance_preferences(preferences)
+        from fdm.ui.trial_preferences_binding import trial_preferences_binding
+        self._trial_preferences = trial_preferences_binding(self.host)
+        self._trial_preferences.changed.connect(self.apply_trial_preferences)
+        self.apply_trial_preferences(self._trial_preferences.preferences)
         self._assistance_loading = False
         self._refresh_assistance_state()
 
@@ -293,32 +289,99 @@ class TrialAssistanceMixin:
         if hasattr(self, "auto_analysis") and not self._assistance_loading:
             self.canvas.cancel_pointer_gesture()
             self.controller.cancel_draft()
-            self.controller.cancel_candidate_submissions()
             self._assistance_preferences_changed()
 
+    def _open_trial_settings(self):
+        self.host.open_settings_dialog(initial_page="trial")
+        if not self._closed:
+            self.canvas.setFocus()
+
     def _show_optical_settings(self, checked=False, *, diagnostics=False):
+        if not diagnostics:
+            return self._open_trial_settings()
         from fdm.ui.optical_settings_dialog import OpticalSettingsDialog
         dialog = getattr(self, "optical_settings_dialog", None)
         if dialog is None:
-            dialog = OpticalSettingsDialog(self)
+            dialog = OpticalSettingsDialog(self, diagnostics_only=True)
             self.optical_settings_dialog = dialog
         elif not dialog.isVisible():
             dialog.reload_config()
-        dialog.tabs.setCurrentIndex(1 if diagnostics else 0)
+        dialog.tabs.setCurrentIndex(1)
         dialog.show()
         dialog.raise_()
         dialog.activateWindow()
 
+    def _set_trial_preferences(self, **changes):
+        if not getattr(self, "_assistance_loading", True):
+            self._trial_preferences.update(**changes)
+
+    def _set_evidence_mode(self, mode):
+        changes = {"evidence_enabled": mode != "disabled"}
+        if mode != "disabled":
+            changes["evidence_format"] = mode
+        self._set_trial_preferences(**changes)
+
+    def _publish_trial_flat_reference(self, reference):
+        """Capture publishes a resource, never an older dialog settings draft."""
+        latest = dict(self._trial_preferences.preferences.optical_analysis)
+        self._set_trial_preferences(optical_analysis={**latest, "flat_reference": reference})
+        return self._trial_preferences.preferences.optical_analysis
+
+    def apply_trial_preferences(self, preferences):
+        if self._closed:
+            return
+        previous = getattr(self, "_applied_trial_preferences", None)
+        self._applied_trial_preferences = preferences
+        interaction_changed = previous is not None and any(
+            getattr(previous, key) != getattr(preferences, key)
+            for key in ("input_mode", "gesture", "manual_algorithm"))
+        if interaction_changed:
+            # Already submitted tasks retain their policy; only unfinished
+            # pointing belongs to the newly selected interaction contract.
+            self.canvas.cancel_pointer_gesture()
+            self.controller.cancel_draft()
+        if previous is not None and (previous.algorithm != preferences.algorithm or
+                                     previous.optical_analysis != preferences.optical_analysis):
+            self.controller.invalidate_analysis_preferences()
+        loading, self._assistance_loading = self._assistance_loading, True
+        try:
+            for widget, setter, value in (
+                (self.gesture, "setCurrentIndex", int(preferences.gesture == "drag")),
+                (self.keep_images, "setChecked", preferences.evidence_enabled),
+                (self.evidence_storage, "setCurrentIndex", self.evidence_storage.findData(
+                    preferences.evidence_format if preferences.evidence_enabled else "disabled")),
+            ):
+                widget.blockSignals(True)
+                getattr(widget, setter)(value)
+                widget.blockSignals(False)
+            self.controller.set_evidence_options({"version": 1, "mode":
+                preferences.evidence_format if preferences.evidence_enabled else "disabled"})
+            values = preferences.to_dict()
+            values["version"] = 4
+            self._apply_assistance_preferences(values)
+            self.canvas.set_trial_preferences(preferences)
+            self._update_operation_help()
+        finally:
+            self._assistance_loading = loading
+        if not preferences.show_stability_status:
+            routine = getattr(self, "_last_routine_status", None)
+            if routine and self.statusBar().currentMessage() == routine:
+                self.statusBar().clearMessage()
+        elif previous is not None and not previous.show_stability_status:
+            self._restore_current_routine_status()
+        if hasattr(self, "live_state_label"):
+            self._refresh_summary()
+        optical = getattr(self, "optical_settings_dialog", None)
+        if optical is not None and getattr(optical, "_diagnostics_only", False):
+            optical.reload_config()
+        self._refresh_assistance_state()
+
     def _assistance_preferences_changed(self, *_):
         if self._assistance_loading:
             return
-        self._apply_assistance_controls()
         preferences = self._assistance_preferences()
-        self.host._trial_assistance_preferences = preferences
-        for workspace in getattr(self.host, "_live_experiment_workspaces", {}).values():
-            if workspace is not self and hasattr(workspace, "auto_analysis") and not workspace._closed:
-                workspace._apply_assistance_preferences(preferences)
-        self._view_preferences_timer.start()
+        preferences.pop("version", None)
+        self._trial_preferences.update(**preferences)
         self._refresh_assistance_state()
 
     def _refresh_assistance_state(self):
@@ -346,7 +409,7 @@ class TrialAssistanceMixin:
         optical_status = flat_field_status_text((context or {}).get("diagnostics", {}))
         key = (running, available, pending, controller.candidate_overlay_ready,
                bool(frame), controller.state, bool(controller.calibration),
-               self.session.effective_evidence_options["mode"], optical_status)
+               self.controller.effective_evidence_options["mode"], optical_status)
         if key != self._assistance_state_key:
             self._assistance_state_key = key
             self.analyze_button.setText("分析中…" if running else "刷新候选" if controller.candidates else "全图分析")
@@ -354,7 +417,7 @@ class TrialAssistanceMixin:
             self.analyze_button.setToolTip("重新分析固定源帧，替换未接受候选；已接受记录保留。" + (f" 正在核验 {pending} 条，刷新将在核验后执行。" if pending else "") + ("\n" + optical_status if optical_status else ""))
             self.candidate_display_button.setText(f"候选 {available}")
             self.workflow_tabs.setTabText(1, f"审核 {available}" if available else "审核")
-            mode = self.session.effective_evidence_options["mode"]
+            mode = self.controller.effective_evidence_options["mode"]
             self.evidence_button.setToolTip("浏览当前试验全部操作者的图片；箭头查看上一条、固定小窗或选择存档模式。" + {"disabled": "当前不保存测量图片。", "crop_jpeg": "当前保存局部 JPEG，质量 95；有透明信息时使用 PNG。", "full_png": "当前保存完整无损 PNG。"}[mode])
             for name, action in self.evidence_mode_actions.items():
                 action.setChecked(name == mode)

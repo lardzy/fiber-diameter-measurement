@@ -74,6 +74,7 @@ class MeasurementIntent:
     measurement_number: int | None = None
     classification_generation: int = 0
     range_reclassifications: list = field(default_factory=list)
+    evidence_options: dict | None = None
 
 
 @dataclass(slots=True)
@@ -89,6 +90,7 @@ class LiveExperimentController(QObject):
     changed = Signal()
     fieldChanged = Signal(int, str)
     statusChanged = Signal(str)
+    routineStatusChanged = Signal(str)
     recordAccepted = Signal(object)
     recordsAccepted = Signal(object)
     resultRejected = Signal(str)
@@ -109,6 +111,8 @@ class LiveExperimentController(QObject):
         self.changed.connect(self.selection_retention.prune)
         self.budget = FrameBudget()
         self.evidence = EvidenceStore(evidence_directory, budget=self.budget)
+        self._runtime_evidence_options = None
+        self._draft_evidence_options = None
         self.calibration: CalibrationSnapshot | None = None
         self.field_epoch = 0
         self.field_id = uuid.uuid4().hex
@@ -166,6 +170,7 @@ class LiveExperimentController(QObject):
         self._automatic_analysis_count = 0
         self._analysis_events = deque(maxlen=128)
         self._refresh_pending = None
+        self._analysis_preferences_stale = False
         self._candidate_ready_previous = False
         self._candidate_visibility_previous = None
         self._candidate_visibility_active = False
@@ -452,7 +457,7 @@ class LiveExperimentController(QObject):
         self.feedbackInvalidated.emit("field_changed")
         self.fieldChanged.emit(self.field_epoch, reason)
         self.candidatesChanged.emit([])
-        self.statusChanged.emit(reason)
+        (self.routineStatusChanged if cause == FieldEndCause.MOTION else self.statusChanged).emit(reason)
         self.changed.emit()
 
     def _pointer_context(self, token):
@@ -516,6 +521,7 @@ class LiveExperimentController(QObject):
         self._draft_lease = lease
         self.draft = (token, point)
         self._draft_context = self._pointer_context(token)
+        self._draft_evidence_options = self.effective_evidence_options
         self._measurement_number += 1
         self._classification_generation += 1
         self._classification_target = {"id": uuid.uuid4().hex, "number": self._measurement_number, "field_epoch": self.field_epoch,
@@ -569,7 +575,8 @@ class LiveExperimentController(QObject):
         identity = self._classification_target["id"] if self._classification_target else uuid.uuid4().hex
         intent = MeasurementIntent(identity, token, start, tuple(point), self.calibration,
             self.session.active_operator_id, self.session.active_direction, material_id,
-            method, threading.Event(), lease, time.perf_counter())
+            method, threading.Event(), lease, time.perf_counter(),
+            evidence_options=deepcopy(self._draft_evidence_options))
         if self._classification_target is not None:
             self._classification_target["state"] = "pending"
             intent.measurement_number = self._classification_target["number"]
@@ -583,6 +590,11 @@ class LiveExperimentController(QObject):
         return intent.id
 
     def _compute(self, intent):
+        from .evidence_resources import get_evidence_resources
+        with get_evidence_resources().activity():
+            return self._compute_measurement(intent)
+
+    def _compute_measurement(self, intent):
         def check():
             if intent.cancel.is_set():
                 raise RuntimeError("测量已取消")
@@ -868,7 +880,7 @@ class LiveExperimentController(QObject):
                         self._stable_count += 1
                         if self._stable_count >= 2:
                             if self.state != "ready":
-                                self.statusChanged.emit("视场稳定，可以测量")
+                                self.routineStatusChanged.emit("视场稳定，可以测量")
                             self.state = "ready"
                     if item is not None:
                         self._present_motion_frame(item)
@@ -1002,15 +1014,27 @@ class LiveExperimentController(QObject):
         self.changed.emit()
         return record
 
+    @property
+    def effective_evidence_options(self):
+        from .evidence_options import effective_evidence_options
+        if self._runtime_evidence_options is not None:
+            return deepcopy(self._runtime_evidence_options)
+        return effective_evidence_options(getattr(self.session, "evidence_options", None),
+                                          save_images=self.session.save_images)
+
+    def set_evidence_options(self, options):
+        from .evidence_options import effective_evidence_options
+        self._runtime_evidence_options = effective_evidence_options(options)
+
     def _reserve_evidence(self, intent, result):
-        if not self.session.save_images:
+        options = intent.evidence_options or self.effective_evidence_options
+        if options["mode"] == "disabled":
             return {"state": "disabled"}
-        options = getattr(self.session, "evidence_options", None)
-        if options is None:
-            # Historical sessions retain complete PNG semantics and legacy
-            # EvidenceStore adapters retain their single-argument contract.
-            return dict(self.evidence.reserve(intent.token.frame))
         points = measurement_evidence_points({**result, "input_start": intent.start, "input_end": intent.end})
+        # Legacy injected stores accept only a frame; new runtime policies use
+        # the explicit immutable options captured when pointing began.
+        if self._runtime_evidence_options is None and getattr(self.session, "evidence_options", None) is None:
+            return dict(self.evidence.reserve(intent.token.frame))
         return dict(self.evidence.reserve(intent.token.frame, options=options, points=points))
 
     def _ensure_field(self, intent, created_at):
@@ -1358,7 +1382,22 @@ class LiveExperimentController(QObject):
             self._candidate_ready_previous = ready
             self.candidateStateChanged.emit()
 
+    def invalidate_analysis_preferences(self):
+        if self.candidate_pending_count:
+            # Finish already submitted confirmations with their original
+            # immutable context, while hiding/blocking unsubmitted old picks.
+            self._analysis_preferences_stale = True
+            for candidate in self.candidates:
+                if candidate.get("state", "available") in {"available", "excluded"}:
+                    candidate["state"] = "stale"
+            self.candidatesChanged.emit(self.candidates)
+        elif self._automatic_context is not None:
+            self.discard_candidates()
+
     def _schedule_automatic(self):
+        if self._analysis_preferences_stale and not self.candidate_pending_count:
+            self._analysis_preferences_stale = False
+            self.discard_candidates()
         if self._refresh_pending is not None and not self.candidate_pending_count:
             algorithm, self._refresh_pending = self._refresh_pending, None
             try:
@@ -1600,7 +1639,8 @@ class LiveExperimentController(QObject):
             intent = MeasurementIntent(uuid.uuid4().hex, context["token"], tuple(result["start"]),
                 tuple(result["end"]), context["calibration"], context["operator_id"],
                 context["direction"], material, "automatic-" + context["algorithm"],
-                threading.Event(), context["lease"], time.perf_counter())
+                threading.Event(), context["lease"], time.perf_counter(),
+                evidence_options=self.effective_evidence_options)
             if not self._valid(intent):
                 raise ValueError("存在未赋类、越限或已失效候选，请先处理。")
             if self._out_of_range(intent, result):

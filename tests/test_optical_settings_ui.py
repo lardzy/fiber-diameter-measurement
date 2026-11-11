@@ -19,9 +19,10 @@ from test_trial_assistance_ui import candidates
 
 
 def open_dialog(view):
-    view._show_optical_settings()
+    view._show_optical_settings(diagnostics=True)
     dialog = view.optical_settings_dialog
     dialog._timer.stop()
+    dialog.tabs.setCurrentIndex(0)
     return dialog
 
 
@@ -38,17 +39,24 @@ def blank(sequence, source="camera"):
                                 source_id=source, sequence=sequence, live=True)
 
 
-def test_registry_has_three_algorithms_and_optical_tools_share_existing_toolbar(workspace):
+def test_registry_has_three_algorithms_and_optical_tools_share_existing_toolbar(workspace, monkeypatch):
     assert [(workspace.algorithm.itemText(i), workspace.algorithm.itemData(i))
             for i in range(workspace.algorithm.count())] == list(ALGORITHM_CHOICES)
     assert workspace.algorithm.currentData() == "traditional"
     QApplication.processEvents()
     before = workspace.view_controls.height()
     actions = workspace.analyze_button.menu().actions()
+    opened = []
+    monkeypatch.setattr(workspace.host, "open_settings_dialog",
+                        lambda **kwargs: opened.append(kwargs), raising=False)
     action = next(item for item in actions if item.text() == "普通光学设置…")
     action.trigger()
+    assert opened == [{"initial_page": "trial"}]
+    assert getattr(workspace, "optical_settings_dialog", None) is None
+    next(item for item in actions if item.text() == "光照检查与诊断…").trigger()
     QApplication.processEvents()
     assert workspace.optical_settings_dialog.isVisible()
+    assert workspace.optical_settings_dialog.save_button.isHidden()
     assert workspace.view_controls.height() == before
 
 
@@ -68,23 +76,29 @@ def test_preference_upgrade_keeps_algorithm_interaction_manual_and_gesture(works
     assert workspace.session.to_dict() == before
 
 
-def test_save_applies_only_next_analysis_and_explicit_refresh_is_separate(workspace, monkeypatch):
+def test_main_settings_apply_invalidates_old_candidates_without_implicit_analysis(workspace, monkeypatch):
+    from fdm.ui.dialogs import SettingsDialog
     candidates(workspace)
     controller = workspace.controller
-    batch = controller._automatic_context
     controller.start((20., 20.))
     draft = controller.draft
     before = workspace.session.to_dict()
     analyses = []
     monkeypatch.setattr(workspace, "_analyze_candidates", lambda: analyses.append(workspace.algorithm.currentData()))
-    dialog = open_dialog(workspace)
-    dialog.imaging_mode.setCurrentIndex(dialog.imaging_mode.findData("double_edge"))
-    dialog.save_button.click()
+    dialog = SettingsDialog(workspace.host._app_settings,
+                            document=workspace.host.current_document(), parent=workspace)
+    dialog.select_trial_section("analysis")
+    page = dialog._trial_settings_widget
+    page.imaging_mode.setCurrentIndex(page.imaging_mode.findData("double_edge"))
+    page.controls["algorithm"].setCurrentIndex(page.controls["algorithm"].findData("optical_adaptive"))
+    workspace._trial_preferences.update(**dialog.app_settings().trial_preferences.to_dict())
+    dialog.close()
     assert controller.optical_analysis_config["imaging_mode"] == "double_edge"
-    assert controller.draft is draft and controller._automatic_context is batch
+    assert controller.draft is draft
+    assert controller._automatic_context is None and controller.candidates == []
     assert workspace.session.to_dict() == before
     assert analyses == []
-    dialog.refresh_button.click()
+    workspace.analyze_button.click()
     assert analyses == ["optical_adaptive"]
 
 
@@ -134,7 +148,7 @@ def test_blank_capture_owns_five_distinct_frames_and_only_saves_reference(worksp
     complete(dialog)
     assert dialog._config["flat_reference"]
     assert not dialog.flat_enabled.isChecked()
-    assert workspace.controller.optical_analysis_config["flat_reference"] is None
+    assert workspace.controller.optical_analysis_config["flat_reference"] == dialog._config["flat_reference"]
     assert workspace.controller.budget.used_bytes == used
     assert workspace.session.to_dict() == before
     dialog._load_reference_preview()

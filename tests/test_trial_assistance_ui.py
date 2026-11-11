@@ -9,6 +9,8 @@ from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
 from fdm.ui.live_experiment_workspace import CandidatesModel, _new_trial_session
+from fdm.settings import AppSettingsIO
+from fdm.trial_preferences import TrialPreferences
 from test_live_experiment_content_workspace import workspace
 
 
@@ -38,12 +40,12 @@ def choose_mode(view, mode):
     QApplication.processEvents()
 
 
-def test_new_trials_default_crop_but_old_payload_remains_unchanged():
+def test_new_trials_default_disabled_but_old_payload_remains_unchanged():
     from fdm.live_experiment import ExperimentSession
     for mode in ("content", "diameter"):
         session = _new_trial_session(mode)
-        assert session.save_images
-        assert session.effective_evidence_options["mode"] == "crop_jpeg"
+        assert not session.save_images
+        assert session.effective_evidence_options["mode"] == "disabled"
         assert not session.can_undo
         assert not session.measurements
     for save in (False, True):
@@ -62,14 +64,17 @@ def test_preferences_do_not_edit_trial_and_are_persisted(workspace):
     choose_mode(workspace, "candidate")
     workspace.algorithm.setCurrentIndex(1)
     workspace._persist_view_preferences()
-    saved = json.loads(workspace._view_preferences_path.read_text())["assistance"]
-    assert saved == {"version": 4, "automatic": True, "algorithm": "multiscale", "visible": False,
+    workspace._trial_preferences.flush()
+    assert "assistance" not in json.loads(workspace._view_preferences_path.read_text())
+    saved = AppSettingsIO.load().trial_preferences.to_dict()
+    expected = {"automatic": True, "algorithm": "multiscale", "visible": False,
                      "opacity": 37, "input_mode": "candidate", "manual_algorithm": "assisted", "retention_seconds": 1.0,
                      "optical_analysis": workspace.controller.optical_analysis_config}
+    assert {key: saved[key] for key in expected} == expected
     assert workspace.session.revision == revision
-    workspace._apply_assistance_preferences({})
+    workspace._trial_preferences.update(**TrialPreferences().to_dict())
     assert not workspace.auto_analysis.isChecked()
-    workspace._apply_assistance_preferences(saved)
+    workspace._trial_preferences.update(**saved)
     assert workspace.auto_analysis.isChecked()
     assert workspace.canvas.candidate_input_enabled
     assert not workspace.canvas.candidate_visible
@@ -236,13 +241,16 @@ def test_point_mode_does_not_apply_manual_post_classification(workspace):
     assert workspace.classification_mode.isEnabled()
 
 
-def test_storage_mode_is_business_configuration_and_survives_sync(workspace):
+def test_storage_mode_is_global_preference_and_survives_sync(workspace):
     before = workspace.session.revision
     workspace.evidence_mode_actions["crop_jpeg"].trigger()
-    assert workspace.session.revision > before
+    assert workspace.session.revision == before
     workspace._sync_configuration_controls()
     workspace._refresh_assistance_state()
-    assert workspace.session.effective_evidence_options["mode"] == "crop_jpeg"
+    assert workspace.controller.effective_evidence_options["mode"] == "crop_jpeg"
+    workspace._trial_preferences.flush()
+    assert AppSettingsIO.load().trial_preferences.evidence_enabled
+    assert AppSettingsIO.load().trial_preferences.evidence_format == "crop_jpeg"
     assert workspace.evidence_storage.currentData() == "crop_jpeg"
     assert "局部" in workspace.evidence_button.toolTip()
     assert workspace.evidence_button.text() == ""
@@ -308,8 +316,7 @@ def test_legacy_input_preferences_migrate_only_application_choice(workspace, leg
         assert workspace.session.to_dict() == payload
 
 
-def test_visible_manual_gesture_menu_updates_existing_saved_choice_and_undo(workspace):
-    from fdm.live_experiment import ExperimentSession
+def test_visible_manual_gesture_menu_updates_global_choice_without_business_undo(workspace):
     choose_mode(workspace, "mixed")
     button = workspace.manual_gesture_button
     assert button.isVisible() and button.isEnabled()
@@ -321,6 +328,7 @@ def test_visible_manual_gesture_menu_updates_existing_saved_choice_and_undo(work
     category_geometry = workspace.category_scroll.geometry()
     viewport_geometry = workspace.image_scroll.geometry()
     controls_height = workspace.view_controls.height()
+    before = workspace.session.to_dict()
     menu = button.menu()
     menu.popup(button.mapToGlobal(button.rect().bottomLeft()))
     QApplication.processEvents()
@@ -333,17 +341,19 @@ def test_visible_manual_gesture_menu_updates_existing_saved_choice_and_undo(work
     assert "按住拖线" in button.accessibleName()
     assert "单击不建立手工首点" in button.toolTip()
     assert workspace.manual_gesture_actions["drag"].isChecked()
-    assert ExperimentSession.from_dict(workspace.session.to_dict()).workspace_options["gesture"] == "drag"
+    workspace._trial_preferences.flush()
+    assert AppSettingsIO.load().trial_preferences.gesture == "drag"
+    assert workspace.session.to_dict() == before
     assert workspace._assistance_preferences() == preferences
     assert workspace.category_scroll.geometry() == category_geometry
     assert workspace.image_scroll.geometry() == viewport_geometry
     assert workspace.view_controls.height() == controls_height
-    workspace._history_action("undo")
+    workspace.manual_gesture_actions["click"].trigger()
     assert workspace.gesture.currentIndex() == 0
     assert workspace.canvas.manual_gesture == "click"
     assert button.text() == "两点"
     assert workspace.manual_gesture_actions["click"].isChecked()
-    workspace._history_action("redo")
+    workspace.manual_gesture_actions["drag"].trigger()
     assert workspace.gesture.currentIndex() == 1
     assert workspace.canvas.manual_gesture == "drag"
     assert button.text() == "拖线"
@@ -365,25 +375,36 @@ def test_advanced_manual_gesture_and_interaction_mode_keep_quick_control_in_sync
     assert "短点击候选" in workspace.manual_gesture_button.toolTip()
 
 
-def test_advanced_evidence_storage_and_menu_share_undoable_policy(workspace):
-    original = workspace.session.effective_evidence_options['mode']
+def test_advanced_evidence_storage_and_menu_share_application_policy(workspace):
+    original = workspace.controller.effective_evidence_options['mode']
     record = workspace.session.add_measurement(20, 'wool', field_id=workspace.controller.field_id,
         evidence={'state': 'saved', 'path': 'existing.png', 'mode': 'full_png'})
     original_record = deepcopy(record.evidence)
-    workspace.settings_dialog.show()
+    revision = workspace.session.revision
     for mode in ('crop_jpeg', 'full_png', 'disabled'):
         workspace.evidence_storage.setCurrentIndex(workspace.evidence_storage.findData(mode))
         workspace._refresh_assistance_state()
-        assert workspace.session.effective_evidence_options['mode'] == mode
+        assert workspace.controller.effective_evidence_options['mode'] == mode
         assert workspace.evidence_mode_actions[mode].isChecked()
         assert workspace.session.measurements[record.id].evidence == original_record
     workspace.evidence_mode_actions['crop_jpeg'].trigger()
     assert workspace.evidence_storage.currentData() == 'crop_jpeg'
-    workspace._history_action('undo')
+    assert workspace.session.revision == revision
+    workspace.evidence_mode_actions['disabled'].trigger()
     assert workspace.evidence_storage.currentData() == 'disabled'
-    workspace._history_action('redo')
+    workspace.evidence_mode_actions['crop_jpeg'].trigger()
     assert workspace.evidence_storage.currentData() == 'crop_jpeg'
     assert original == 'disabled'
+
+
+def test_trial_advanced_entry_routes_to_main_settings_without_local_dialog(workspace, monkeypatch):
+    opened = []
+    monkeypatch.setattr(workspace.host, "open_settings_dialog",
+                        lambda *, initial_page: opened.append(initial_page), raising=False)
+    workspace.advanced_toggle.trigger()
+    assert opened == ["trial"]
+    assert not workspace.advanced_toggle.isCheckable()
+    assert not hasattr(workspace, "settings_dialog")
 
 
 def test_album_button_opens_single_nonmodal_window_without_sidebar_reflow(workspace):

@@ -133,6 +133,7 @@ def rebase_experiment_assets(experiments, saved_payload: dict, root: Path) -> No
     """
     sessions = {session.id: session for session in experiments}
     root = root.resolve()
+    published_paths = {}
     for snapshot in saved_payload.get("live_experiments", []):
         session = sessions.get(snapshot["id"])
         if session is None:
@@ -167,6 +168,12 @@ def rebase_experiment_assets(experiments, saved_payload: dict, root: Path) -> No
             session._evidence_overrides[record_id] = evidence
             if record is not None:
                 session.measurements[record_id] = replace(record, evidence=evidence)
+            for previous in (original.get("path"), current.get("path")):
+                if previous:
+                    published_paths[previous] = evidence["path"]
+    if published_paths:
+        from .evidence_resources import get_evidence_resources
+        get_evidence_resources().published_paths(published_paths)
 
 
 def hydrate_experiment_assets(experiments, root: Path) -> None:

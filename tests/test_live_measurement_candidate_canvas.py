@@ -234,6 +234,8 @@ def test_actual_tab_navigation_and_scroll_keep_labels_in_visible_viewport(canvas
 
 
 def test_accepted_ordinals_survive_deletion_and_frame_arrival(canvas):
+    from fdm.trial_preferences import TrialPreferences
+    canvas.set_trial_preferences(TrialPreferences(content_label="number"))
     session = canvas.controller.session
     record_a = session.add_measurement(20, "wool", endpoints=((200, 200), (230, 210)),
                                        provenance={"measurement_number": 12})

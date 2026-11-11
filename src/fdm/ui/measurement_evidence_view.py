@@ -419,7 +419,8 @@ class EvidenceReviewController(QObject):
             self.dialog.image.clear_image()
             self.dialog.status.setText("正在读取测量证据…")
             self._loading_key = key
-            self._decode_future = self._decoder.submit(self._decode, path, expected_size)
+            from fdm.ui.trial_evidence_lifecycle import submit_evidence_read
+            self._decode_future = submit_evidence_read(self._decoder, self._decode, path, expected_size, path=path)
 
     def suspend(self):
         if self._closed:

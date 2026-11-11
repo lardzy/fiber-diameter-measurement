@@ -268,6 +268,7 @@ class PreparedProjectSave:
     analysis_paths: dict[str, Path]
     receipts: dict[str, RasterAssetReceipt]
     preparation_ms: float = 0.0
+    evidence_lease: object | None = field(default=None, repr=False, compare=False)
 
     def equivalent(self, other: PreparedProjectSave) -> bool:
         return (
@@ -678,6 +679,7 @@ class ProjectSessionController:
             clean_snapshot = snapshotter() if callable(snapshotter) else None
             if clean_snapshot is not None:
                 clean_snapshot = replace(clean_snapshot, document_persistence=self.persistence_snapshot())
+            from fdm.live_experiment.evidence_resources import get_evidence_resources
             return PreparedProjectSave(
                 target_path=target_path, project_identity=id(host.project),
                 plan=replace(plan, documents=tuple(documents)), savepoints=savepoints,
@@ -686,6 +688,7 @@ class ProjectSessionController:
                 rasters=rasters, images=images, analysis_paths=analysis_paths,
                 receipts=dict(self._raster_asset_receipts),
                 preparation_ms=(perf_counter() - started) * 1000,
+                evidence_lease=get_evidence_resources().pin_payload(plan.payload),
             )
         except Exception as exc:  # noqa: BLE001 - snapshot failures leave live state intact
             return ProjectSaveResult(False, path=target_path, message=f"无法构造项目保存计划：{exc}")
@@ -1490,6 +1493,12 @@ class _SaveStorageHost:
 
 
 def write_project_save(prepared: PreparedProjectSave) -> ProjectWriteResult:
+    from fdm.live_experiment.evidence_resources import get_evidence_resources
+    with get_evidence_resources().activity():
+        return _write_project_save(prepared)
+
+
+def _write_project_save(prepared: PreparedProjectSave) -> ProjectWriteResult:
     """Storage transaction shared by synchronous callers and the Qt worker.
 
     Inputs are owned by this request. Only immutable pixels/encoded Logo bytes

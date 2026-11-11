@@ -76,18 +76,26 @@ def test_direction_switch_requires_new_field_and_preserves_history(workspace):
 
 
 def test_settings_tabs_fit_without_horizontal_scroll_or_hidden_fields(workspace):
-    workspace.settings_dialog.resize(620, 480)
-    workspace.advanced_toggle.trigger()
+    from fdm.ui.dialogs import SettingsDialog
+    dialog = SettingsDialog(workspace.host._app_settings, document=None, parent=workspace.host)
+    dialog.select_page("trial")
+    dialog.resize(900, 620)
+    dialog.show()
     QApplication.processEvents()
-    assert workspace.settings_tabs.count() == 2
+    tabs = dialog._trial_settings_widget.tabs
+    assert tabs.count() == 3
     assert workspace.workflow_tabs.count() == 3
-    assert not workspace.settings_dialog.isAncestorOf(workspace.sample)
-    assert not workspace.settings_dialog.isAncestorOf(workspace.sample_number)
-    for index in range(workspace.settings_tabs.count()):
-        workspace.settings_tabs.setCurrentIndex(index)
-        QApplication.processEvents()
-        scroll = workspace.settings_tabs.currentWidget()
-        assert isinstance(scroll, QScrollArea)
-        assert not scroll.horizontalScrollBar().isVisible()
-        assert scroll.widget().width() <= scroll.viewport().width()
+    assert not dialog.isAncestorOf(workspace.sample)
+    assert not dialog.isAncestorOf(workspace.sample_number)
+    try:
+        for index in range(tabs.count()):
+            tabs.setCurrentIndex(index)
+            QApplication.processEvents()
+            scroll = tabs.currentWidget()
+            assert isinstance(scroll, QScrollArea)
+            assert not scroll.horizontalScrollBar().isVisible()
+            assert scroll.widget().width() <= scroll.viewport().width()
+    finally:
+        dialog.reject()
+        dialog.deleteLater()
     assert not isinstance(workspace, QMainWindow)

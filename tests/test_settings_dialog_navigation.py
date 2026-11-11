@@ -41,7 +41,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
 
-    def test_uses_nine_professional_preference_categories(self) -> None:
+    def test_uses_ten_professional_preference_categories(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
             labels = [
@@ -58,12 +58,13 @@ class SettingsDialogNavigationTests(unittest.TestCase):
                     "图像与智能分析",
                     "面积识别",
                     "采集与数字切片",
+                    "采集与试验",
                     "截图工具",
                     "导出与模板",
                 ],
             )
             self.assertNotIn("当前图片", labels)
-            self.assertEqual(dialog._settings_pages.count(), 9)  # noqa: SLF001
+            self.assertEqual(dialog._settings_pages.count(), 10)  # noqa: SLF001
             self.assertEqual(dialog._settings_page_title.text(), "常规")  # noqa: SLF001
         finally:
             dialog.close()

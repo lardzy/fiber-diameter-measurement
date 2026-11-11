@@ -200,7 +200,6 @@ class AcquisitionWorkbench(QWidget):
             return True
         trial.controller.cancel_draft()
         trial.controller.end_field(reason)
-        trial.settings_dialog.hide()
         return trial._stop_source()
 
     def clear_trial_pages(self):

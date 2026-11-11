@@ -7,7 +7,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import tempfile
 import threading
 import uuid
 
@@ -31,8 +30,15 @@ class _WriteTask:
 
 class EvidenceStore:
     def __init__(self, directory: Path | str | None = None, *, budget: FrameBudget | None = None):
-        self.directory = Path(directory) if directory else Path(tempfile.mkdtemp(prefix="fdm-live-evidence-"))
-        self.directory.mkdir(parents=True, exist_ok=True)
+        self.resources = None
+        self._resource_key = None
+        if directory is None:
+            from .evidence_resources import get_evidence_resources
+            self.resources = get_evidence_resources()
+            self._resource_key, self.directory = self.resources.register_store(self)
+        else:
+            self.directory = Path(directory)
+            self.directory.mkdir(parents=True, exist_ok=True)
         self.budget = budget or FrameBudget()
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-evidence")
         self._entries: dict[str, dict] = {}
@@ -41,6 +47,17 @@ class EvidenceStore:
         self._scratch_group = "evidence:" + uuid.uuid4().hex
         self._lock = threading.RLock()
         self._closed = False
+
+    def attach_owner(self, project, session):
+        if self.resources is not None:
+            self.resources.attach_owner(self._resource_key, project, session)
+
+    def rebase_owned_paths(self, paths):
+        """Retire the cache's temporary dependency with its published records."""
+        with self._lock:
+            for entry in self._entries.values():
+                if entry.get("path") in paths and entry.get("state") == "saved":
+                    entry["path"] = paths[entry["path"]]
 
     def reserve(self, frame: FrameHandle, *, options: dict | None = None, points=None) -> dict:
         """Reserve before ledger commit; dedup source, rectangle and encoding.
@@ -129,9 +146,13 @@ class EvidenceStore:
             frame, task.frame = task.frame, None
         entry = task.entry
         temporary = None
+        handle = None
+        activity = self.resources.activity() if self.resources is not None else None
         try:
             temporary = Path(entry["path"]).with_suffix(".pending")
-            with temporary.open("wb", buffering=0) as handle:
+            handle = (self.resources.open_pending(self._resource_key, entry["path"])
+                      if self.resources is not None else temporary.open("wb", buffering=0))
+            with handle:
                 x, y, width, height = task.region
                 pixels = frame.pixels[y:y+height, x:x+width]
                 encoded = (write_jpeg_evidence(pixels, handle, quality=entry["quality"])
@@ -145,6 +166,8 @@ class EvidenceStore:
                         task.lease = None
                 handle.flush()
                 os.fsync(handle.fileno())
+            if self.resources is not None and (Path(entry["path"]).exists() or Path(entry["path"]).is_symlink()):
+                raise FileExistsError("临时图片目标已被占用，未覆盖")
             os.replace(temporary, entry["path"])
             return {**entry, "state": "saved", "sha256": encoded.sha256,
                     "size_bytes": encoded.size_bytes}
@@ -154,7 +177,7 @@ class EvidenceStore:
             # could keep the borrowed input or compressor buffers alive.
             exc.__traceback__ = None
             try:
-                if temporary is not None:
+                if temporary is not None and (self.resources is None or handle is not None):
                     temporary.unlink(missing_ok=True)
             except OSError as cleanup_error:
                 # Losing write access can also prevent removal. Preserve the
@@ -166,6 +189,8 @@ class EvidenceStore:
             with task.lock:
                 task.state = "done"
                 self._release_task_resources(task)
+            if activity is not None:
+                activity.close()
 
     def poll(self) -> list[dict]:
         completed = []

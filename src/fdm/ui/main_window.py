@@ -2315,6 +2315,9 @@ class MainWindow(QMainWindow):
             and app.platformName().casefold() != "offscreen"
         ):
             QTimer.singleShot(0, self, self._start_configured_screenshot_tool)
+        from fdm.ui.trial_evidence_lifecycle import trial_evidence_cleanup, install_trial_evidence_shutdown
+        install_trial_evidence_shutdown(QApplication.instance())
+        QTimer.singleShot(1500, self, lambda: trial_evidence_cleanup(self).request())
 
     @property
     def _load_thread(self):
@@ -21384,6 +21387,18 @@ class MainWindow(QMainWindow):
             parent=self,
         )
         dialog.select_page(initial_page)
+        from fdm.ui.trial_evidence_lifecycle import trial_evidence_cleanup
+        cleanup = trial_evidence_cleanup(self)
+        cleanup.statusChanged.connect(dialog.set_trial_cleanup_status)
+        dialog.finished.connect(lambda _result: cleanup.statusChanged.disconnect(dialog.set_trial_cleanup_status))
+        dialog.trialEvidenceCleanupRequested.connect(cleanup.request)
+        dialog.set_trial_cleanup_status(cleanup.last_message, cleanup.future is not None)
+        from fdm.ui.trial_preferences_binding import trial_preferences_binding
+        trial_preferences = trial_preferences_binding(self)
+        trial_preferences.changed.connect(dialog.update_trial_optical_resources)
+        dialog.finished.connect(
+            lambda _result: trial_preferences.changed.disconnect(dialog.update_trial_optical_resources)
+        )
         screenshot_status = self._screenshot_agent_client.status(timeout_ms=180)
         status_error = str(screenshot_status.error or "")
         if self._screenshot_settings_load_error:
@@ -21954,6 +21969,9 @@ class MainWindow(QMainWindow):
         settings = settings.normalized_copy()
         magic_model_changed = settings.magic_segment_model_variant != self._app_settings.magic_segment_model_variant
         self._app_settings = settings
+        binding = getattr(self, "_trial_preferences_binding", None)
+        if binding is not None:
+            binding.activated()
         if magic_model_changed:
             for document_id, canvas in self._canvases.items():
                 if canvas.has_magic_segment_session() and self._prompt_seg_worker is not None:
@@ -24233,6 +24251,8 @@ class MainWindow(QMainWindow):
             for index in range(self.tab_widget.count())
         ]
         self._snapshot_controls.reset()
+        from fdm.live_experiment.evidence_resources import get_evidence_resources
+        get_evidence_resources().discard_project(self.project)
         self.project = ProjectState.empty()
         self._workspace_composite_undo.clear()
         self._workspace_composite_redo.clear()
@@ -24509,6 +24529,8 @@ class MainWindow(QMainWindow):
         self._close_analysis_batch_dialog(wait=True)
         self.project_save_coordinator.reset()
         self._snapshot_controls.reset()
+        from fdm.live_experiment.evidence_resources import get_evidence_resources
+        get_evidence_resources().discard_project(self.project)
         self.project = ProjectState.empty()
         self._construction_resolution_cache.clear()
         self._workspace_composite_undo.clear()
@@ -29553,4 +29575,9 @@ class MainWindow(QMainWindow):
         self._preview_display_binding.close()
         if self._acquisition_workbench is not None:
             self._acquisition_workbench.records.shutdown()
+        binding = getattr(self, "_trial_preferences_binding", None)
+        if binding is not None and binding._timer.isActive():
+            binding.flush()
+        from fdm.live_experiment.evidence_resources import get_evidence_resources
+        get_evidence_resources().discard_project(self.project)
         event.accept()
