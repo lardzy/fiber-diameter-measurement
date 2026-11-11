@@ -330,6 +330,7 @@ class TrialAssistanceMixin:
     def apply_trial_preferences(self, preferences):
         if self._closed:
             return
+        self._trial_preferences.apply_quantity_target(self.session, refresh=False)
         previous = getattr(self, "_applied_trial_preferences", None)
         self._applied_trial_preferences = preferences
         interaction_changed = previous is not None and any(

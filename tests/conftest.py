@@ -53,6 +53,7 @@ def isolated_desktop_profile(tmp_path, monkeypatch):
     from threading import enumerate as threads
 
     monkeypatch.setattr(settings, "settings_file_path", lambda: tmp_path / "settings.json")
+    monkeypatch.setattr(settings, "settings_directory", lambda: tmp_path)
     monkeypatch.setattr(screenshot_settings, "screenshot_settings_file_path", lambda: tmp_path / "screenshot-settings.json")
     monkeypatch.setattr(runtime_logging, "runtime_log_path", lambda: tmp_path / "startup.log")
     yield

@@ -6924,6 +6924,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 def screenshot_settings(self):
                     return window._screenshot_settings
 
+                def trial_total_target_changed(self) -> bool:
+                    return False
+
                 def wants_scale_anchor_pick(self) -> bool:
                     return False
 

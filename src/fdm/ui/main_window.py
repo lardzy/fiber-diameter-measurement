@@ -21395,6 +21395,10 @@ class MainWindow(QMainWindow):
         dialog.set_trial_cleanup_status(cleanup.last_message, cleanup.future is not None)
         from fdm.ui.trial_preferences_binding import trial_preferences_binding
         trial_preferences = trial_preferences_binding(self)
+        try:
+            trial_preferences.prepare_quantity_target_dialog(dialog)
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(dialog, "总根数提醒设置", f"无法读取总根数提醒设置：\n{exc}")
         trial_preferences.changed.connect(dialog.update_trial_optical_resources)
         dialog.finished.connect(
             lambda _result: trial_preferences.changed.disconnect(dialog.update_trial_optical_resources)
@@ -21455,6 +21459,12 @@ class MainWindow(QMainWindow):
                 return
         new_settings = dialog.app_settings()
         new_screenshot_settings = dialog.screenshot_settings()
+        from fdm.ui.trial_preferences_binding import trial_preferences_binding
+        try:
+            trial_preferences_binding(self).commit_quantity_target_dialog(dialog)
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(dialog, "总根数提醒设置", f"未能保存总根数提醒设置，原值保持不变：\n{exc}")
+            return
         if self._slide_acquisition_active():
             new_settings = self._settings_with_locked_digital_slide_values(new_settings)
         self._activate_app_settings(new_settings)

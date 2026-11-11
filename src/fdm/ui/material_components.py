@@ -36,7 +36,10 @@ def material_summary(material):
     density = number_text(material.density)
     if material.density is None or material.density <= 0:
         density += "（待确认）"
-    return f"密度 {density} g/cm³\n直径范围 {range_text(material)} μm"
+    measured = f"{material.measured_target} 根" if material.measured_target is not None else "随试验默认"
+    counted = f"{material.count_target} 根" if material.count_target is not None else "不提醒"
+    return (f"密度 {density} g/cm³\n直径范围 {range_text(material)} μm"
+            f"\n实测直径提醒 {measured} · 补计／计数提醒 {counted}")
 
 
 def fit_dialog(dialog, width, height):
@@ -124,6 +127,19 @@ class MaterialParameterEditor(QWidget):
         self.density.setPlaceholderText("未设置")
         self.lower.setPlaceholderText("不限")
         self.upper.setPlaceholderText("不限")
+        for key, title, placeholder in (("measured_target", "实测直径提醒根数", "留空随试验默认"),
+                                         ("count_target", "补计／计数提醒根数", "留空不提醒")):
+            editor = QLineEdit(panel)
+            editor.setMinimumWidth(0)
+            editor.setAccessibleName(title)
+            editor.setPlaceholderText(placeholder)
+            editor.setToolTip("填写正整数；达到时提醒，可以继续。实测和补计分别统计，补计不含实测。")
+            editor.textChanged.connect(self._changed)
+            self.form.addRow(title, editor)
+            setattr(self, key, editor)
+        target_note = QLabel("提醒按操作者及经／纬方向分别统计。实测留空沿用试验默认；补计留空不提醒。", panel)
+        target_note.setWordWrap(True)
+        self.form.addRow(target_note)
         for key, title in (("below", "低于下限时建议"), ("above", "高于上限时建议")):
             editor = NoWheelComboBox(panel)
             editor.setMinimumWidth(0)
@@ -164,7 +180,9 @@ class MaterialParameterEditor(QWidget):
             self.title.setText(f"{scope} · {material.name}")
             self.name.setText(material.name)
             self.aliases.setText("，".join(material.aliases))
-            for editor, value in ((self.density, material.density), (self.lower, material.lower_limit), (self.upper, material.upper_limit)):
+            for editor, value in ((self.density, material.density), (self.lower, material.lower_limit),
+                                  (self.upper, material.upper_limit),
+                                  (self.measured_target, material.measured_target), (self.count_target, material.count_target)):
                 editor.setText("" if value is None else str(value))
             for combo, value in ((self.below, material.lower_suggestion_id), (self.above, material.upper_suggestion_id)):
                 combo.clear()
@@ -188,6 +206,17 @@ class MaterialParameterEditor(QWidget):
             raise ValueError("请先选择类别")
         def numeric(editor):
             return float(editor.text().strip()) if editor.text().strip() else None
+        def target(editor):
+            text = editor.text().strip()
+            if not text:
+                return None
+            try:
+                value = int(text)
+            except ValueError as error:
+                raise ValueError("类别提醒根数必须是正整数或留空") from error
+            if value < 1:
+                raise ValueError("类别提醒根数必须是正整数或留空")
+            return value
         provenance = deepcopy(self.original.provenance)
         if self.source.text().strip() != self._source_original:
             provenance["parameter_source"] = self.source.text().strip()
@@ -195,7 +224,7 @@ class MaterialParameterEditor(QWidget):
             aliases=tuple(self.aliases.text().replace("，", ",").split(",")),
             density=numeric(self.density), lower_limit=numeric(self.lower), upper_limit=numeric(self.upper),
             lower_suggestion_id=self.below.currentData(), upper_suggestion_id=self.above.currentData(),
-            provenance=provenance)
+            provenance=provenance, measured_target=target(self.measured_target), count_target=target(self.count_target))
 
 
 def material_table(parent=None, *, selectable=False):

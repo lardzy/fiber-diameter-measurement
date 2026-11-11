@@ -1,6 +1,7 @@
 """History and target changes cannot leave obsolete viewport feedback visible."""
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 import importlib.util
 
 import pytest
@@ -11,6 +12,8 @@ from PySide6.QtWidgets import QPushButton
 from fdm.live_experiment import default_materials
 from fdm.live_experiment.feedback import feedback_for_reason
 from fdm.live_experiment.reminders import ReminderPolicy
+from fdm.live_experiment.trial_defaults import save_content_total_target_default
+from fdm.ui.trial_preferences_binding import trial_preferences_binding
 from fdm.ui import live_experiment_workspace as workspace_module
 
 _spec = importlib.util.spec_from_file_location("feedback_history_workflow",
@@ -29,7 +32,14 @@ def page(tmp_path):
             page.session.set_materials(default_materials(), direction=direction)
         page._refresh_materials()
         page._configure(reminder_policy=ReminderPolicy(content_measured_target=2, content_total_target=3))
+        shared_target(page, 3)
         yield page
+
+
+def shared_target(page, target):
+    save_content_total_target_default(target)
+    trial_preferences_binding(page.host).prepare_quantity_target_dialog(
+        SimpleNamespace(set_trial_total_target=lambda value: None))
 
 
 def accept(page, diameter):
@@ -139,7 +149,7 @@ def test_changed_goal_snapshot_dismisses_card_without_forgetting_delivery(page, 
     elif change == "increase_count":
         page._count_material("wool", 1)
     elif change == "target":
-        page._configure(reminder_policy=replace(page.session.reminder_policy, content_total_target=7))
+        shared_target(page, 7)
     else:
         page.session.rename_operator("新姓名")
         page._changed()

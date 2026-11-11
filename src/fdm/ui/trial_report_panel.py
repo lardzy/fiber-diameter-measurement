@@ -23,6 +23,9 @@ class TrialReportPanel(QObject):
         self.workspace = workspace
         self.trial_mode = workspace.session.workspace_options["mode"]
         self.preferences = template_preferences(self.trial_mode)
+        self._live_manager = None
+        self._methods_source = None
+        self._task_source = None
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-template-report")
         self.future = None
         self.cancel_event = threading.Event()
@@ -30,11 +33,19 @@ class TrialReportPanel(QObject):
         self.last_report = None
         layout = workspace.report_layout
         self.path_label = QLabel(workspace)
+        self.path_label.setTextFormat(Qt.TextFormat.PlainText)
         self.path_label.setWordWrap(True)
+        self.path_label.installEventFilter(self)
         layout.addWidget(self.path_label)
+        self.live_template_label = QLabel(workspace)
+        self.live_template_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.live_template_label.setWordWrap(True)
+        layout.addWidget(self.live_template_label)
         row = QHBoxLayout()
         for title, callback in (("选择模板", self.choose), ("打开模板", self.open), ("所在位置", self.folder)):
             button = QPushButton(title)
+            if callback == self.choose:
+                button.setToolTip("为当前试验从所选文件新建实时工作簿，并作为后续试验模板。旧工作簿保留供您保存；同路径重选也会重新加载。")
             button.clicked.connect(lambda checked=False, fn=callback: workspace._guard(fn))
             row.addWidget(button)
         layout.addLayout(row)
@@ -49,7 +60,7 @@ class TrialReportPanel(QObject):
         self.method.currentIndexChanged.connect(self.method_changed)
         layout.addWidget(self.method)
         self.method.setVisible(self.trial_mode == "content")
-        self.method.setToolTip("为当前试验方法指定模板中的同一标准标签；切换试验方法不会沿用其他方法的映射。")
+        self.method.setToolTip("为当前试验方法指定模板中的同一标准标签。修改后将为当前试验新建实时工作簿，旧工作簿保留；后续试验使用此映射，其他已打开试验不变。")
         self.status = QLabel("生成后请复核报告方法与结果，再编辑或打印。", workspace)
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
@@ -110,29 +121,97 @@ class TrialReportPanel(QObject):
         self._sync_actions()
 
     def eventFilter(self, watched, event):
+        if watched is self.path_label and event.type() == QEvent.Type.Show:
+            self.refresh_path()
         if watched is getattr(self.workspace, "report_status_label", None) and event.type() == QEvent.Type.Resize:
             self._sync_actions()
         return False
 
     def path(self, *, create=False):
-        return Path(self.preferences["template"]) if self.preferences.get("template") else working_template(create=create, trial_mode=self.trial_mode)
+        # Pages can outlive a selection made in another trial. Never write an
+        # old page's cached preference dictionary back over the new selection.
+        self.preferences = template_preferences(self.trial_mode)
+        path = Path(self.preferences["template"]) if self.preferences.get("template") else working_template(create=create, trial_mode=self.trial_mode)
+        source = self._template_source(self.preferences, path=path)
+        if source != self._methods_source:
+            self._reset_methods(source)
+        return path
+
+    def _template_source(self, preferences, *, path=None):
+        """A standard list belongs to the file/mapping that produced it."""
+        path = path or (Path(preferences["template"]) if preferences.get("template")
+                        else working_template(trial_mode=self.trial_mode))
+        mapping = preferences.get("mapping") or ""
+
+        def identity(value):
+            if not value:
+                return "", None
+            value = Path(value)
+            try:
+                stat = value.stat()
+                stamp = (stat.st_size, stat.st_mtime_ns, stat.st_ino)
+            except OSError:
+                stamp = None
+            return str(value), stamp
+
+        return identity(path), identity(mapping)
+
+    def _reset_methods(self, source):
+        self._methods_source = source
+        previous = self.method.blockSignals(True)
+        self.method.clear()
+        self.method.addItem("当前试验方法 → 自动匹配同名模板标准", None)
+        self.method.blockSignals(previous)
 
     def refresh_path(self):
-        self.path_label.setText("报告模板：" + str(self.path()))
+        path = self.path()
+        label = "后续试验模板" if self.preferences.get("template") else "后续试验模板（个人工作副本）"
+        self.path_label.setText(label + "：" + str(path))
+
+    def bind_live_excel(self, manager):
+        if self._live_manager is manager:
+            return
+        if self._live_manager is not None:
+            self._live_manager.changed.disconnect(self._live_changed)
+        self._live_manager = manager
+        manager.changed.connect(self._live_changed)
+        self._live_changed(self.workspace.session.id)
+
+    def _live_changed(self, session_id):
+        if session_id != self.workspace.session.id or self._live_manager is None:
+            return
+        state = self._live_manager.status(session_id)
+        path = state.get("template_path")
+        label = "当前实时工作簿模板" if state.get("connected") else "上次实时工作簿模板"
+        lines = [label + "：" + path] if path else ["当前试验尚未建立实时工作簿。"]
+        if state.get("pending_template_path"):
+            prefix = "正在更换为：" if state.get("template_replacement_pending") else "更换未完成："
+            lines.append(prefix + state["pending_template_path"])
+        self.live_template_label.setText("\n".join(lines))
+
+    def _replace_live_template(self):
+        if self._live_manager is not None:
+            self._live_manager.replace_template(self.workspace.session, preferences=self.preferences)
+
+    def _require_idle_template_task(self):
+        if self.future is not None:
+            raise ValueError("已有模板任务正在处理，请完成或取消后再选择模板；测量可以继续。")
 
     def choose(self):
+        self._require_idle_template_task()
         path, _ = QFileDialog.getOpenFileName(self.workspace, "选择可编辑报告模板", str(self.path()),
             "Excel 模板 (*.xlt *.xltm *.xltx);;Excel 工作簿 (*.xls *.xlsm *.xlsx)")
         if path:
+            if not Path(path).is_file():
+                raise FileNotFoundError("所选模板不存在，请重新选择；当前工作簿保留。")
+            self.preferences = template_preferences(self.trial_mode)
             self.preferences["template"] = path
             self.preferences.pop("method_label", None)
             self.preferences.pop("method_labels", None)
             save_template_preferences(self.preferences, trial_mode=self.trial_mode)
-            self.method.blockSignals(True)
-            self.method.clear()
-            self.method.addItem("当前试验方法 → 自动匹配同名模板标准", None)
-            self.method.blockSignals(False)
+            self._reset_methods(self._template_source(self.preferences))
             self.refresh_path()
+            self._replace_live_template()
             self.inspect()
 
     def open(self):
@@ -147,24 +226,44 @@ class TrialReportPanel(QObject):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.path(create=True).parent)))
 
     def choose_mapping(self):
+        self._require_idle_template_task()
         path, _ = QFileDialog.getOpenFileName(self.workspace, "选择 CU 模板输入映射", "", "JSON (*.json)")
         if path:
             TemplateProfile.load(path, trial_mode=self.trial_mode)
+            self.preferences = template_preferences(self.trial_mode)
             self.preferences["mapping"] = path
             save_template_preferences(self.preferences, trial_mode=self.trial_mode)
+            self.refresh_path()
+            self._replace_live_template()
+            self._set_status("输入映射已更新，将为当前试验新建实时工作簿，旧工作簿保留；请重新读取模板标准。")
 
     def method_changed(self, _):
+        self.preferences = template_preferences(self.trial_mode)
+        source = self._template_source(self.preferences)
+        if source != self._methods_source:
+            # A hidden panel may still contain labels read from the old file.
+            # Never attach such a label to another panel's new preference.
+            self._reset_methods(source)
+            self.refresh_path()
+            self._set_status("模板或输入映射已改变，旧标准列表已清除；请重新读取模板标准后选择。")
+            return
         self.preferences.pop("method_label", None)
         mappings = dict(self.preferences.get("method_labels") or {})
-        mappings[self.workspace.session.method] = self.method.currentData()
+        method, label = self.workspace.session.method, self.method.currentData()
+        if mappings.get(method) == label:
+            return
+        mappings[method] = label
         self.preferences["method_labels"] = mappings
         save_template_preferences(self.preferences, trial_mode=self.trial_mode)
+        self._replace_live_template()
+        self._set_status("标准映射已更新，将为当前试验新建实时工作簿；旧工作簿保留，其他已打开试验不变。")
 
-    def start(self, function):
+    def start(self, function, *, source=None):
         if self.future is not None:
             raise ValueError("已有模板任务正在处理，测量可以继续。")
         self.cancel_event.clear()
         self.set_diagnostics({})
+        self._task_source = source
         self.future = self.executor.submit(function)
         self.cancel_button.setEnabled(True)
         self._set_status("Excel 正在后台处理，实时采集与计数继续。")
@@ -198,7 +297,7 @@ class TrialReportPanel(QObject):
     def inspect(self):
         request = {"operation": "inspect", "template": str(self.path(create=True)),
                    "profile": asdict(TemplateProfile.load(self.preferences.get("mapping"), trial_mode=self.trial_mode))}
-        self.start(lambda: run_excel_request(request, cancel_event=self.cancel_event))
+        self.start(lambda: run_excel_request(request, cancel_event=self.cancel_event), source=self._methods_source)
 
     def export(self):
         if self.future is not None:
@@ -222,8 +321,14 @@ class TrialReportPanel(QObject):
         if self.future is None or not self.future.done():
             return
         future, self.future = self.future, None
+        source, self._task_source = self._task_source, None
         self.timer.stop()
         self.cancel_button.setEnabled(False)
+        if source is not None:
+            self.refresh_path()
+            if source != self._methods_source:
+                self._set_status("模板或输入映射已改变，已忽略旧模板返回的标准列表；请重新读取模板标准。")
+                return
         try:
             result = future.result()
         except Exception as exc:

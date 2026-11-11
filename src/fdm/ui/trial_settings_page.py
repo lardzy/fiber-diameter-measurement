@@ -109,6 +109,14 @@ class TrialSettingsPage(QWidget):
         display.addStretch(1)
 
         storage = self._page("测量与图片存档")
+        _, goals = self._group(storage, "数量提醒")
+        self.total_target = NoWheelSpinBox(self)
+        self.total_target.setObjectName("trialContentTotalTarget")
+        self.total_target.setRange(1, 100_000_000)
+        self.total_target.setValue(1500)
+        self.total_target.setSuffix(" 根")
+        goals.addRow("含量试验总根数", self.total_target)
+        self._note(storage, "统一用于所有已有及以后新建的含量试验。按每位操作者的经／纬方向分别累计实测＋补计，达到后提醒，仍可继续。类别的实测和计数目标在纤维类别库中设置。")
         _, interaction = self._group(storage, "测量交互")
         self._combo(interaction, "input_mode", "交互模式", (("混合：候选点选与手工绘制", "mixed"),
             ("仅手工测量", "manual"), ("仅候选点选", "candidate")))
@@ -262,6 +270,7 @@ class TrialSettingsPage(QWidget):
         # A later unrelated preference notification must not resurrect the
         # unchanged global reference that the user's draft just cleared.
         self.set_preferences(TrialPreferences(), reset_resource_observation=False)
+        self.total_target.setValue(1500)
 
     def update_optical_resources(self, preferences):
         """Merge asynchronous capture resources without overwriting UI drafts."""

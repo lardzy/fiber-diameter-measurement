@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 from fdm.atomic_io import atomic_write_json
@@ -44,6 +45,21 @@ def save_reminder_defaults(mode: str, policy: ReminderPolicy, *, path=None) -> P
     policy = ReminderPolicy.from_dict(policy.to_dict())
     payload = _read(path)
     payload.setdefault(mode, {})["reminder_policy"] = policy.to_dict()
+    return atomic_write_json(path or defaults_path(), payload)
+
+
+def content_total_target_default(*, path=None) -> int:
+    """One shared total goal, including trials loaded from older projects."""
+    return new_trial_defaults("content", path=path)["reminder_policy"].content_total_target
+
+
+def save_content_total_target_default(target: int, *, path=None) -> Path:
+    """Change only the shared total, preserving other goals and trial defaults."""
+    payload = _read(path)
+    data = payload.setdefault("content", {})
+    policy = ReminderPolicy.from_dict(data["reminder_policy"]) if "reminder_policy" in data else ReminderPolicy()
+    policy = replace(policy, content_total_target=target)
+    data["reminder_policy"] = policy.to_dict()
     return atomic_write_json(path or defaults_path(), payload)
 
 

@@ -192,6 +192,7 @@ class WorkflowHarness:
         from fdm.settings import AppSettings, AppSettingsIO
         from fdm.ui.main_window import MainWindow
         self.profile.mkdir(parents=True, exist_ok=True)
+        self.stack.enter_context(patch.object(settings, "settings_directory", lambda: self.profile))
         for module, name, filename in ((settings, "settings_file_path", "settings.json"),
                 (screenshot_settings, "screenshot_settings_file_path", "screenshot-settings.json"),
                 (runtime_logging, "runtime_log_path", "startup.log")):

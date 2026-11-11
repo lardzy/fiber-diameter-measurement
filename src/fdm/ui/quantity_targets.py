@@ -4,7 +4,7 @@ from dataclasses import replace
 from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QFormLayout,
     QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget, QHBoxLayout, QToolButton, QSizePolicy)
 
-from fdm.live_experiment.reminders import ReminderPolicy, reminder_progress
+from fdm.live_experiment.reminders import ReminderPolicy, reminder_progress, effective_content_total_target
 from fdm.live_experiment.trial_defaults import save_reminder_defaults
 from fdm.ui.icons import themed_icon
 from fdm.ui.widgets import NoWheelSpinBox
@@ -46,7 +46,9 @@ class QuantityTargets(QWidget):
             self.progress.setText("配置类别后显示数量目标")
         details = []
         for row in rows:
-            title = row.material_name + "实测" if row.kind == "measured" else "本方向总根数（实测＋补计）" if row.kind == "total" else "当前操作者有效测量"
+            title = (row.material_name + "实测" if row.kind == "measured" else
+                     row.material_name + "补计／计数" if row.kind == "counted" else
+                     "本方向总根数（实测＋补计）" if row.kind == "total" else "当前操作者有效测量")
             details.append(f"{'✓ ' if row.reached else ''}{title} {row.count} / {row.target}")
         if self.session.reminder_policy is None:
             details.append("沿用旧试验数量规则 · 可在数量目标中切换")
@@ -67,7 +69,7 @@ class QuantityTargetDialog(QDialog):
         self.setWindowTitle("数量目标")
         self.resize(450, 460)
         layout = QVBoxLayout(self)
-        note = QLabel("达到目标时提示一次，可以继续测量。每类填 0 可恢复默认目标。"
+        note = QLabel("达到目标时提示一次，可以继续测量。每类填 0 可恢复类别参数或试验默认目标。"
                       "目标是试验配置；默认值不代表标准强制要求。", self)
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -102,14 +104,28 @@ class QuantityTargetDialog(QDialog):
         self.diameter = spin("diameter", "当前操作者有效测量", self.policy.diameter_measured_target)
         self.default = spin("default", "未单独设置类别的目标", self.policy.content_measured_target)
         self.total = spin("total", "本方向总根数（实测＋补计）", self.policy.content_total_target)
+        self._shared_total = getattr(session, "_content_total_target", None)
+        if self._shared_total is not None:
+            for editor in (self.total, self.legacy_total):
+                editor.setMaximum(max(editor.maximum(), effective_content_total_target(session)))
+                editor.setValue(effective_content_total_target(session))
+                editor.setEnabled(False)
+                editor.setToolTip("所有含量试验共用。请在设置 → 采集与试验中调整总根数提醒。")
+            shared_note = QLabel("总根数提醒已统一到设置 → 采集与试验，修改后作用于所有含量试验。", panel)
+            shared_note.setWordWrap(True)
+            form.addRow(shared_note)
         materials = {m.id: m for op in session.operators.values() for group in op.materials.values() for m in group}
         overrides = dict(self.policy.material_targets)
         self.material_editors = {key: spin("material:" + key, m.name + "实测", overrides.get(key, 0), inherit=True)
                                  for key, m in materials.items()}
 
         def refresh_inherited_text():
-            for editor in self.material_editors.values():
-                editor.setSpecialValueText(f"使用默认（{self.default.value()} 根）")
+            for key, editor in self.material_editors.items():
+                material_default = materials[key].measured_target
+                if material_default is not None:
+                    editor.setSpecialValueText(f"使用类别参数（{material_default} 根）")
+                else:
+                    editor.setSpecialValueText(f"使用默认（{self.default.value()} 根）")
 
         self.default.valueChanged.connect(refresh_inherited_text)
         refresh_inherited_text()
@@ -141,7 +157,8 @@ class QuantityTargetDialog(QDialog):
 
     def changes(self):
         if not self.enable_new.isChecked():
-            return dict(measured_reminder=self.legacy_measured.value(), total_reminder=self.legacy_total.value())
+            return dict(measured_reminder=self.legacy_measured.value(),
+                        total_reminder=self.session.total_reminder if self._shared_total is not None else self.legacy_total.value())
         if self.session.workspace_options["mode"] == "diameter":
             policy = replace(self.policy, diameter_measured_target=self.diameter.value())
         else:
@@ -152,7 +169,8 @@ class QuantityTargetDialog(QDialog):
                 else:
                     targets[key] = editor.value()
             policy = replace(self.policy, content_measured_target=self.default.value(),
-                             content_total_target=self.total.value(), material_targets=targets)
+                             content_total_target=self.policy.content_total_target if self._shared_total is not None else self.total.value(),
+                             material_targets=targets)
         return {"reminder_policy": policy}
 
     def _save_default(self):
@@ -160,8 +178,12 @@ class QuantityTargetDialog(QDialog):
         changes = self.changes()
         policy = changes.get("reminder_policy") or replace(self.policy,
             content_measured_target=self.legacy_measured.value(),
-            content_total_target=self.legacy_total.value(),
+            content_total_target=self.policy.content_total_target if self._shared_total is not None else self.legacy_total.value(),
             diameter_measured_target=self.legacy_measured.value())
+        if self._shared_total is not None:
+            # Saving other defaults must not restore the old trial snapshot's
+            # total over the application's shared value.
+            policy = replace(policy, content_total_target=effective_content_total_target(self.session))
         try:
             save_reminder_defaults(mode, policy, path=self.defaults_file)
             self.default_status.setText("已保存为新试验默认，其他已有试验不改变。")

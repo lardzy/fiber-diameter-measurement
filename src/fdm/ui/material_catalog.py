@@ -43,7 +43,8 @@ class MaterialEditDialog(QDialog):
         self.editor = MaterialParameterEditor(self)
         self.editor.load(material, catalog, scope=scope)
         layout.addWidget(self.editor)
-        for key in ("name", "aliases", "density", "lower", "upper", "below", "above", "source", "error"):
+        for key in ("name", "aliases", "density", "lower", "upper", "below", "above", "source", "error",
+                    "measured_target", "count_target"):
             setattr(self, key, getattr(self.editor, key))
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -113,7 +114,7 @@ class MaterialCatalogDialog(QDialog):
         _button("编辑选中类别", self.edit, left_layout)
         self.editor = MaterialParameterEditor(right)
         self.editor.changed.connect(lambda: self.status.setText("草稿尚未保存；保存类别库后供以后选用。"))
-        for key in ("name", "aliases", "density", "lower", "upper", "source"):
+        for key in ("name", "aliases", "density", "lower", "upper", "source", "measured_target", "count_target"):
             getattr(self.editor, key).editingFinished.connect(self._editor_finished)
         right_layout.addWidget(self.editor, 1)
         self.panes = ResponsiveMaterialPanes(left, right, self,
@@ -185,6 +186,7 @@ class MaterialCatalogDialog(QDialog):
             if self._row_id(row) == material.id:
                 for column, text in enumerate((material.name, number_text(material.density), range_text(material), status)):
                     self.table.item(row, column).setText(text)
+                    self.table.item(row, column).setToolTip(material_summary(material))
                 break
         self.table.setSortingEnabled(sorting)
         self._filter()

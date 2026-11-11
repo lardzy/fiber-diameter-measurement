@@ -8,13 +8,13 @@ import pytest
 from fdm.live_experiment.excel_live import input_patch, report_update
 from fdm.live_experiment.excel_template import ExportSnapshot
 from fdm.ui.live_excel import LiveExcelControls, ReportInformationDialog
-from test_excel_live import coordinator, projection, trial, wait_until
+from test_excel_live import coordinator, measurement_at, projection, trial, wait_until
 
 
 @pytest.mark.parametrize('mode', ['content', 'diameter'])
 def test_report_information_and_settings_are_not_quantitative_patches(mode):
     session = trial(mode)
-    session.add_measurement(12, 'a')
+    measurement_at(session, 12, 'a')
     before = projection(session)
     session.sample_name, session.sample_number = '用户新样品', 'N-007'
     session.method, session.group_width, session.grouped = 'iso17751', 2, False
@@ -36,7 +36,8 @@ def test_report_information_and_settings_are_not_quantitative_patches(mode):
 
 def test_diameter_edits_write_contiguous_changed_ranges_only():
     session = trial()
-    records = [session.add_measurement(value, 'a') for value in (10, 20, 30, 40, 50)]
+    records = [measurement_at(session, value, 'a', f'2026-11-11T00:00:{index:02d}+00:00')
+               for index, value in enumerate((10, 20, 30, 40, 50))]
     before = projection(session)
     for record, value in zip(records[1:3] + records[4:], (21, 31, 51)):
         session.measurements[record.id] = replace(record, diameter_um=value)
@@ -63,7 +64,8 @@ def test_equal_timestamp_record_order_is_stable_after_delete_and_restore():
 
 def test_undo_returns_deleted_record_to_original_excel_row():
     session = trial()
-    records = [session.add_measurement(value, 'a') for value in (10, 20, 30)]
+    records = [measurement_at(session, value, 'a', f'2026-11-11T00:00:{index:02d}+00:00')
+               for index, value in enumerate((10, 20, 30))]
     before = projection(session)
     removed = session.measurements.pop(records[0].id)
     partial = projection(session)
@@ -76,11 +78,11 @@ def test_undo_returns_deleted_record_to_original_excel_row():
 
 def test_append_requires_matching_record_prefix_not_just_equal_diameters():
     session = trial()
-    old = session.add_measurement(10, 'a')
+    old = measurement_at(session, 10, 'a', '2026-11-11T00:00:00+00:00')
     before = projection(session)
     session.measurements.pop(old.id)
-    session.add_measurement(10, 'a')
-    session.add_measurement(20, 'a')
+    measurement_at(session, 10, 'a', '2026-11-11T00:00:01+00:00')
+    measurement_at(session, 20, 'a', '2026-11-11T00:00:02+00:00')
     patch = input_patch(before, projection(session))
     assert patch['blocks'][0]['cell'] == 'D25'
     assert patch['blocks'][0]['values'] == [[10], [20]]
@@ -90,7 +92,7 @@ def test_capacity_warning_does_not_infer_excel_settings_from_fdm_grouped_flag():
     session = trial()
     session.grouped = False
     for _ in range(1489):
-        session.add_measurement(10, 'a')
+        measurement_at(session, 10, 'a')
     data = projection(session).data()
     assert not data['report_settings']['grouped']
     assert any('1488' in warning for warning in data['warnings'])
@@ -99,7 +101,7 @@ def test_capacity_warning_does_not_infer_excel_settings_from_fdm_grouped_flag():
 def test_partial_write_busy_then_undo_does_not_leave_unacknowledged_value(coordinator):
     manager, transport, app = coordinator
     session = trial()
-    record = session.add_measurement(10, 'a')
+    record = measurement_at(session, 10, 'a')
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
     session.measurements[record.id] = replace(record, diameter_um=20)
@@ -124,7 +126,7 @@ def test_partial_write_busy_then_undo_does_not_leave_unacknowledged_value(coordi
 def test_auxiliary_busy_cannot_discard_failed_partial_quantitative_batch(coordinator):
     manager, transport, app = coordinator
     session = trial()
-    record = session.add_measurement(10, 'a')
+    record = measurement_at(session, 10, 'a')
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
     session.measurements[record.id] = replace(record, diameter_um=20)
@@ -174,7 +176,7 @@ def test_readonly_failure_does_not_invalidate_input_or_force_full_output(coordin
     assert manager.status(session.id)['save_state'] == 'unknown'
     assert manager.status(session.id)['saved'] is None
     assert manager.status(session.id)['error_stack'] == 'fixture line 123'
-    session.add_measurement(17, 'a')
+    measurement_at(session, 17, 'a')
     manager.update(session)
     link.retry_at = 0
     wait_until(app, lambda: manager.flush(session))
@@ -201,7 +203,7 @@ def test_visible_input_ack_finishes_lifecycle_before_metadata_and_survives_error
         return {'ok': False, 'error_code': 'excel_failed', 'message': 'metadata unavailable', 'stage': 'metadata'}
 
     monkeypatch.setattr(transport, 'request', request)
-    session.add_measurement(22, 'a')
+    measurement_at(session, 22, 'a')
     manager.update(session)
     try:
         wait_until(app, lambda: manager.status(session.id)['input_revision'] == session.revision)
@@ -216,7 +218,7 @@ def test_visible_input_ack_finishes_lifecycle_before_metadata_and_survives_error
     assert manager._links[session.id].pending_batch is None
     assert manager.status(session.id)['save_state'] == 'unknown'
     monkeypatch.setattr(transport, 'request', original)
-    session.add_measurement(23, 'a')
+    measurement_at(session, 23, 'a')
     manager.update(session)
     wait_until(app, lambda: manager.flush(session))
     assert transport.requests[-1][4]['blocks'][0]['values'] == [[23]]
@@ -225,7 +227,7 @@ def test_visible_input_ack_finishes_lifecycle_before_metadata_and_survives_error
 def test_same_revision_full_output_waits_for_its_own_ack(coordinator):
     manager, transport, app = coordinator
     session = trial()
-    session.add_measurement(22, 'a')
+    measurement_at(session, 22, 'a')
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
 
@@ -259,7 +261,7 @@ def test_post_ack_failure_recovers_readonly_status_or_keeps_closed_state(coordin
         return {'ok': False, 'error_code': code, 'message': 'post-input metadata failure'}
 
     monkeypatch.setattr(transport, 'request', request)
-    session.add_measurement(22, 'a')
+    measurement_at(session, 22, 'a')
     manager.update(session)
     wait_until(app, lambda: manager.status(session.id).get('error_code') == code)
     assert manager.flush(session)
@@ -380,7 +382,7 @@ def test_report_failure_does_not_block_later_quantitative_input(coordinator):
     assert manager.flush(session)
     assert not manager._links[session.id].dirty
     assert manager._links[session.id].pending_batch is None
-    session.add_measurement(25, 'a')
+    measurement_at(session, 25, 'a')
     manager.update(session)
     wait_until(app, lambda: manager.flush(session))
     assert transport.requests[-1][0] == 'sync'

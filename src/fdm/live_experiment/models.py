@@ -64,6 +64,8 @@ class MaterialSnapshot:
     upper_suggestion_id: str | None = None
     provenance: dict[str, Any] = field(default_factory=dict)
     aliases: tuple[str, ...] = ()
+    measured_target: int | None = None
+    count_target: int | None = None
 
     def __post_init__(self) -> None:
         if not self.id or not self.name.strip():
@@ -88,6 +90,10 @@ class MaterialSnapshot:
             raise ValueError("类别别名必须是文本列表")
         object.__setattr__(self, "aliases", tuple(dict.fromkeys(
             alias.strip() for alias in self.aliases if alias.strip() and alias.strip() != self.name)))
+        for key in ("measured_target", "count_target"):
+            value = getattr(self, key)
+            if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 1):
+                raise ValueError("类别提醒根数必须是正整数或留空")
 
     def range_status(self, diameter_um: float) -> str:
         value = _finite(diameter_um, "直径", positive=True)

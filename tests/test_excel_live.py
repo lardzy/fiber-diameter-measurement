@@ -1,5 +1,6 @@
 """Live workbook input diffs and serialized coordinator without Office."""
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import threading
@@ -28,12 +29,25 @@ def projection(session):
                           TemplateProfile.load(trial_mode=session.workspace_options['mode']))
 
 
+def measurement_at(session, value, material, created_at=None):
+    """Fixture chronology is independent of the host clock (including after deletion)."""
+    if created_at is None:
+        # Known identities include removed rows, so a later append never reuses
+        # a deleted record's timestamp. Equal-time ordering has its own test.
+        created_at = (datetime(2026, 11, 11, tzinfo=timezone.utc)
+                      + timedelta(seconds=len(session._known_measurement_ids))).isoformat()
+    record = session.add_measurement(value, material)
+    record = replace(record, created_at=created_at)
+    session.measurements[record.id] = record
+    return record
+
+
 @pytest.mark.parametrize('mode,column', [('content','D'), ('diameter','C')])
 def test_append_is_single_column_delta_and_delete_clears_tail(mode, column):
     session = trial(mode)
-    first = session.add_measurement(12, 'a')
+    first = measurement_at(session, 12, 'a', '2026-11-11T00:00:00+00:00')
     old = projection(session)
-    second = session.add_measurement(18, 'a')
+    second = measurement_at(session, 18, 'a', '2026-11-11T00:00:01+00:00')
     patch = input_patch(old, projection(session))
     assert patch['blocks'] == [{'sheet': TemplateProfile.load(trial_mode=mode).data_sheet,
                                'cell': f'{column}26', 'values': [[18.0]]}]
@@ -50,7 +64,7 @@ def test_append_is_single_column_delta_and_delete_clears_tail(mode, column):
 
 def test_reclassification_rewrites_only_affected_columns():
     session = trial()
-    identity = session.add_measurement(12, 'a').id
+    identity = measurement_at(session, 12, 'a').id
     before = projection(session)
     record = session.measurements[identity]
     session.measurements[identity] = replace(record, material_id='b')
@@ -63,7 +77,7 @@ def test_reclassification_rewrites_only_affected_columns():
 
 def test_evidence_only_revisions_do_not_write_workbook():
     session = trial()
-    identity = session.add_measurement(12, 'a').id
+    identity = measurement_at(session, 12, 'a').id
     before = projection(session)
     session.measurements[identity] = replace(session.measurements[identity], evidence={'saved': True})
     session.revision += 1
@@ -82,8 +96,8 @@ def test_empty_metadata_and_full_reset_cover_absent_participants():
 
 def test_diameter_input_aggregates_operator_records_without_content_formula():
     session = trial('diameter')
-    session.add_measurement(12.123456789, 'a')
-    session.add_measurement(16, 'b')
+    measurement_at(session, 12.123456789, 'a')
+    measurement_at(session, 16, 'b')
     request = template_request(ExportSnapshot.capture(session), 'sheet_dia.xlt', 'report.xls')
     assert request['trial_kind'] == 'diameter'
     assert request['blocks'] == [{'cell':'C25', 'values':[[12.123456789], [16.0]]}]
@@ -95,12 +109,12 @@ def test_diameter_input_aggregates_operator_records_without_content_formula():
 
 def test_projection_is_detached_from_session_and_serializable():
     session = trial()
-    session.add_measurement(12, 'a')
+    measurement_at(session, 12, 'a')
     before = projection(session)
     encoded = before.encoded
     returned = before.data()
     returned['raw']['D'].append(999)
-    session.add_measurement(18, 'a')
+    measurement_at(session, 18, 'a')
     assert before.encoded == encoded
     assert before.data()['raw']['D'] == [12]
     assert 'evidence' not in encoded
@@ -172,7 +186,7 @@ def test_manager_keeps_one_flight_latest_snapshot_and_reuses_workbook(coordinato
     manager.ensure(session)
     wait_until(app, lambda: len(transport.requests) == 1)
     for diameter in (12, 14, 16):
-        session.add_measurement(diameter, 'a')
+        measurement_at(session, diameter, 'a')
         manager.update(session)
     assert len(transport.requests) == 1
     transport.gate.set()
@@ -253,7 +267,7 @@ def test_resync_during_inflight_preserves_latest_full_rebuild(coordinator):
     transport.gate.clear()
     manager.ensure(session)
     wait_until(app, lambda: len(transport.requests) == 1)
-    session.add_measurement(23, 'a')
+    measurement_at(session, 23, 'a')
     manager.resync(session)
     transport.gate.set()
     wait_until(app, lambda: manager.flush(session))
@@ -263,8 +277,7 @@ def test_resync_during_inflight_preserves_latest_full_rebuild(coordinator):
     assert requests[-1][4]['blocks'][0]['values'] == [[23]]
 
 
-def test_changed_template_reassociates_with_new_generation(coordinator, tmp_path, monkeypatch):
-    from fdm.ui import live_excel
+def test_explicit_template_selection_reassociates_with_new_generation(coordinator, tmp_path):
     manager, transport, app = coordinator
     session = trial()
     manager.ensure(session)
@@ -272,13 +285,242 @@ def test_changed_template_reassociates_with_new_generation(coordinator, tmp_path
     old_generation = manager.status(session.id)['generation']
     replacement = tmp_path/'other.xlt'
     replacement.write_bytes(b'changed fixture')
-    monkeypatch.setattr(live_excel,'working_template', lambda **kwargs: replacement)
-    manager.resync(session)
+    manager.replace_template(session, {'template': str(replacement)})
     wait_until(app, lambda: manager.flush(session))
     requests = [item for item in transport.requests if item[0] == 'open']
     assert len(requests) == 2
     assert requests[-1][2] == old_generation + 1
     assert requests[-1][4]['template'] == str(replacement)
+    assert transport.requests[-2][0] == 'detach'
+    assert transport.requests[-2][2] == old_generation
+    assert manager.status(session.id)['template_path'] == str(replacement)
+    assert not manager.status(session.id)['template_replacement_pending']
+
+
+def test_same_path_reselection_reads_template_again_without_revision_change(coordinator):
+    manager, transport, app = coordinator
+    session = trial()
+    measurement_at(session, 18, 'a')
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    template = Path(manager.status(session.id)['template_path'])
+    template.write_bytes(b'replaced at the same filename')
+    revision = session.revision
+    manager.replace_template(session, {'template': str(template)})
+    wait_until(app, lambda: manager.flush(session))
+    opens = [item for item in transport.requests if item[0] == 'open']
+    assert len(opens) == 2
+    assert opens[-1][2] == opens[0][2] + 1
+    assert opens[-1][3] == revision
+    assert opens[-1][4]['full_sync']
+    assert opens[-1][4]['blocks'][0]['values'] == [[18]]
+    assert not any(item[0] in ('save', 'close') for item in transport.requests)
+
+
+def test_existing_links_keep_bound_template_and_mapping_when_defaults_change(coordinator, tmp_path, monkeypatch):
+    from fdm.ui import live_excel
+    manager, transport, app = coordinator
+    first, second = trial(), trial()
+    for session in (first, second):
+        manager.ensure(session)
+        wait_until(app, lambda: manager.flush(session))
+    old_path = manager.status(first.id)['template_path']
+    replacement = tmp_path / 'next trial.xlt'
+    replacement.write_bytes(b'new default')
+    monkeypatch.setattr(live_excel, 'working_template', lambda **kwargs: replacement)
+    monkeypatch.setattr(live_excel, 'template_preferences', lambda **kwargs: {'mapping': 'missing-new-map.json'})
+    Path(old_path).unlink()  # Existing workbooks do not need their source file.
+    measurement_at(first, 12, 'a')
+    manager.update(first)
+    manager.resync(second)
+    wait_until(app, lambda: manager.flush(first) and manager.flush(second))
+    assert len([item for item in transport.requests if item[0] == 'open']) == 2
+    assert manager.status(first.id)['template_path'] == old_path
+    assert manager.status(second.id)['template_path'] == old_path
+    assert all(item[4]['template'] == old_path for item in transport.requests if item[0] == 'sync')
+    monkeypatch.setattr(live_excel, 'template_preferences', lambda **kwargs: {})
+    third = trial()
+    manager.ensure(third)
+    wait_until(app, lambda: manager.flush(third))
+    assert manager.status(third.id)['template_path'] == str(replacement)
+
+
+def test_missing_replacement_preserves_old_generation_and_detaches_safely(coordinator, tmp_path):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    old = manager.status(session.id)
+    before = len(transport.requests)
+    missing = tmp_path / 'missing selected template.xlt'
+    manager.replace_template(session, {'template': str(missing)})
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
+    state = manager.status(session.id)
+    assert state['generation'] == old['generation']
+    assert state['template_path'] == old['template_path']
+    assert state['pending_template_path'] == str(missing)
+    assert state['connected']
+    assert '未使用其他默认模板' in state['message']
+    assert len(transport.requests) == before
+    manager.stop(session.id)
+    wait_until(app, lambda: manager.is_detached(session.id))
+    assert transport.requests[-1][0] == 'detach'
+    assert transport.requests[-1][2] == old['generation']
+
+
+def test_reconnect_after_manual_close_retains_this_trials_template(coordinator, tmp_path, monkeypatch):
+    from fdm.ui import live_excel
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    original = manager.status(session.id)['template_path']
+    other = tmp_path / 'other trials default.xlt'
+    other.write_bytes(b'other')
+    monkeypatch.setattr(live_excel, 'working_template', lambda **kwargs: other)
+    transport.failure = {'ok': False, 'error_code': 'workbook_closed'}
+    manager.show(session.id)
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'stopped')
+    manager.resync(session)
+    wait_until(app, lambda: manager.flush(session))
+    opens = [item for item in transport.requests if item[0] == 'open']
+    assert len(opens) == 2
+    assert opens[-1][4]['template'] == original
+
+
+def test_failed_new_workbook_retry_keeps_selected_template(coordinator, tmp_path):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    old_generation = manager.status(session.id)['generation']
+    request = transport.request
+    failed = False
+
+    def failed_open(operation, session_id='', generation=0, input_revision=0, payload=None, *, progress=None):
+        nonlocal failed
+        if operation == 'open' and generation > old_generation and not failed:
+            failed = True
+            transport.requests.append((operation, session_id, generation, input_revision, payload))
+            return {'ok': False, 'error_code': 'template_mapping', 'workbook_connected': False}
+        return request(operation, session_id, generation, input_revision, payload, progress=progress)
+
+    transport.request = failed_open
+    selected = tmp_path / 'explicitly selected.xlt'
+    selected.write_bytes(b'new')
+    manager.replace_template(session, {'template': str(selected)})
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
+    assert not manager.status(session.id)['connected']
+    assert manager.status(session.id)['template_path'] == ''
+    manager.resync(session)
+    wait_until(app, lambda: manager.flush(session))
+    opens = [item for item in transport.requests if item[0] == 'open']
+    assert len(opens) == 3
+    assert opens[-1][4]['template'] == str(selected)
+    assert manager.status(session.id)['pending_template_path'] == ''
+
+
+def test_template_detach_busy_keeps_old_generation_until_retry(coordinator, tmp_path):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    old_generation = manager.status(session.id)['generation']
+    selected = tmp_path / 'selected after detach retry.xlt'
+    selected.write_bytes(b'new')
+    transport.failure = {'ok': False, 'error_code': 'excel_busy', 'workbook_connected': True}
+    manager.replace_template(session, {'template': str(selected)})
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'busy')
+    assert manager.status(session.id)['generation'] == old_generation
+    assert manager.status(session.id)['template_replacement_pending']
+    manager._links[session.id].retry_at = 0
+    wait_until(app, lambda: manager.flush(session))
+    assert manager.status(session.id)['generation'] == old_generation + 1
+    assert manager.status(session.id)['template_path'] == str(selected)
+    assert [item[2] for item in transport.requests if item[0] == 'detach'] == [old_generation, old_generation]
+
+
+def test_busy_old_batch_finishes_before_latest_selected_template(coordinator, tmp_path):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    measurement_at(session, 12, 'a')
+    transport.failure = {'ok': False, 'error_code': 'excel_busy', 'workbook_connected': True}
+    manager.update(session)
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'busy')
+    pending = manager._links[session.id].pending_batch
+    transport.gate.clear()
+    earlier, latest = tmp_path / 'earlier.xlt', tmp_path / 'latest.xlt'
+    earlier.write_bytes(b'earlier')
+    latest.write_bytes(b'latest')
+    manager.replace_template(session, {'template': str(earlier)})
+    wait_until(app, lambda: manager._busy is not None)
+    prefs = {'template': str(latest)}
+    manager.replace_template(session, prefs)
+    prefs['template'] = str(earlier)  # The selected configuration is detached.
+    measurement_at(session, 24, 'a')
+    manager.update(session)
+    assert not manager.flush(session)
+    assert manager.status(session.id)['pending_template_path'] == str(latest)
+    transport.gate.set()
+    wait_until(app, lambda: manager.flush(session))
+    mutations = [item for item in transport.requests if item[0] in ('open', 'sync', 'detach')]
+    assert [item[0] for item in mutations] == ['open', 'sync', 'sync', 'detach', 'open']
+    assert mutations[1][4]['batch_id'] == mutations[2][4]['batch_id'] == pending.payload['batch_id']
+    assert mutations[-1][4]['template'] == str(latest)
+    assert mutations[-1][4]['blocks'][0]['values'] == [[12], [24]]
+
+
+@pytest.mark.parametrize('shutdown', [False, True])
+def test_stop_or_close_cancels_queued_template_selection(coordinator, tmp_path, shutdown):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    transport.gate.clear()
+    measurement_at(session, 12, 'a')
+    manager.update(session)
+    wait_until(app, lambda: manager._busy is not None)
+    template = tmp_path / 'never opened.xlt'
+    template.write_bytes(b'new')
+    manager.replace_template(session, {'template': str(template)})
+    if shutdown:
+        manager.close()
+    else:
+        manager.stop(session.id)
+    transport.gate.set()
+    wait_until(app, lambda: manager.close() if shutdown else manager.is_detached(session.id))
+    assert len([item for item in transport.requests if item[0] == 'open']) == 1
+    assert not manager.status(session.id)['template_replacement_pending']
+
+
+@pytest.mark.parametrize('new_workbook_connected', [False, True])
+def test_stop_during_new_template_busy_uses_actual_association_generation(coordinator, tmp_path, new_workbook_connected):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    old_generation = manager.status(session.id)['generation']
+    request = transport.request
+
+    def busy_open(operation, session_id='', generation=0, input_revision=0, payload=None, *, progress=None):
+        if operation == 'open' and generation > old_generation:
+            transport.requests.append((operation, session_id, generation, input_revision, payload))
+            return {'ok': False, 'error_code': 'excel_busy', 'workbook_connected': new_workbook_connected}
+        return request(operation, session_id, generation, input_revision, payload, progress=progress)
+
+    transport.request = busy_open
+    template = tmp_path / 'selected.xlt'
+    template.write_bytes(b'new')
+    manager.replace_template(session, {'template': str(template)})
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'busy')
+    assert manager.status(session.id)['connected'] is new_workbook_connected
+    manager.stop(session.id)
+    wait_until(app, lambda: manager.is_detached(session.id))
+    detaches = [item for item in transport.requests if item[0] == 'detach']
+    assert [item[2] for item in detaches] == ([old_generation, old_generation + 1]
+                                               if new_workbook_connected else [old_generation])
 
 
 def test_never_established_workbook_does_not_block_exit(coordinator):
@@ -298,7 +540,7 @@ def test_dirty_existing_workbook_is_not_reported_flushed_after_failed_calculatio
     session = trial()
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
-    session.add_measurement(14, 'a')
+    measurement_at(session, 14, 'a')
     transport.failure = {'ok':False,'error_code':'excel_failed','message':'宏失败','needs_full_sync':True}
     manager.update(session)
     wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
@@ -402,10 +644,10 @@ def test_excel_busy_finishes_fixed_batch_then_writes_latest_snapshot(coordinator
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
     transport.failure = {'ok':False,'error_code':'excel_busy','message':'正在编辑单元格','needs_full_sync':True}
-    session.add_measurement(12,'a')
+    measurement_at(session, 12,'a')
     manager.update(session)
     wait_until(app, lambda: manager.status(session.id)['state'] == 'busy')
-    session.add_measurement(18,'a')
+    measurement_at(session, 18,'a')
     manager.update(session)
     wait_until(app, lambda: manager.flush(session))
     requests = [item for item in transport.requests if item[0] == 'sync']
@@ -437,12 +679,59 @@ def test_template_label_mapping_is_scoped_to_current_method(coordinator, monkeyp
     assert last[4]['report_settings']['method_label'] == 'ISO 17751-1:2016(E)'
 
 
+@pytest.mark.parametrize('explicit_selection', [False, True])
+def test_template_method_labels_stay_with_this_book_after_defaults_change(coordinator, monkeypatch, explicit_selection):
+    from fdm.ui import live_excel
+    manager, transport, app = coordinator
+    session = trial()
+    session.method = 'gb16988'
+    preferences = {'method_labels': {'gb16988': '当前工作簿的标准标签'}}
+    monkeypatch.setattr(live_excel, 'template_preferences', lambda **kwargs: preferences)
+    if explicit_selection:
+        manager.replace_template(session, preferences)
+    else:
+        manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    preferences = {'method_labels': {'gb16988': '另一个模板的不同标签'}}
+    measurement_at(session, 12, 'a')
+    manager.resync(session)
+    wait_until(app, lambda: manager.flush(session))
+    assert manager._links[session.id].projection.data()['report_settings']['method_label'] == '当前工作簿的标准标签'
+    manager.update_report(session, information=False, settings=True)
+    wait_until(app, lambda: any(item[0] == 'update_report' for item in transport.requests))
+    updated = [item for item in transport.requests if item[0] == 'update_report'][-1]
+    assert updated[4]['report_settings']['method_label'] == '当前工作簿的标准标签'
+    wait_until(app, lambda: manager._busy is None)
+    transport.failure = {'ok': False, 'error_code': 'workbook_closed'}
+    manager.show(session.id)
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'stopped')
+    manager.resync(session)
+    wait_until(app, lambda: manager.flush(session))
+    reopened = [item for item in transport.requests if item[0] == 'open'][-1]
+    assert reopened[4]['report_settings']['method_label'] == '当前工作簿的标准标签'
+
+
+def test_status_uses_cached_template_identity_without_decoding_trial_inputs(coordinator, monkeypatch):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    expected = manager.status(session.id)['template_path']
+    value = manager._links[session.id].projection
+
+    def no_decode(self):
+        raise AssertionError('status must not decode the full trial input')
+
+    monkeypatch.setattr(type(value), 'data', no_decode)
+    assert manager.status(session.id)['template_path'] == expected
+
+
 def test_status_poll_does_not_erase_failed_calculation_state(coordinator):
     manager, transport, app = coordinator
     session = trial()
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
-    session.add_measurement(14,'a')
+    measurement_at(session, 14,'a')
     transport.failure = {'ok':False,'error_code':'excel_failed','message':'模板宏失败','needs_full_sync':True}
     manager.update(session)
     wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
@@ -513,7 +802,7 @@ def test_compact_controls_actions_and_full_warning_details(coordinator):
 def test_diameter_report_specific_capacity_does_not_truncate_input(count, limited_excess, main_excess):
     session = trial('diameter')
     for index in range(count):
-        session.add_measurement(12 + index / 10000, 'a')
+        measurement_at(session, 12 + index / 10000, 'a')
     request = template_request(ExportSnapshot.capture(session), 'sheet_dia.xlt', 'report.xls')
     assert sum(len(block['values']) for block in request['blocks']) == count
     limited = [warning for warning in request['warnings'] if '部分标准报告' in warning]
@@ -542,8 +831,8 @@ def test_diameter_comparisons_distinguish_raw_average_and_grouped_mean():
     empty = template_request(ExportSnapshot.capture(session), 'sheet_dia.xlt', 'report.xls')
     assert empty['checks'][0]['raw_range'] is None
     assert empty['checks'][0]['local_mean'] is None
-    session.add_measurement(12.1, 'a')
-    session.add_measurement(15.2, 'a')
+    measurement_at(session, 12.1, 'a')
+    measurement_at(session, 15.2, 'a')
     request = template_request(ExportSnapshot.capture(session), 'sheet_dia.xlt', 'report.xls')
     check = request['checks'][0]
     assert check['raw_range'] == 'C25:C26'
@@ -615,7 +904,7 @@ def test_warm_synchronization_defers_status_until_idle(coordinator):
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
     for value in (12, 13, 14):
-        session.add_measurement(value, 'a')
+        measurement_at(session, value, 'a')
         manager.update(session)
         wait_until(app, lambda: manager.flush(session))
         manager._pump()

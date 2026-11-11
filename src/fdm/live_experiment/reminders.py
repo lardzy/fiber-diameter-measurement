@@ -55,8 +55,9 @@ class ReminderPolicy:
             raise ValueError("类别数量目标必须使用唯一的材料 ID 和正整数") from error
         object.__setattr__(self, "material_targets", tuple(sorted(normalized)))
 
-    def material_target(self, material_id: str) -> int:
-        return dict(self.material_targets).get(material_id, self.content_measured_target)
+    def material_target(self, material_id: str, *, material_default: int | None = None) -> int:
+        return dict(self.material_targets).get(material_id,
+            material_default if material_default is not None else self.content_measured_target)
 
     def to_dict(self) -> dict[str, Any]:
         return {"version": self.version,
@@ -85,10 +86,18 @@ def normalize_policy(value: ReminderPolicy | dict[str, Any] | None) -> ReminderP
     return ReminderPolicy.from_dict(value)
 
 
+def effective_content_total_target(session: "ExperimentSession") -> int:
+    """Application binding may override the saved trial goal without dirtying it."""
+    shared = getattr(session, "_content_total_target", None)
+    if shared is not None:
+        return _target(shared)
+    return session.reminder_policy.content_total_target if session.reminder_policy else session.total_reminder
+
+
 @dataclass(frozen=True)
 class ReminderProgress:
     session_id: str
-    kind: str  # measured, total, or diameter_measured
+    kind: str  # measured, counted (extra counts only), total, or diameter_measured
     operator_id: str
     direction: str | None
     material_id: str | None
@@ -122,6 +131,7 @@ class ReminderNotice:
             if item.direction is not None:
                 prefix += "／" + ("经向" if item.direction == "warp" else "纬向")
             subject = (f"{item.material_name}实测" if item.kind == "measured" else
+                       f"{item.material_name}补计／计数" if item.kind == "counted" else
                        "有效测量" if item.kind == "diameter_measured" else "总根数")
             messages.append(f"{prefix} {subject}已达到 {item.target} 根（当前 {item.count} 根）")
         return "；".join(messages)
@@ -139,6 +149,7 @@ def all_reminder_progress(session: "ExperimentSession") -> tuple[ReminderProgres
     """Use incremental aggregates; cost is bounded by owners and material slots."""
     policy = session.reminder_policy
     diameter = policy is not None and session.workspace_options["mode"] == "diameter"
+    content = session.workspace_options["mode"] == "content"
     rows = []
     for owner, operator in session.operators.items():
         if diameter:
@@ -151,11 +162,17 @@ def all_reminder_progress(session: "ExperimentSession") -> tuple[ReminderProgres
             for material in operator.materials[direct]:
                 aggregate = session._aggregates.get((owner, direct, material.id))
                 count = aggregate.raw.count if aggregate is not None else 0
-                total += count + (aggregate.extra_count if aggregate is not None else 0)
-                target = policy.material_target(material.id) if policy else session.measured_reminder
+                extra = aggregate.extra_count if aggregate is not None else 0
+                total += count + extra
+                target = (policy.material_target(material.id, material_default=material.measured_target)
+                          if policy else material.measured_target if content and material.measured_target is not None
+                          else session.measured_reminder)
                 rows.append(ReminderProgress(session.id, "measured", owner, direct, material.id,
                                              count, target, operator.name, material.name, policy is None))
-            target = policy.content_total_target if policy else session.total_reminder
+                if content and material.count_target is not None:
+                    rows.append(ReminderProgress(session.id, "counted", owner, direct, material.id,
+                                                 extra, material.count_target, operator.name, material.name))
+            target = effective_content_total_target(session)
             rows.append(ReminderProgress(session.id, "total", owner, direct, None,
                                          total, target, operator.name, legacy=policy is None))
     return tuple(rows)
@@ -166,12 +183,16 @@ def reminder_state(session: "ExperimentSession", *, operator_id: str | None = No
     """Compatibility dictionary plus explicit per-material and scope metadata."""
     progress = reminder_progress(session, operator_id=operator_id, direction=direction)
     measured_rows = [item for item in progress if item.kind == "measured"]
-    total = next(item for item in progress if item.kind != "measured")
+    counted_rows = [item for item in progress if item.kind == "counted"]
+    total = next(item for item in progress if item.kind in ("total", "diameter_measured"))
     policy = session.reminder_policy
     return {"measured": {item.material_id: item.count for item in measured_rows},
             "measured_targets": {item.material_id: item.target for item in measured_rows},
             "measured_target": policy.content_measured_target if policy else session.measured_reminder,
             "measured_reached": [item.material_id for item in measured_rows if item.reached],
+            "counted": {item.material_id: item.count for item in counted_rows},
+            "counted_targets": {item.material_id: item.target for item in counted_rows},
+            "counted_reached": [item.material_id for item in counted_rows if item.reached],
             "total": total.count, "total_target": total.target, "total_reached": total.reached,
             "mode": session.workspace_options["mode"], "legacy": policy is None,
             "policy_version": policy.version if policy else None,
@@ -192,19 +213,30 @@ class ReminderTracker:
         self._seen: set[tuple[Any, ...]] = set()
         self._counts: dict[tuple[Any, ...], int] = {}
         self._policy: Any = None
+        self._material_policies: dict[tuple[str, str, str, str], int | None] = {}
         self.seed(session)
 
     @staticmethod
     def _policy_key(session: "ExperimentSession") -> tuple[Any, ...]:
         return (session.workspace_options["mode"], session.reminder_policy,
                 session.measured_reminder if session.reminder_policy is None else None,
-                session.total_reminder if session.reminder_policy is None else None)
+                session.total_reminder if session.reminder_policy is None else None,
+                getattr(session, "_content_total_target", None))
+
+    @staticmethod
+    def _material_policy_keys(session: "ExperimentSession") -> dict[tuple[str, str, str, str], int | None]:
+        return {(owner, direction, material.id, kind): value
+                for owner, operator in session.operators.items()
+                for direction, materials in operator.materials.items()
+                for material in materials
+                for kind, value in (("measured", material.measured_target), ("counted", material.count_target))}
 
     def seed(self, session: "ExperimentSession") -> None:
         if self._session_id != session.id:
             self._seen.clear()
         self._session_id = session.id
         self._policy = self._policy_key(session)
+        self._material_policies = self._material_policy_keys(session)
         progress = all_reminder_progress(session)
         self._counts = {item.key: item.count for item in progress}
         self._seen.update(item.key for item in progress if item.reached)
@@ -215,11 +247,22 @@ class ReminderTracker:
             return None
         progress = all_reminder_progress(session)
         history = session._reminder_mutation_origin in ("undo", "redo", "load")
+        material_policies = self._material_policy_keys(session)
+        changed = {key for key, value in material_policies.items()
+                   if key in self._material_policies and self._material_policies[key] != value}
         crossings = []
         for item in progress:
+            # Editing a category goal adopts existing progress without replaying
+            # old measurements. Newly added owners/materials still notify normally.
+            scope = (item.operator_id, item.direction, item.material_id, item.kind)
+            if scope in changed:
+                if item.reached:
+                    self._seen.add(item.key)
+                continue
             if item.reached and self._counts.get(item.key, 0) < item.target and item.key not in self._seen:
                 self._seen.add(item.key)
                 if not history:
                     crossings.append(item)
         self._counts = {item.key: item.count for item in progress}
+        self._material_policies = material_policies
         return ReminderNotice(tuple(crossings)) if crossings else None

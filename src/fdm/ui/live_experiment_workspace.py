@@ -409,6 +409,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         from fdm.ui.trial_excel_lifecycle import live_excel_manager
         from fdm.ui.live_excel import LiveExcelControls
         self.live_excel = live_excel_manager(host)
+        self.report_panel.bind_live_excel(self.live_excel)
         self.live_excel_controls = LiveExcelControls(self.live_excel, session, self,
             compact=True, status_label=self.report_status_label)
         self.live_excel_layout.addWidget(self.live_excel_controls)
