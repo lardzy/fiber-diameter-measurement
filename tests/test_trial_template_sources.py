@@ -61,6 +61,60 @@ def test_deliberate_selection_repairs_preferences_and_drops_another_files_mappin
     assert template_identity(source)['sha256'] != selected['template_identity']['sha256']
 
 
+def test_save_during_diagnostic_hash_does_not_reject_template_choice(isolated_sources, tmp_path, monkeypatch):
+    from fdm.live_experiment import excel_template
+    source = tmp_path / '编辑中的模板.xlt'
+    source.write_bytes(b'original template')
+    sha256 = hashlib.sha256
+
+    class SavingDigest:
+        def __init__(self):
+            self.digest = sha256()
+
+        def update(self, data):
+            self.digest.update(data)
+            source.write_bytes(b'new template saved while reading diagnostic hash')
+
+        def hexdigest(self):
+            return self.digest.hexdigest()
+
+    monkeypatch.setattr(excel_template.hashlib, 'sha256', SavingDigest)
+    selected = selected_template_preferences(source)
+    assert selected['template'] == str(source.resolve())
+    assert selected['template_identity']['sha256'] is None
+    assert selected['template_identity']['hash_status'] == 'changed_during_read'
+    save_template_preferences(selected)
+    assert working_template() == source
+
+
+def test_diagnostic_hash_read_failure_does_not_preempt_excel_open(isolated_sources, tmp_path, monkeypatch):
+    source = tmp_path / '暂时被其他程序写入.xlt'
+    source.write_bytes(b'valid path')
+    original_open = Path.open
+
+    def locked_hash(path, *args, **kwargs):
+        if path == source and args == ('rb',):
+            raise PermissionError('diagnostic reader cannot acquire this file')
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, 'open', locked_hash)
+    selected = selected_template_preferences(source)
+    assert selected['template_identity']['sha256'] is None
+    assert selected['template_identity']['hash_status'] == 'unavailable'
+    assert 'diagnostic reader' in selected['template_identity']['hash_error']
+    save_template_preferences(selected)
+    assert working_template() == source
+
+
+@pytest.mark.parametrize('directory', [False, True])
+def test_template_choice_still_requires_an_existing_file(isolated_sources, tmp_path, directory):
+    source = tmp_path / 'missing-or-directory.xlt'
+    if directory:
+        source.mkdir()
+    with pytest.raises(FileNotFoundError):
+        selected_template_preferences(source)
+
+
 def test_settings_selection_is_draft_only_and_default_is_explicit(isolated_sources, tmp_path, monkeypatch, desktop_application):
     from fdm.ui.trial_settings_page import TrialTemplateSettings
     from PySide6.QtWidgets import QFileDialog

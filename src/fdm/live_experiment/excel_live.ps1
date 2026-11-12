@@ -199,16 +199,30 @@ function Forget-Candidate([string]$key) {
     Release-BookState $state
 }
 
-function Template-Identity([string]$path, $expected) {
+function Template-Identity([string]$path) {
     if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
         Failure 'template_missing' 'The selected live-report template does not exist.'
     }
     $file = Get-Item -LiteralPath $path
-    $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($expected -and $expected.sha256 -and [string]$expected.sha256 -ne $hash) {
-        Failure 'template_changed' 'The selected template changed before Excel opened it. Select or recreate it again.'
+    $identity = @{path=$file.FullName;size=$file.Length;mtime_utc=$file.LastWriteTimeUtc.ToString('o');
+                  sha256=$null;hash_status='unavailable'}
+    $writeTicks = $file.LastWriteTimeUtc.Ticks
+    # A fingerprint is diagnostic context, not permission to use a template.
+    # Excel performs the real open; source edits and unavailable hash reads
+    # must not reject a workbook Excel can otherwise create and populate.
+    try {
+        $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256 -ErrorAction Stop).Hash
+        $after = Get-Item -LiteralPath $file.FullName -ErrorAction Stop
+        if ($identity.size -ne $after.Length -or $writeTicks -ne $after.LastWriteTimeUtc.Ticks) {
+            $identity.hash_status = 'changed_during_read'
+        } elseif ($hash) {
+            $identity.sha256 = $hash.ToLowerInvariant()
+            $identity.hash_status = 'available'
+        }
+    } catch {
+        $identity.hash_error = $_.Exception.Message
     }
-    return @{path=$file.FullName;size=$file.Length;mtime_utc=$file.LastWriteTimeUtc.ToString('o');sha256=$hash}
+    return $identity
 }
 
 function Capture-BookView($state) {
@@ -706,22 +720,18 @@ try {
                         $state=$script:candidates[$candidateKey]
                         if (!(Test-BookOpen $state)) { Failure 'workbook_closed' 'The pending template workbook was closed.' }
                     } else {
-                        $identity=Template-Identity ([string]$payload.template) $payload.template_identity
+                        $identity=Template-Identity ([string]$payload.template)
                         $book=Open-TemplateBook ([string]$identity.path)
                         Require-Object $book 'new template workbook'
                         $state=@{book=$book;generation=[int64]$script:request.generation;revision=-1;
                             initialized=$false;sheets=@{};warnings=@();pending=$null;last_batch=$null;
                             last_input_at=$null;trial_kind=[string]$payload.trial_kind;excel_version=[string]$script:excel.Version;
-                            template_identity=$identity;initial_view=$null;candidate_name=$null;source_verified=$false;stage='verify opened template'}
+                            template_identity=$identity;initial_view=$null;candidate_name=$null;stage='read opened workbook'}
                         $script:candidates[$candidateKey]=$state
                     }
-                    # Each step is resumable: an Excel busy response while reading
-                    # Name/view must not skip source verification on the retry.
+                    # A busy response resumes the existing candidate. The source
+                    # file is not reread after Excel has opened this workbook.
                     if (!$state.candidate_name) { $state.candidate_name=[string]$state.book.Name }
-                    if (!$state.source_verified) {
-                        [void](Template-Identity ([string]$state.template_identity.path) $state.template_identity)
-                        $state.source_verified=$true
-                    }
                     if (!$state.initial_view) { $state.initial_view=Capture-BookView $state }
                     $result=Run-Batch $state $payload 'open' $true
                     # Switch only after the candidate's inputs are complete. The

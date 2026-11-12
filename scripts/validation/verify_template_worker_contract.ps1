@@ -29,12 +29,18 @@ $temp=Join-Path ([IO.Path]::GetTempPath()) ('fdm-template-identity-'+[Guid]::New
 [void][IO.Directory]::CreateDirectory($temp)
 try {
     $file=Join-Path $temp '模板.xlt'; [IO.File]::WriteAllText($file,'template fixture')
-    $identity=Template-Identity $file $null
+    $identity=Template-Identity $file
     Check ($identity.sha256 -eq (Get-FileHash -LiteralPath $file).Hash.ToLowerInvariant()) 'identity hashes the actual selected file'
     [IO.File]::WriteAllText($file,'changed fixture')
-    $rejected=$false
-    try { [void](Template-Identity $file $identity) } catch { $rejected=(Error-Code $_) -eq 'template_changed' }
-    Check $rejected 'same-path changed content is rejected before opening'
+    $changed=Template-Identity $file
+    Check ($changed.sha256 -ne $identity.sha256) 'same-path changed content is recorded without rejecting the source'
+    function Get-FileHash { throw 'synthetic diagnostic hash failure' }
+    $unavailable=Template-Identity $file
+    Check ($unavailable.path -eq $file -and $unavailable.hash_status -eq 'unavailable') 'unavailable diagnostic hash does not reject a readable source'
+    Remove-Item Function:\Get-FileHash
+    $missingRejected=$false
+    try { [void](Template-Identity (Join-Path $temp 'missing.xlt')) } catch { $missingRejected=(Error-Code $_) -eq 'template_missing' }
+    Check $missingRejected 'missing source still fails before Excel opens'
 } finally { Remove-Item -LiteralPath $temp -Recurse -Force }
 
 # Exercise the real view helpers using worksheet-like objects, including a
@@ -77,7 +83,7 @@ foreach ($clause in $requestSwitch.Clauses) {
 }
 function Start-Excel {}
 function Ensure-Ready {}
-function Template-Identity([string]$path,$expected) { return @{path=$path;sha256='fixture-hash'} }
+function Template-Identity([string]$path) { return @{path=$path;sha256='fixture-hash'} }
 $script:created=0; $script:failBatch=''
 $failureBody=$ast.FindAll({param($n)
     $n -is [Management.Automation.Language.CatchClauseAst] -and $n.Extent.Text.Contains('$failure.candidate_pending=')

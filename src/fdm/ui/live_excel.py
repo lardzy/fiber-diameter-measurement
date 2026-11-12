@@ -43,7 +43,7 @@ _EXCEL_ERROR_MESSAGES = {
 }
 
 _CONFIGURATION_ERRORS = frozenset({'template_missing', 'template_mapping', 'template_method',
-    'template_changed', 'template_protected', 'unsupported_platform'})
+    'template_protected', 'unsupported_platform'})
 
 
 @dataclass(frozen=True)
@@ -882,7 +882,10 @@ class LiveExcelManager(QObject):
             if result.get('ok'):
                 original = (link.template_selection or {}).get('identity') or {}
                 current = result.get('source_identity') or {}
-                link.metadata['template_source_changed'] = bool(original.get('sha256') and original.get('sha256') != current.get('sha256'))
+                # A missing diagnostic hash is unknown, not a template change.
+                # Either way the open workbook remains linked and writable.
+                link.metadata['template_source_changed'] = bool(original.get('sha256') and current.get('sha256')
+                    and original['sha256'] != current['sha256'])
                 link.metadata['configured_template_path'] = result.get('configured_template_path', '')
                 link.metadata.pop('template_source_error', None)
             else:

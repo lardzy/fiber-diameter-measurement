@@ -348,19 +348,34 @@ def working_template(*, create=False, trial_mode="content"):
 
 
 def template_identity(path):
-    """Hash a source at selection/open boundaries, never in the measurement loop."""
+    """Describe the chosen source; a diagnostic hash never gates Excel use.
+
+    Excel opens this path itself. A concurrent save or a hash read failure does
+    not invalidate the choice, and cannot prove which bytes Excel has loaded.
+    """
     source = Path(path).expanduser().resolve(strict=True)
     if not source.is_file():
         raise FileNotFoundError(f"所选模板不是文件：{source}")
     before = source.stat()
-    digest = hashlib.sha256()
-    with source.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    after = source.stat()
+    identity = {"path": str(source), "size": before.st_size, "mtime_ns": before.st_mtime_ns,
+                "sha256": None, "hash_status": "unavailable"}
+    try:
+        digest = hashlib.sha256()
+        with source.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+        after = source.stat()
+    except OSError as exc:
+        # The actual Excel open reports unreadable/invalid templates. Diagnostic
+        # reads must not reject a file Excel can still open, e.g. during saving.
+        identity["hash_error"] = str(exc)
+        return identity
+    identity.update(size=after.st_size, mtime_ns=after.st_mtime_ns)
     if (before.st_size, before.st_mtime_ns, before.st_ino) != (after.st_size, after.st_mtime_ns, after.st_ino):
-        raise ExcelTemplateError("读取期间模板文件发生变化，请完成编辑后重试。", code="template_changed")
-    return {"path": str(source), "size": after.st_size, "mtime_ns": after.st_mtime_ns, "sha256": digest.hexdigest()}
+        identity["hash_status"] = "changed_during_read"
+    else:
+        identity.update(sha256=digest.hexdigest(), hash_status="available")
+    return identity
 
 
 def selected_template_preferences(path, trial_mode="content", *, current=None):

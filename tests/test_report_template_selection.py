@@ -292,6 +292,31 @@ def test_one_shot_export_uses_current_workbook_source_not_later_default(report_s
     assert template_preferences()['template'] == str(other)
 
 
+@pytest.mark.parametrize('mode', ['content', 'diameter'])
+def test_same_path_template_edit_does_not_block_export_or_replace_live_book(report_setup, tmp_path, monkeypatch, mode):
+    from pathlib import Path
+    from fdm.live_experiment.excel_template import template_identity
+    make, manager, transport, app = report_setup
+    window, panel = make(mode)
+    manager.ensure(window.session)
+    wait_until(app, lambda: manager.flush(window.session))
+    binding = manager.template_binding(window.session)
+    source = Path(binding['path'])
+    source.write_bytes(b'updated template including new report sheets')
+    current_identity = template_identity(source)
+    assert current_identity['sha256'] != binding['identity']['sha256']
+    captured = []
+    monkeypatch.setattr(trial_report_panel.QFileDialog, 'getSaveFileName', lambda *a: (str(tmp_path/'export.xls'), ''))
+    monkeypatch.setattr(trial_report_panel, 'run_excel_request', lambda request, **kwargs: captured.append(request) or {})
+    panel.export()
+    wait_until(app, lambda: bool(captured))
+    assert captured[0]['template'] == str(source)
+    assert captured[0]['template_identity'] == current_identity
+    assert manager.template_binding(window.session) == binding
+    assert len([item for item in transport.requests if item[0] == 'open']) == 1
+    assert manager.status(window.session.id)['connected']
+
+
 def test_report_page_can_repair_broken_config_and_diagnostic_is_bounded(report_setup, tmp_path, monkeypatch):
     from fdm.live_experiment.excel_template import template_preferences_path
     make, manager, transport, app = report_setup

@@ -725,6 +725,36 @@ def test_missing_source_on_reentry_does_not_stop_existing_workbook(coordinator):
     assert [item for item in transport.requests if item[0] == 'sync'][-1][4]['blocks'][0]['values'] == [[19]]
 
 
+@pytest.mark.parametrize('missing_at_open', [False, True])
+def test_unavailable_diagnostic_hash_does_not_block_open_or_existing_sync(coordinator, monkeypatch, missing_at_open):
+    from fdm.ui import live_excel
+    manager, transport, app = coordinator
+    session = trial()
+    real_identity = live_excel.template_identity
+
+    def without_hash(path):
+        identity = real_identity(path)
+        return {**identity, 'sha256': None, 'hash_status': 'unavailable', 'hash_error': 'diagnostic only'}
+
+    if missing_at_open:
+        monkeypatch.setattr(live_excel, 'template_identity', without_hash)
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    original = manager.template_binding(session)
+    monkeypatch.setattr(live_excel, 'template_identity', without_hash)
+    manager.ensure(session)
+    wait_until(app, lambda: 'template_source_changed' in manager.status(session.id))
+    assert not manager.status(session.id)['template_source_changed']
+    assert not manager.status(session.id).get('template_source_error')
+    assert manager.template_binding(session) == original
+    measurement_at(session, 19, 'a')
+    manager.update(session)
+    wait_until(app, lambda: manager.flush(session))
+    assert manager.status(session.id)['connected']
+    assert len([item for item in transport.requests if item[0] == 'open']) == 1
+    assert [item for item in transport.requests if item[0] == 'sync'][-1][4]['blocks'][0]['values'] == [[19]]
+
+
 def test_failed_replacement_keeps_exact_input_baseline_and_binding(coordinator, tmp_path):
     manager, transport, app = coordinator
     session = trial()

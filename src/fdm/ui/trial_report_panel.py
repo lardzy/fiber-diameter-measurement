@@ -413,8 +413,6 @@ class TrialReportPanel(QObject):
         template = Path(binding["path"]) if binding else self.path(create=True)
         preferences = binding["preferences"] if binding else self.preferences
         identity = template_identity(template)
-        if binding and binding.get("identity") and identity["sha256"] != binding["identity"].get("sha256"):
-            raise ValueError("当前工作簿的源模板内容已改变。请先重新创建工作簿，或直接在 Excel 保存当前工作簿。")
         suffix = ".xlsx" if template.suffix.lower() == ".xltx" else ".xlsm" if template.suffix.lower() in {".xltm", ".xlsm"} else ".xls"
         path, _ = QFileDialog.getSaveFileName(self.workspace, "生成模板报告", "试验报告" + suffix,
                                              f"Excel (*{suffix})")

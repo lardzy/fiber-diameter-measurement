@@ -46,14 +46,27 @@ function LiteralValue($value) {
     if ($value -is [string]) { return "'" + $value }
     return [double]$value
 }
-function TemplateIdentity([string]$path, $expected) {
+function TemplateIdentity([string]$path) {
     $file=Get-Item -LiteralPath $path
     if ($file.PSIsContainer) { throw 'The selected template is not a file.' }
-    $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($expected -and $expected.sha256 -and [string]$expected.sha256 -ne $hash) {
-        throw 'The selected template changed before it could be opened. Select it again.'
+    $identity=@{path=$file.FullName;size=$file.Length;mtime_utc=$file.LastWriteTimeUtc.ToString('o');
+                sha256=$null;hash_status='unavailable'}
+    $writeTicks=$file.LastWriteTimeUtc.Ticks
+    # Diagnostics only: source changes or hash-read failures must not prevent
+    # Excel from opening, editing, inspecting or exporting the selected file.
+    try {
+        $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256 -ErrorAction Stop).Hash
+        $after=Get-Item -LiteralPath $file.FullName -ErrorAction Stop
+        if ($identity.size -ne $after.Length -or $writeTicks -ne $after.LastWriteTimeUtc.Ticks) {
+            $identity.hash_status='changed_during_read'
+        } elseif ($hash) {
+            $identity.sha256=$hash.ToLowerInvariant()
+            $identity.hash_status='available'
+        }
+    } catch {
+        $identity.hash_error=$_.Exception.Message
     }
-    return @{path=$file.FullName;size=$file.Length;mtime_utc=$file.LastWriteTimeUtc.ToString('o');sha256=$hash}
+    return $identity
 }
 function BookView($workbook) {
     $sheets=$null; $active=$null
@@ -80,7 +93,7 @@ try {
         [string]::IsNullOrWhiteSpace([string]$request.template)) {
         throw 'Invalid template request: operation and template are required.'
     }
-    $templateIdentity=TemplateIdentity ([string]$request.template) $request.template_identity
+    $templateIdentity=TemplateIdentity ([string]$request.template)
     Stage '启动独立 Excel'
     $existing = @(Get-Process EXCEL -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
     Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class FdmExcelWindow { [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint id); }'
@@ -109,7 +122,6 @@ try {
                 $missing, $true, $missing, $missing, ($request.operation -eq 'edit'))
         } else { $book=$books.Add([string]$request.template) }
     } finally { if($books){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($books)} }
-    [void](TemplateIdentity ([string]$request.template) $templateIdentity)
     $initialView=BookView $book
     if ($request.operation -ne 'edit') { $excel.EnableEvents=$false }
     if ($request.operation -eq 'edit') {
