@@ -353,8 +353,11 @@ def build(
         )
         return 1
 
-    if clean:
-        for stale_path in (dist_path, work_path):
+    # Incremental means reusing analysis/PYZ caches, never mixing the new
+    # COLLECT output with files from an earlier resource variant.
+    stale_outputs = (dist_path, work_path) if clean else (dist_path / "FiberDiameterMeasurement",)
+    if stale_outputs:
+        for stale_path in stale_outputs:
             try:
                 if stale_path.exists():
                     shutil.rmtree(stale_path)
@@ -374,7 +377,7 @@ def build(
         "-m",
         "PyInstaller",
         "--noconfirm",
-        "--clean",
+        *(["--clean"] if clean else []),
         "--distpath",
         str(dist_path),
         "--workpath",
@@ -455,7 +458,7 @@ def main() -> int:
     parser.add_argument(
         "--no-clean",
         action="store_true",
-        help="Keep the existing dist/windows and build/pyinstaller contents before building.",
+        help="Reuse PyInstaller analysis caches; changed sources/resources are still rebuilt and the package is verified.",
     )
     parser.add_argument(
         "--profile",

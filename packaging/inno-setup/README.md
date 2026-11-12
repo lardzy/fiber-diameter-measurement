@@ -18,6 +18,8 @@ python scripts/build_windows_installer.py
 
 上面两个命令择一执行即可。默认重建 full onedir，再生成安装器。公开版本继续使用 `--public-release`；复用已验证的 onedir 使用 `--reuse-onedir`。
 
+内部同时生成含／不含面积模型的两个安装器，运行 `scripts\build_windows_both_installers.bat`，或为 Python 入口添加 `--both-area-variants`。只运行一次 PyInstaller；两次 Inno 压缩分别使用独立资源清单及输出文件名，不覆盖另一变体。两者默认均保留报表模板。详细说明见 [`docs/windows-dual-installer-build.md`](../../docs/windows-dual-installer-build.md)。
+
 编译器未被自动发现时，可显式指定路径：
 
 ```powershell

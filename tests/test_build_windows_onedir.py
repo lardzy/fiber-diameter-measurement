@@ -412,6 +412,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 result = build(clean=True, console=False, bootloader_debug=False, profile="core", root=root)
 
             self.assertEqual(result, 0)
+            self.assertIn("--clean", run_mock.call_args.args[0])
             self._native_mock.assert_called_once_with(root)
             self_check_mock.assert_called_once_with(
                 app_dir, report_path=root / "build" / "self-check" / "packaged-runtime.json"
@@ -428,6 +429,40 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 excluded_components=(),
                 included_components=("content-templates",),
             )
+
+    def test_no_clean_reuses_analysis_but_rebuilds_and_checks_output(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            cache = root / "build/pyinstaller/Analysis-00.toc"
+            cache.parent.mkdir(parents=True)
+            cache.write_text("cached analysis")
+            app_dir = root / "dist/windows/FiberDiameterMeasurement"
+            old_model = app_dir / "runtime/area-models/obsolete.pth"
+            old_model.parent.mkdir(parents=True)
+            old_model.write_bytes(b"old variant")
+
+            def compile_changed_sources(command, **kwargs):
+                self.assertNotIn("--clean", command)
+                self.assertIn("PyInstaller", command)
+                self.assertEqual(cache.read_text(), "cached analysis")
+                self.assertFalse(old_model.exists(), "incremental builds must start with a fresh COLLECT directory")
+                app_dir.mkdir(parents=True, exist_ok=True)
+                for name in ("FiberDiameterMeasurement.exe", "FiberAreaWorker.exe", "FiberScreenshotTool.exe", "runtime_assets.toml"):
+                    (app_dir / name).write_bytes(b"rebuilt content")
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=RuntimeProfileCheck("core", (), ())),
+                patch("build_windows_onedir.subprocess.run", side_effect=compile_changed_sources) as compiler,
+                patch("build_windows_onedir.write_release_manifest") as manifest,
+                patch("build_windows_onedir.run_packaged_self_check", return_value=[]) as check,
+            ):
+                self.assertEqual(build(clean=False, console=False, bootloader_debug=False, profile="core", root=root), 0)
+            compiler.assert_called_once()
+            check.assert_called_once()
+            self.assertFalse(manifest.call_args.kwargs["clean_build"])
 
     def test_build_warns_and_continues_on_hash_mismatch_by_default(self) -> None:
         with TemporaryDirectory() as tmpdir:

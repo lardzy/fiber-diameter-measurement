@@ -36,6 +36,10 @@ def _prepare_installer_root(root: Path, *, version: str = "3.1.4") -> Path:
 
 class BuildWindowsInstallerTests(unittest.TestCase):
     def setUp(self) -> None:
+        for name, value in (("get_git_commit", "source123"), ("get_dirty_worktree_entries", [])):
+            patcher = patch("build_windows_installer." + name, return_value=value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
         self._self_check_patcher = patch(
             "build_windows_installer.run_packaged_self_check", return_value=[]
         )
@@ -271,7 +275,7 @@ class BuildWindowsInstallerTests(unittest.TestCase):
 
             def compile_installer(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
                 compiled_output.parent.mkdir(parents=True, exist_ok=True)
-                compiled_output.write_bytes(b"public installer")
+                public_output.write_bytes(b"public installer")
                 return subprocess.CompletedProcess([], 0)
 
             with (

@@ -7,12 +7,15 @@ import shutil
 import string
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from build_support import (
     BUILD_COMPONENT_AREA_MODELS,
     BUILD_COMPONENT_CONTENT_TEMPLATES,
     normalize_build_exclusions,
+    get_git_commit,
+    get_dirty_worktree_entries,
     read_app_version,
     validate_installer_release,
     write_installer_version_include,
@@ -113,9 +116,20 @@ def build_installer(
     rebuild_onedir: bool = False,
     exclude_area_models: bool = False,
     exclude_content_templates: bool = False,
+    app_dir: Path | None = None,
+    clean: bool = True,
+    timings: dict[str, float] | None = None,
 ) -> int:
     iss_path = root / "packaging" / "inno-setup" / "fdm_installer.iss"
-    app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
+    source_override = app_dir is not None
+    app_dir = app_dir or root / "dist" / "windows" / "FiberDiameterMeasurement"
+    if source_override and rebuild_onedir:
+        print("A derived app directory cannot rebuild the shared onedir.", file=sys.stderr)
+        return 1
+    if strict_release and not clean:
+        print("Formal release requires a clean build; do not use --no-clean.", file=sys.stderr)
+        return 1
+    timings = timings if timings is not None else {}
     excluded_components = normalize_build_exclusions(
         component
         for component, excluded in (
@@ -137,6 +151,13 @@ def build_installer(
         print("Sync only mode: version.auto.iss has been refreshed from src/fdm/version.py")
         return 0
 
+    try:
+        commit = get_git_commit(root)
+        dirty = get_dirty_worktree_entries(root)
+        print(f"Source commit: {commit}; worktree: {'dirty (' + str(len(dirty)) + ' entries)' if dirty else 'clean'}")
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        print(f"Source identity unavailable: {exc}")
+
     language_file = iss_path.parent / "languages" / "ChineseSimplified.isl"
     if not language_file.is_file():
         print(f"Simplified Chinese installer messages not found: {language_file}", file=sys.stderr)
@@ -144,9 +165,10 @@ def build_installer(
     print(f"Installer language: Simplified Chinese ({language_file})")
 
     if rebuild_onedir:
-        print("Building a clean full-profile onedir package before the installer...")
+        print("Building one full-profile onedir package before the installer...")
+        started = time.perf_counter()
         onedir_result = build_onedir(
-            clean=True,
+            clean=clean,
             console=False,
             bootloader_debug=False,
             profile="full",
@@ -155,6 +177,7 @@ def build_installer(
             exclude_content_templates=exclude_content_templates,
             root=root,
         )
+        timings["program_build_and_self_check_seconds"] = time.perf_counter() - started
         if onedir_result != 0:
             print("Onedir prerequisite build failed; installer compilation was not started.", file=sys.stderr)
             return 1
@@ -168,6 +191,7 @@ def build_installer(
         return 1
 
     release_warnings: list[str] = []
+    started = time.perf_counter()
     release_errors = validate_installer_release(
         root,
         app_dir,
@@ -178,6 +202,7 @@ def build_installer(
         include_content_templates=not exclude_content_templates,
         warnings=release_warnings,
     )
+    timings["package_validation_seconds"] = time.perf_counter() - started
     if release_warnings:
         print("Internal release warnings:", file=sys.stderr)
         for warning in release_warnings:
@@ -190,9 +215,13 @@ def build_installer(
         return 1
 
     if not rebuild_onedir:
+        started = time.perf_counter()
         self_check_errors = run_packaged_self_check(
-            app_dir, report_path=root / "build" / "self-check" / "packaged-runtime.json"
+            app_dir, report_path=root / "build" / "self-check" / (
+                "packaged-runtime-no-area-models.json" if source_override else "packaged-runtime.json"
+            )
         )
+        timings["reused_package_self_check_seconds"] = time.perf_counter() - started
         if self_check_errors:
             print(
                 "Packaged runtime self-check failed:\n  " + "\n  ".join(self_check_errors),
@@ -208,14 +237,21 @@ def build_installer(
         )
         return 2
 
-    command = [resolved_compiler, str(iss_path)]
     output_dir = root / "dist" / "installer"
-    compiled_output = output_dir / f"fiber-diameter-measurement-setup-{version}.exe"
     expected_output = output_dir / (
         f"fiber-diameter-measurement-setup-{version}"
         f"{_installer_variant_suffix(excluded_components)}.exe"
     )
-    for stale_output in {compiled_output, expected_output}:
+    # Each variant compiles straight to its own name. Never delete or rename
+    # another variant's successfully built installer as an intermediate file.
+    compiled_output = expected_output
+    command = [resolved_compiler]
+    if source_override:
+        command.append(f"/DMyAppSourceDir={app_dir.resolve()}")
+    if _installer_variant_suffix(excluded_components):
+        command.append(f"/DMyAppOutputBaseFilename={expected_output.stem}")
+    command.append(str(iss_path))
+    for stale_output in {expected_output}:
         try:
             stale_output.unlink(missing_ok=True)
         except OSError as exc:
@@ -223,11 +259,14 @@ def build_installer(
             return 1
     print("Running Inno Setup:")
     print(" ".join(command))
+    started = time.perf_counter()
     try:
         subprocess.run(command, cwd=root, check=True)
     except (OSError, subprocess.CalledProcessError) as exc:
         print(f"Inno Setup compilation failed: {exc}", file=sys.stderr)
         return 1
+    finally:
+        timings["inno_compression_seconds"] = time.perf_counter() - started
 
     if not _installer_is_nonempty(compiled_output):
         print(
@@ -268,6 +307,8 @@ def build_installer(
     print("\nInstaller build completed.")
     print(f"Output directory: {output_dir}")
     print(f"Installer: {expected_output}")
+    for phase, elapsed in timings.items():
+        print(f"  {phase}: {elapsed:.2f} s")
     return 0
 
 
@@ -310,6 +351,10 @@ def main() -> int:
         action="store_true",
         help="Reuse dist/windows/FiberDiameterMeasurement instead of rebuilding the onedir prerequisite.",
     )
+    parser.add_argument("--both-area-variants", action="store_true",
+                        help="Build the program once, then create installers with and without area models; keep content templates by default.")
+    parser.add_argument("--no-clean", action="store_true",
+                        help="Reuse PyInstaller analysis caches while rebuilding changed sources; incompatible with --strict-release or --reuse-onedir.")
     parser.add_argument(
         "--exclude-area-models",
         action="store_true",
@@ -330,8 +375,21 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    if args.both_area_variants and (args.exclude_area_models or args.public_release or args.sync_only):
+        parser.error("--both-area-variants cannot be combined with --exclude-area-models, --public-release or --sync-only")
+    if args.no_clean and (args.strict_release or args.reuse_onedir):
+        parser.error("--no-clean cannot be combined with --strict-release or --reuse-onedir")
+
     root = Path(__file__).resolve().parents[1]
     compiler = args.compiler.strip() or None
+    if args.both_area_variants:
+        from build_windows_variants import build_area_variants
+        return build_area_variants(root=root, compiler_path=compiler,
+            sign_command=args.sign_command.strip() or None,
+            verify_signature_command=args.verify_signature_command.strip() or None,
+            strict_asset_hashes=args.strict_asset_hashes, strict_release=args.strict_release,
+            rebuild_onedir=not args.reuse_onedir, clean=not args.no_clean,
+            exclude_content_templates=args.exclude_content_templates)
     return build_installer(
         root=root,
         sync_only=args.sync_only,
@@ -343,6 +401,7 @@ def main() -> int:
         rebuild_onedir=not args.reuse_onedir,
         exclude_area_models=args.exclude_area_models or args.public_release,
         exclude_content_templates=args.exclude_content_templates or args.public_release,
+        clean=not args.no_clean,
     )
 
 

@@ -8,9 +8,13 @@
 #define ProjectProgId "LARD.FiberDiameterMeasurement.Project"
 #define DigitalSlideProgId "LARD.FiberDiameterMeasurement.DigitalSlide"
 #define ProjectRoot AddBackslash(SourcePath) + "..\.."
-#define MyAppSourceDir ProjectRoot + "\dist\windows\FiberDiameterMeasurement"
+#ifndef MyAppSourceDir
+  #define MyAppSourceDir ProjectRoot + "\dist\windows\FiberDiameterMeasurement"
+#endif
 #define MyAppOutputDir ProjectRoot + "\dist\installer"
-#define MyAppOutputBaseFilename "fiber-diameter-measurement-setup-" + MyAppVersion
+#ifndef MyAppOutputBaseFilename
+  #define MyAppOutputBaseFilename "fiber-diameter-measurement-setup-" + MyAppVersion
+#endif
 #define MyAppIconFile ProjectRoot + "\packaging\assets\icons\app-icon.ico"
 #define MyAppMessagesFile AddBackslash(SourcePath) + "languages\ChineseSimplified.isl"
 

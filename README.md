@@ -350,6 +350,16 @@ python scripts/build_windows_onedir.py --public-release
 python scripts/build_windows_installer.py
 ```
 
+内部同时需要“含面积识别模型”和“不含面积识别模型”两个安装包时，使用一次入口：
+
+```powershell
+.\scripts\build_windows_both_installers.bat
+# 等价于：
+python scripts/build_windows_installer.py --both-area-variants
+```
+
+该流程只构建一次程序，再生成两份安装器；两份都保留内部报表模板。不含模型版去除六个面积模型并关闭对应功能，程序、普通测量、相机和其他依赖复用。源码提交、dirty 状态、分段耗时、最终路径及 SHA-256 写入 `dist/installer/area-variants-build.json`。流程说明和验证边界见 [`docs/windows-dual-installer-build.md`](docs/windows-dual-installer-build.md)。
+
 安装器和卸载器默认使用简体中文，语言文件随仓库提供，无需向 Inno Setup 安装目录复制 `.isl`。安装界面中的软件名称为“特纤通用测量工具”；缺少中文语言文件时，打包脚本会在重建 onedir 前报错。语言文件维护及 Windows 检查步骤见 [`packaging/inno-setup/README.md`](packaging/inno-setup/README.md)。
 
 产物位于：
@@ -367,6 +377,9 @@ python scripts/build_windows_installer.py --sync-only
 
 # 已确认现有 onedir 的版本、资源选择、提交和 manifest 一致时复用
 python scripts/build_windows_installer.py --reuse-onedir
+
+# 开发试测：重跑程序构建，但复用 PyInstaller 分析缓存，不混用旧输出文件
+python scripts/build_windows_installer.py --both-area-variants --no-clean
 
 # 生成不包含私有模型和原始记录模板的公开包
 python scripts/build_windows_installer.py --public-release
