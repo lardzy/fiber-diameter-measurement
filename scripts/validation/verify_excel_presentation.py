@@ -42,7 +42,8 @@ def main():
     from excel_owned_probe import ExcelProbe, PROBE_PS, view_differences
 
     report = {"passed": False, "source_only": True, "native_excel": True,
-              "hardware": False, "checks": [], "events": [], "requests": [], "cleanup": []}
+              "hardware": False, "checks": [], "events": [], "requests": [], "cleanup": [],
+              "initial_template_comparison": {}}
     app = QApplication.instance() or QApplication([])
     owned = {}
     manager = None
@@ -50,6 +51,7 @@ def main():
     modal = None
     modal_window = None
     sources = {}
+    source_views = {}
     probe = ExcelProbe(output / "owned-excel")
     # Extend the existing identity-checked probe, keeping its exact process
     # ownership barrier. No GetActiveObject or global ActiveWorkbook is used.
@@ -166,6 +168,7 @@ def main():
                 copy = output / f"{mode}.xlt"
                 shutil.copy2(source, copy)
                 save_template_preferences({"template": str(copy)}, trial_mode=mode)
+                source_views[mode] = probe.call("baseline", source=str(copy))
             manager = LiveExcelManager(transport=RecordingTransport(), coalesce_ms=50)
             manager.changed.connect(lambda sid: report["events"].append(
                 {"time": time.perf_counter(), "sid": sid, **manager.status(sid)}))
@@ -190,6 +193,11 @@ def main():
                      and manager.status(session.id).get("excel_pid")
                      and manager.status(session.id).get("excel_created"), "initial synchronization and identity")
                 first = operate("note", session)
+                differences = view_differences(source_views[mode], first)
+                report["initial_template_comparison"][mode] = {
+                    "baseline": source_views[mode], "workbook": first, "differences": differences}
+                check(not differences,
+                      f"{mode}: initial FDM workbook preserves source template pages and active sheet")
                 before = len(report["requests"])
                 operate("minimize", session)
                 QTest.mouseClick(controls.excel_button, Qt.MouseButton.LeftButton)

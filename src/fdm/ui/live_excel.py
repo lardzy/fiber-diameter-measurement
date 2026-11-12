@@ -14,8 +14,8 @@ from PySide6.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QMenu, QMessageBox, QPushButton,
                                QSizePolicy, QStyle, QToolButton, QVBoxLayout, QWidget)
 
-from fdm.live_experiment.excel_template import (DiameterTemplateProfile, ExportSnapshot, TemplateProfile,
-                                               template_preferences, working_template)
+from fdm.live_experiment.excel_template import (DiameterTemplateProfile, ExcelTemplateError, ExportSnapshot, TemplateProfile,
+                                               template_identity, template_preferences, working_template)
 from fdm.live_experiment.excel_live import PowerShellLiveTransport, input_patch, project_inputs, report_update
 
 
@@ -53,6 +53,8 @@ class _Batch:
     revision: int
     projection: object
     payload: dict
+    binding_selection: dict | None = None
+    replaces_binding: bool = False
 
 
 @dataclass
@@ -81,6 +83,8 @@ class _Link:
     pending_template: dict | None = None
     replacing_template: dict | None = None
     template_selection: dict | None = None
+    failed_template: dict | None = None
+    template_replacement_failure: dict | None = None
     presentation: dict | None = None
 
 
@@ -98,6 +102,7 @@ class LiveExcelManager(QObject):
         self._closing = False
         self._closed = False
         self._shutdown_retry = 0.0
+        self._template_inspection_active = False
         self.close_message = ""
         self._tasks = Queue()
         self._destroyed_event = threading.Event()
@@ -130,7 +135,6 @@ class LiveExcelManager(QObject):
             used_generation = generation
             projection = previous
             replacing = operation == 'replace'
-            template_replaced = False
             binding_selection = None
             try:
                 if operation == 'shutdown':
@@ -139,8 +143,18 @@ class LiveExcelManager(QObject):
                 elif batch is not None:
                     operation, used_generation, revision, projection = (
                         batch.operation, batch.generation, batch.revision, batch.projection)
+                    binding_selection = batch.binding_selection
+                    replacing = batch.replaces_binding
                     result = self._transport.request(operation, sid, used_generation, revision, batch.payload,
                         progress=lambda value: self._emit_progress((value, batch, generation)))
+                elif operation == 'check_template':
+                    # Source identity is checked on entry, off the GUI thread;
+                    # ongoing measurement writes do not read/hash source files.
+                    bound = options.get('bound_selection') or {}
+                    identity = template_identity(bound['path']) if bound.get('path') else None
+                    configured = working_template(trial_mode=options['trial_mode'])
+                    result = {'ok': True, 'source_identity': identity,
+                              'configured_template_path': str(configured)}
                 elif operation == 'recalculate' and previous is not None:
                     # The associated workbook retains its original mapping even
                     # if the template path was subsequently moved or reselected.
@@ -161,23 +175,21 @@ class LiveExcelManager(QObject):
                         profile = TemplateProfile.load(preferences.get('mapping'), trial_mode=mode)
                         template = Path(selection['path']) if selection is not None else working_template(create=True, trial_mode=mode)
                     if operation in ('open', 'replace') and not Path(template).is_file():
-                        raise FileNotFoundError(f'所选试验 Excel 模板不存在：{template}。请重新选择模板；未使用其他默认模板。')
+                        raise ExcelTemplateError(f'所选试验 Excel 模板不存在：{template}。请重新选择模板；未使用其他默认模板。',
+                                                 code='template_missing')
                     method_labels = preferences.get('method_labels', {})
                     method_label = method_labels.get(snapshot.method) if isinstance(method_labels, dict) else None
                     projection = project_inputs(snapshot, template, profile, method_label=method_label)
                     if operation in ('open', 'replace'):
-                        binding_selection = {'path': str(template), 'preferences': deepcopy(preferences)}
+                        identity = template_identity(template)
+                        binding_selection = {'path': str(template), 'preferences': deepcopy(preferences),
+                                             'identity': identity}
                     if replacing:
-                        # Validate all inputs before releasing the old association.
-                        # Detach never closes, saves or edits the old workbook.
+                        # The worker commits a candidate only after it has been
+                        # validated and filled. The old workbook remains bound
+                        # throughout failures/busy retries.
                         payload = input_patch(None, projection)
-                        payload.update(report_update(projection, information=True, settings=True))
-                        if options.get('detach_existing'):
-                            detached = self._transport.request('detach', sid, generation, revision)
-                            if not detached.get('ok'):
-                                self._finished.emit((sid, generation, operation, revision, previous, detached, generation, None))
-                                continue
-                        template_replaced = True
+                        payload.update(report_update(projection, information=True, settings=False))
                         used_generation += 1
                         operation = 'open'
                         force_full = True
@@ -189,12 +201,15 @@ class LiveExcelManager(QObject):
                     else:
                         payload = input_patch(None if force_full or operation == 'open' else previous, projection)
                         if operation == 'open':
-                            payload.update(report_update(projection, information=True, settings=True))
+                            payload.update(report_update(projection, information=True, settings=False))
                     if payload is None:
                         result = {'ok': True, 'status': 'synced', 'unchanged': True, 'input_written': True}
                     else:
                         payload['batch_id'] = uuid4().hex
-                        batch = _Batch(operation, used_generation, revision, projection, payload)
+                        if binding_selection is not None:
+                            payload['template_identity'] = binding_selection['identity']
+                        batch = _Batch(operation, used_generation, revision, projection, payload,
+                                       binding_selection, replacing)
                         result = self._transport.request(operation, sid, used_generation, revision, payload,
                             progress=lambda value: self._emit_progress((value, batch, generation)))
                 else:
@@ -203,8 +218,8 @@ class LiveExcelManager(QObject):
             except Exception as exc:
                 result = {'ok': False, 'error_code': getattr(exc, 'code', 'excel_failed'),
                           'message': str(exc)}
-            if template_replaced:
-                result = {**result, 'template_replaced': True}
+            if replacing:
+                result = {**result, 'replacement_attempt': True}
             if binding_selection is not None:
                 result = {**result, 'binding_selection': binding_selection}
             if operation == 'show':
@@ -246,6 +261,11 @@ class LiveExcelManager(QObject):
             self.changed.emit(session.id)
         else:
             self.update(session)
+            link = self._links[session.id]
+            if link.connected and not link.detaching and not any(item[0] == 'check_template' for item in link.actions):
+                link.actions.append(('check_template', None, {
+                    'bound_selection': deepcopy(link.template_selection),
+                    'trial_mode': session.workspace_options.get('mode', 'content')}))
         # Explicitly stopped, closed or failed links need a user resync. Reentry
         # does not recreate a workbook that the user deliberately closed.
 
@@ -256,8 +276,25 @@ class LiveExcelManager(QObject):
         link.session = session
         if link.active and session.revision != link.acknowledged_revision:
             link.dirty = True
-            if link.state == 'error' and link.metadata.get('error_operation') in ('show', 'status', 'metadata', 'update_report', 'recalculate'):
+            if link.state == 'error' and link.metadata.get('error_operation') in ('show', 'status', 'metadata', 'update_report', 'recalculate', 'replace'):
                 link.state, link.message = 'syncing', '正在等待测量数据输出'
+
+    def template_binding(self, session):
+        """Actual successful association, independent of later global defaults."""
+        link = self._links.get(self._sid(session))
+        return deepcopy(link.template_selection) if link and link.template_selection else None
+
+    def begin_template_inspection(self):
+        """Serialize independent Excel creation against live workbook creation."""
+        if (self._closing or self._template_inspection_active or
+                (self._busy and self._busy[2] in ('open', 'replace'))):
+            return False
+        self._template_inspection_active = True
+        return True
+
+    def end_template_inspection(self):
+        self._template_inspection_active = False
+        self._pump()
 
     def status(self, session_id):
         link = self._links.get(self._sid(session_id))
@@ -265,6 +302,7 @@ class LiveExcelManager(QObject):
             return {'state': 'idle', 'message': '进入试验后自动连接 Excel', 'active': False,
                     'connected': False, 'pending': False, 'unsynced': False}
         replacing = link.pending_template or link.replacing_template
+        replacement_failure = link.template_replacement_failure or {}
         pending = bool(replacing or (link.active and link.dirty) or link.pending_batch or link.pending_auxiliary or link.actions or link.detaching or
                        (self._busy and self._busy[0] == link.session.id))
         unsynced = bool(link.ever_connected and (link.dirty or link.projection is None or
@@ -280,9 +318,11 @@ class LiveExcelManager(QObject):
                 'generation': link.generation,
                 'presentation_pending': link.presentation is not None,
                 'template_path': link.metadata.get('template_path', ''),
-                'pending_template_path': replacing['path'] if replacing else link.metadata.get('failed_template_path', ''),
-                'template_replacement_failed': bool(link.metadata.get('failed_template_path')),
-                'template_replacement_message': link.message if link.metadata.get('failed_template_path') else '',
+                'pending_template_path': replacing['path'] if replacing else replacement_failure.get('path', ''),
+                'template_replacement_failed': bool(replacement_failure),
+                'template_replacement_path': replacement_failure.get('path', ''),
+                'template_replacement_message': replacement_failure.get('message', ''),
+                'template_replacement_error_code': replacement_failure.get('error_code', ''),
                 'template_replacement_pending': bool(replacing)}
 
     def show(self, session_id):
@@ -393,6 +433,11 @@ class LiveExcelManager(QObject):
             if present_after:
                 self._want_presentation(link, wait_for_input=True)
             return
+        if link.failed_template is not None:
+            self.replace_template(session, link.failed_template['preferences'])
+            if present_after:
+                self._want_presentation(link, wait_for_input=True)
+            return
         if link.state == 'error' and link.metadata.get('error_code') != 'excel_busy':
             link.pending_batch = None
         link.session = session
@@ -442,7 +487,8 @@ class LiveExcelManager(QObject):
             # The worker terminated this failed cursor. Selecting another
             # template explicitly repairs the association with a full snapshot.
             link.pending_batch = link.pending_auxiliary = None
-        link.metadata.pop('failed_template_path', None)
+        link.failed_template = None
+        link.template_replacement_failure = None
         link.state, link.message = 'template_pending', '正在等待当前 Excel 操作完成，再按所选模板建立新工作簿'
         self.changed.emit(session.id)
         self._pump()
@@ -520,7 +566,9 @@ class LiveExcelManager(QObject):
         generation = link.generation if link else 0
         revision = snapshot.revision if snapshot else (link.acknowledged_revision if link else 0)
         if batch is not None:
-            generation, operation, revision = batch.generation, batch.operation, batch.revision
+            # A replacement batch has a newer worker generation while the
+            # coordinator still owns the old binding until the commit ACK.
+            operation, revision = batch.operation, batch.revision
         self._busy = sid, generation, operation, revision
         self._busy_input_confirmed = operation not in ('open', 'sync', 'replace')
         previous = (link.projection or link.workbook_projection) if link else None
@@ -539,9 +587,11 @@ class LiveExcelManager(QObject):
             if link.detaching:
                 if now < link.retry_at:
                     continue
-                if not link.connected:
+                if not link.connected and not link.replacing_template and not (
+                        link.pending_batch and link.pending_batch.operation == 'open'):
                     link.detaching = False
                     link.pending_batch = link.pending_auxiliary = None
+                    link.failed_template = link.template_replacement_failure = None
                     link.state, link.message = 'detached', '同步已停止；Excel 工作簿由用户保存'
                     self.changed.emit(sid)
                     continue
@@ -569,10 +619,12 @@ class LiveExcelManager(QObject):
                 return
             if (link.active and link.pending_batch is not None and now >= link.retry_at
                     and link.state not in ('error', 'stopped', 'unsupported')):
+                if self._template_inspection_active and link.pending_batch.operation == 'open':
+                    continue
                 self._dispatch(sid, link, link.pending_batch.operation, batch=link.pending_batch)
                 return
             if (link.active and link.pending_template is not None and now >= link.retry_at
-                    and link.state not in ('error', 'stopped', 'unsupported')):
+                    and link.state not in ('error', 'stopped', 'unsupported') and not self._template_inspection_active):
                 try:
                     snapshot = ExportSnapshot.capture(link.session)
                 except Exception as exc:
@@ -584,7 +636,7 @@ class LiveExcelManager(QObject):
                 link.replacing_template = selection
                 link.state, link.message = 'replacing_template', '正在按所选模板建立新工作簿；原工作簿保留在 Excel 中'
                 self._dispatch(sid, link, 'replace', snapshot,
-                               options={'template_selection': selection, 'detach_existing': link.connected})
+                               options={'template_selection': selection})
                 self.changed.emit(sid)
                 return
             if link.connected and link.actions and now >= link.retry_at:
@@ -592,6 +644,8 @@ class LiveExcelManager(QObject):
                 self._dispatch(sid, link, operation, snapshot, options=options)
                 return
             if link.active and link.dirty and now >= link.retry_at and link.state not in ('error', 'stopped', 'unsupported'):
+                if self._template_inspection_active and (not link.connected or link.reopen):
+                    continue
                 try:
                     snapshot = ExportSnapshot.capture(link.session)
                 except Exception as exc:
@@ -623,8 +677,6 @@ class LiveExcelManager(QObject):
         # identity without decoding all measurement input on each repaint.
         if projection is not None and not link.metadata.get('template_path'):
             link.metadata['template_path'] = projection.data()['template']
-        if link.metadata.get('failed_template_path') == link.metadata.get('template_path'):
-            link.metadata.pop('failed_template_path', None)
         link.dirty = link.session.revision != revision or link.force_full
         if link.pending_batch is not None and link.pending_batch.revision == revision:
             link.pending_batch = None
@@ -641,10 +693,11 @@ class LiveExcelManager(QObject):
                 or event.get('batch_id') != batch.payload['batch_id']):
             return
         if event.get('event') == 'inputs_written' and event.get('input_written') is True:
+            if batch.replaces_binding:
+                # A write ACK from an uncommitted candidate is not a binding ACK.
+                return
             # This event is emitted after visible absolute writes, independently
             # of best-effort metadata or template calculation. It is an ACK.
-            if self._busy[2] == 'replace':
-                link.metadata.clear()
             self._confirm_input(link, batch.revision, batch.projection)
             self._busy_input_confirmed = True
             link.metadata['last_input_batch'] = batch.payload['batch_id']
@@ -666,11 +719,88 @@ class LiveExcelManager(QObject):
                     'batch_id', 'completed_ops', 'calculated_revision'):
             if key in result:
                 link.metadata[key] = result[key]
-
         for key in ('window_handle', 'window_visible', 'window_minimized', 'foreground',
                     'presentation_status', 'presentation_message', 'activation_deferred', 'attention_requested'):
             if key in result:
                 link.metadata[key] = result[key]
+        for key in ('template_identity', 'workbook_sheets', 'active_sheet', 'template_initial_state', 'initial_view'):
+            if key in result:
+                link.metadata[key] = result[key]
+
+    def _complete_replacement(self, link, generation, revision, projection, result, batch):
+        """Keep the old confirmed workbook intact until a candidate commits."""
+        selection = (result.get('binding_selection') or
+                     (batch.binding_selection if batch else None) or link.replacing_template)
+        if result.get('ok') and result.get('input_written') is True:
+            link.generation = generation
+            if link.presentation:
+                link.presentation['generation'] = generation
+            link.pending_batch = None
+            link.replacing_template = link.failed_template = None
+            link.template_replacement_failure = None
+            link.template_selection = selection
+            link.metadata.clear()
+            self._metadata(link, result)
+            if selection and not link.metadata.get('template_identity'):
+                link.metadata['template_identity'] = selection.get('identity')
+            self._confirm_input(link, revision, projection)
+            link.next_poll = time.monotonic() + 2.0
+            link.state, link.message = 'synced', '已按所选模板建立工作簿；原工作簿保留在 Excel 中'
+        else:
+            code = result.get('error_code', 'protocol_mismatch')
+            raw_error = result.get('message') or result.get('error') or 'Excel 未确认新工作簿数据写入'
+            link.metadata.update(error_code=code, raw_error=raw_error, error_operation='replace')
+            for key in ('stage', 'error_stack', 'candidate_name', 'candidate_template_identity'):
+                if key in result:
+                    link.metadata[key] = result[key]
+            if code == 'excel_busy':
+                link.pending_batch = batch
+                if batch is None:
+                    link.pending_template, link.replacing_template = selection, None
+                link.retry_at = time.monotonic() + .5
+                link.state, link.message = 'busy', '等待 Excel 完成当前操作；当前工作簿尚未替换'
+            else:
+                link.presentation = None
+                link.pending_batch = None
+                link.replacing_template = None
+                link.failed_template = selection
+                link.state, link.message = 'error', f'无法切换到所选模板：{raw_error}；当前工作簿未替换。'
+                if code == 'workbook_closed' and result.get('workbook_connected') is False:
+                    link.connected = link.active = False
+                    link.message = 'Excel 工作簿已关闭；新模板也未建立关联，请重新连接。'
+                # A successful later input/status update only confirms the old
+                # workbook. Keep candidate failure separate even at the same path.
+                link.template_replacement_failure = {
+                    'path': selection['path'] if selection else '',
+                    'error_code': code, 'message': link.message,
+                }
+                if code in ('worker_timeout', 'worker_exited', 'worker_disconnected', 'protocol_mismatch'):
+                    for other in self._links.values():
+                        other.connected = other.active = False
+                        other.presentation = None
+                        other.pending_batch = other.pending_auxiliary = None
+                        other.state, other.message = 'error', link.message
+                        other.metadata.update(error_code=code, raw_error=raw_error, save_state='unknown', saved=None)
+                        self.changed.emit(other.session.id)
+                    self._transport = PowerShellLiveTransport()
+                elif (link.pending_template is not None and link.active and not link.detaching
+                      and not self._closing and code != 'unsupported_platform'):
+                    # A was in flight while the user selected B. A's terminal
+                    # failure must not leave B stranded behind the error gate,
+                    # or make a later resync silently choose A again.
+                    link.metadata['previous_template_failure'] = {
+                        'path': selection['path'] if selection else '',
+                        'error_code': code, 'message': raw_error,
+                    }
+                    link.failed_template = None
+                    link.template_replacement_failure = None
+                    for key in ('error_code', 'raw_error', 'error_operation',
+                                'stage', 'error_stack', 'candidate_name', 'candidate_template_identity'):
+                        link.metadata.pop(key, None)
+                    link.retry_at = 0.0
+                    link.state, link.message = 'template_pending', '上次模板未能创建，正在按最新选择建立工作簿；当前工作簿保留'
+        self.changed.emit(link.session.id)
+
     def _complete_show(self, link, result):
         intent = link.presentation
         request_id = result.get('presentation_request')
@@ -732,7 +862,6 @@ class LiveExcelManager(QObject):
             presentation_error_code=code)
         self.changed.emit(link.session.id)
 
-
     def _complete(self, value):
         sid, generation, operation, revision, projection, result, used_generation, batch = value
         self._busy = None
@@ -749,29 +878,28 @@ class LiveExcelManager(QObject):
         if not link or generation != link.generation:
             self._pump()
             return
+        if operation == 'check_template':
+            if result.get('ok'):
+                original = (link.template_selection or {}).get('identity') or {}
+                current = result.get('source_identity') or {}
+                link.metadata['template_source_changed'] = bool(original.get('sha256') and original.get('sha256') != current.get('sha256'))
+                link.metadata['configured_template_path'] = result.get('configured_template_path', '')
+                link.metadata.pop('template_source_error', None)
+            else:
+                link.metadata['template_source_error'] = result.get('message', '无法读取模板来源')
+            self.changed.emit(sid)
+            return
+        if result.get('replacement_attempt') or (batch and batch.replaces_binding):
+            self._complete_replacement(link, used_generation, revision, projection, result, batch)
+            return
         if operation == 'show' and result.get('error_code') not in (
                 'worker_timeout', 'worker_exited', 'worker_disconnected', 'protocol_mismatch'):
             self._complete_show(link, result)
             return
         link.generation = used_generation
-        if link.presentation:
-            link.presentation['generation'] = used_generation
-        selection = link.replacing_template
-        if selection is not None:
-            link.replacing_template = None
         progress_written = (batch is not None and link.metadata.get('last_input_batch') == batch.payload['batch_id']
                             and link.acknowledged_revision == revision)
-        if result.get('template_replaced'):
-            # The old association was released before opening the new workbook.
-            # An open failure must not retain its saved/name/input metadata.
-            link.connected = False
-            link.projection = link.workbook_projection = None
-            link.acknowledged_revision = -1
-            link.metadata.clear()
-            link.template_selection = selection
-            if projection is not None and (result.get('workbook_connected') or result.get('input_written') or progress_written):
-                link.metadata['template_path'] = projection.data()['template']
-        if result.get('binding_selection') is not None:
+        if result.get('binding_selection') is not None and result.get('ok') and result.get('input_written'):
             link.template_selection = result['binding_selection']
         self._metadata(link, result)
         quantitative = operation in ('open', 'sync')
@@ -806,6 +934,8 @@ class LiveExcelManager(QObject):
                 if operation == 'detach':
                     link.connected = link.active = link.detaching = False
                     link.pending_batch = link.pending_auxiliary = None
+                    link.replacing_template = link.failed_template = None
+                    link.template_replacement_failure = None
                     link.state, link.message = 'detached', '同步已停止；Excel 工作簿由用户保存'
                     if link.pending_template and not self._closing:
                         link.active = True
@@ -825,8 +955,6 @@ class LiveExcelManager(QObject):
         if not result.get('ok'):
             code = result.get('error_code', result.get('code', 'excel_failed'))
             raw_error = result.get('message') or result.get('error') or ''
-            if selection is not None:
-                link.metadata['failed_template_path'] = selection['path']
             link.metadata.update(error_code=code, raw_error=raw_error, error_operation=operation,
                                  save_state='unknown', saved=None)
             for key in ('stage', 'error_stack'):
@@ -834,8 +962,6 @@ class LiveExcelManager(QObject):
                     link.metadata[key] = result[key]
             link.state = 'unsupported' if code == 'unsupported_platform' else 'stopped' if code == 'workbook_closed' else 'error'
             link.message = _EXCEL_ERROR_MESSAGES.get(code, 'Excel 操作未完成，请查看同步详情。')
-            if operation == 'replace':
-                link.message = f'无法切换到所选模板：{raw_error}；当前工作簿未替换。'
             if written:
                 link.metadata['error_operation'] = 'metadata'
                 if code not in ('workbook_closed', 'unsupported_platform'):
@@ -856,10 +982,6 @@ class LiveExcelManager(QObject):
             if code == 'excel_busy':
                 link.state, link.message = 'busy', 'Excel 正在编辑、保存或运行宏；恢复后继续输出'
                 link.retry_at = time.monotonic() + .5
-                if operation == 'replace' and selection is not None and link.pending_template is None:
-                    # Detach did not succeed, so the original generation and
-                    # workbook are still valid. Retry this explicit selection.
-                    link.pending_template = selection
                 if operation == 'show':
                     link.actions.insert(0, ('show', None, {}))
                 # Readonly busy never sets dirty, invalidates the projection or
@@ -1110,6 +1232,8 @@ class LiveExcelControls(QWidget):
     @staticmethod
     def _diagnostics(status):
         labels = (('template_path', '当前工作簿模板'), ('pending_template_path', '待切换／尚未生效模板'),
+                  ('template_replacement_message', '模板更换失败'),
+                  ('template_replacement_error_code', '模板更换错误代码'),
                   ('raw_error', '原始错误'), ('metadata_error', '状态读取错误'),
                   ('report_error', '报表操作错误'), ('report_error_stack', '报表操作位置'),
                   ('presentation_error', '窗口显示错误'), ('presentation_error_code', '窗口显示错误代码'),

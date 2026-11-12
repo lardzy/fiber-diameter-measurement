@@ -52,17 +52,20 @@ def test_snapshot_does_not_follow_later_edits_or_counts():
     assert not any(c["value"] for c in request["cells"] if c["cell"].endswith('8'))
 
 
-def test_existing_user_template_survives_updated_default(tmp_path,monkeypatch):
+def test_updated_default_is_used_without_deleting_legacy_personal_copy(tmp_path,monkeypatch):
     from fdm import settings
     from fdm.live_experiment import excel_template as module
     source = tmp_path/'runtime'/'content-templates'/'sheet.xlt'
     source.parent.mkdir(parents=True); source.write_bytes(b'first default')
     monkeypatch.setattr(settings,'runtime_directory',lambda:tmp_path/'runtime')
     monkeypatch.setattr(settings,'settings_directory',lambda:tmp_path/'user')
-    path = working_template(create=True)
-    path.write_bytes(b'user changed formulas and macros')
+    legacy = tmp_path/'user'/'templates'/'sheet.xlt'
+    legacy.parent.mkdir(parents=True)
+    legacy.write_bytes(b'user changed formulas and macros')
     source.write_bytes(b'new default')
-    assert working_template(create=True).read_bytes() == b'user changed formulas and macros'
+    assert working_template(create=True) == source
+    assert working_template(create=True).read_bytes() == b'new default'
+    assert legacy.read_bytes() == b'user changed formulas and macros'
 
 
 def test_mapping_validates_location_not_template_bytes(tmp_path):

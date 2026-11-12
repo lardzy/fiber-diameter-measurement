@@ -7,13 +7,118 @@ from copy import deepcopy
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import (
-    QColorDialog, QCheckBox, QFormLayout, QFrame, QGroupBox, QHBoxLayout,
+    QColorDialog, QCheckBox, QFileDialog, QFormLayout, QFrame, QGroupBox, QHBoxLayout,
     QLabel, QPushButton, QScrollArea, QTabWidget, QVBoxLayout, QWidget,
 )
 
 from fdm.services.optical_config import ALGORITHM_CHOICES, IMAGING_MODE_CHOICES
 from fdm.trial_preferences import TrialPreferences
 from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox, NoWheelFontComboBox, NoWheelSpinBox
+
+
+class TrialTemplateSettings(QWidget):
+    """The same template preferences as the report picker, edited as a draft."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        from fdm.live_experiment.excel_template import template_preferences, ExcelTemplateError
+        self._values = {}
+        self._changed = set()
+        self._errors = {}
+        self.labels = {}
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        note = QLabel("此处与试验“报告 → 选择模板”共用同一模板来源。应用后用于之后创建的工作簿；已打开工作簿保持原样，可在报告页重新创建。", self)
+        note.setWordWrap(True)
+        layout.addWidget(note)
+        for mode, title in (("content", "含量试验模板"), ("diameter", "直径试验模板")):
+            try:
+                self._values[mode] = template_preferences(mode)
+            except ExcelTemplateError as exc:
+                self._values[mode] = {}
+                self._errors[mode] = str(exc)
+            group = QGroupBox(title, self)
+            body = QVBoxLayout(group)
+            label = QLabel(group)
+            label.setObjectName("trialTemplatePath_" + mode)
+            label.setWordWrap(True)
+            label.setTextFormat(Qt.TextFormat.PlainText)
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            self.labels[mode] = label
+            body.addWidget(label)
+            row = QHBoxLayout()
+            select = QPushButton("选择模板…", group)
+            select.setObjectName("trialTemplateChoose_" + mode)
+            select.clicked.connect(lambda checked=False, current=mode: self.choose(current))
+            row.addWidget(select)
+            reset = QPushButton("使用程序默认", group)
+            reset.setObjectName("trialTemplateDefault_" + mode)
+            reset.clicked.connect(lambda checked=False, current=mode: self.use_default(current))
+            row.addWidget(reset)
+            row.addStretch(1)
+            body.addLayout(row)
+            layout.addWidget(group)
+        explanation = QLabel("模板中的新增报表页、初始可见状态、布局与公式完整保留。打开时不自动执行 CU 分组宏，也不改标准或组距。\n默认直接读取程序模板；历史个人副本保留在原位置，不再自动优先使用，可显式选择继续使用。\n更改须点“应用”或“确定”；“取消”不改变模板来源。", self)
+        explanation.setWordWrap(True)
+        layout.addWidget(explanation)
+        layout.addStretch(1)
+        self.refresh()
+
+    def refresh(self):
+        from fdm.live_experiment.excel_template import default_template_path
+        for mode, label in self.labels.items():
+            if mode in self._errors:
+                label.setText(self._errors[mode])
+                continue
+            values = self._values[mode]
+            source = values.get("template") or str(default_template_path(mode))
+            text = ("所选模板：" if values.get("template") else "程序默认：") + source
+            if mode in self._changed:
+                text += "\n尚未应用"
+            label.setText(text)
+
+    def choose(self, mode):
+        from fdm.live_experiment.excel_template import default_template_path, selected_template_preferences
+        current = self._values[mode]
+        path, _ = QFileDialog.getOpenFileName(self, "选择试验 Excel 模板",
+            current.get("template") or str(default_template_path(mode)),
+            "Excel 模板 (*.xlt *.xltm *.xltx);;Excel 工作簿 (*.xls *.xlsm *.xlsx)")
+        if not path:
+            return
+        try:
+            self._values[mode] = selected_template_preferences(path, mode, current=current)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._errors[mode] = str(exc)
+            self.refresh()
+            return
+        self._errors.pop(mode, None)
+        self._changed.add(mode)
+        self.refresh()
+
+    def use_default(self, mode):
+        self._values[mode] = {}
+        self._errors.pop(mode, None)
+        self._changed.add(mode)
+        self.refresh()
+
+    def changes(self):
+        from fdm.live_experiment.excel_template import template_identity
+        values = {}
+        for mode in self._changed:
+            if mode in self._errors:
+                raise ValueError(self._errors[mode])
+            pending = deepcopy(self._values[mode])
+            if pending.get("template"):
+                pending["template_identity"] = template_identity(pending["template"])
+            values[mode] = pending
+        return values
+
+    def mark_saved(self):
+        self._changed.clear()
+        self.refresh()
+
+    def restore_defaults(self):
+        for mode in self._values:
+            self.use_default(mode)
 
 
 class TrialLabelPreview(QWidget):
@@ -156,6 +261,9 @@ class TrialSettingsPage(QWidget):
         optical.addRow(self.reference_status)
         self._note(analysis, "分析、取消、采集空白参考与光照检查在试验界面执行；候选仍需确认后才计入。这里不启动设备或分析任务。")
         analysis.addStretch(1)
+        templates = self._page("Excel 模板")
+        self.template_settings = TrialTemplateSettings(self)
+        templates.addWidget(self.template_settings)
         self.set_preferences(preferences)
 
     def _page(self, title):
@@ -271,6 +379,7 @@ class TrialSettingsPage(QWidget):
         # unchanged global reference that the user's draft just cleared.
         self.set_preferences(TrialPreferences(), reset_resource_observation=False)
         self.total_target.setValue(1500)
+        self.template_settings.restore_defaults()
 
     def update_optical_resources(self, preferences):
         """Merge asynchronous capture resources without overwriting UI drafts."""

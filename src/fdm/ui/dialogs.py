@@ -1889,7 +1889,7 @@ class SettingsDialog(QDialog):
         ("图像与智能分析", "景深合成、魔棒和快速测径", "图像 景深 合成 锐化 魔棒 EdgeSAM ROI 快速测径"),
         ("面积识别", "面积模型、权重和推理设备", "面积 模型 权重 Python CPU CUDA 推理"),
         ("采集与数字切片", "预览、运动控制和切片参数", "采集 预览 数字化切片 电机 运动 焦层"),
-        ("采集与试验", "试验交互、标记、数量提醒与图片存档", "试验 含量 直径 高级 视场 稳定 字体 字号 颜色 类别 标记 原图 图片 存档 清理 算法 数量 总根数 目标 提醒"),
+        ("采集与试验", "试验交互、标记、数量提醒、图片存档与 Excel 模板", "试验 含量 直径 高级 视场 稳定 字体 字号 颜色 类别 标记 原图 图片 存档 清理 算法 数量 总根数 目标 提醒 Excel 模板 报表 sheet xlt"),
         ("截图工具", "常驻截图、全局快捷键和 CU 系列实时预览", "截图 常驻 托盘 快捷键 开机启动 CU 系列 CU-5 CU-6 Microview 窗口 区域"),
         ("导出与模板", "原始记录模板和导出规则", "导出 原始记录 模板 规则 Excel 工作表"),
     )
@@ -2151,10 +2151,17 @@ class SettingsDialog(QDialog):
     def trial_total_target_changed(self) -> bool:
         return self.trial_total_target() != getattr(self, "_trial_total_target_initial", 1500)
 
+    def trial_template_changes(self) -> dict:
+        """Independent template-source drafts; the caller persists on Apply only."""
+        return self._trial_settings_widget.template_settings.changes()
+
+    def mark_trial_templates_saved(self) -> None:
+        self._trial_settings_widget.template_settings.mark_saved()
+
     def select_trial_section(self, section: str) -> None:
         self.select_page("trial")
         self._trial_settings_widget.tabs.setCurrentIndex(
-            {"display": 0, "evidence": 1, "targets": 1, "analysis": 2}.get(section, 0)
+            {"display": 0, "evidence": 1, "targets": 1, "analysis": 2, "templates": 3}.get(section, 0)
         )
 
     def _update_settings_navigation_item_sizes(self) -> None:

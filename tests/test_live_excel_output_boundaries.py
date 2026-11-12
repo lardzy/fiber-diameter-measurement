@@ -300,7 +300,7 @@ def test_reoutput_preserves_report_fields_but_explicit_actions_choose_them(coord
     wait_until(app, lambda: manager.flush(session))
     initial = transport.requests[0][4]
     assert any(item['value'] == '初始名称' for item in initial['report_cells'])
-    assert initial['report_settings'] is not None
+    assert initial['report_settings'] is None
     session.sample_name, session.group_width = '后续名称', 3
     session.revision += 1
     manager.update(session)
@@ -368,7 +368,7 @@ def test_nonbusy_partial_initialization_can_be_retried_in_same_workbook(coordina
     calls = [item for item in transport.requests if item[0] == 'open']
     assert len(calls) == 2
     assert calls[1][2] == old_generation
-    assert calls[1][4]['report_settings'] is not None
+    assert calls[1][4]['report_settings'] is None
 
 
 def test_report_failure_does_not_block_later_quantitative_input(coordinator):

@@ -34,7 +34,8 @@ def report_setup(tmp_path, monkeypatch, desktop_application):
         window._guard = lambda fn: fn()
         panel = trial_report_panel.TrialReportPanel(window)
         panel.bind_live_excel(manager)
-        monkeypatch.setattr(panel, 'inspect', lambda: None)
+        # Keep the actual picker path: selecting a source must not spawn a
+        # separate Excel inspection concurrently with workbook creation.
         panels.append((window, panel))
         return window, panel
 
@@ -60,6 +61,9 @@ def test_report_picker_replaces_unchanged_trial_and_same_path_again(report_setup
     template = tmp_path / '用户选择的模板.xlt'
     template.write_bytes(b'custom first')
     monkeypatch.setattr(trial_report_panel.QFileDialog, 'getOpenFileName', lambda *a: (str(template), ''))
+    def forbidden_inspect():
+        pytest.fail('Selecting a template must not launch a parallel Excel inspector')
+    monkeypatch.setattr(panel, 'inspect', forbidden_inspect)
     panel.choose()
     wait_until(app, lambda: manager.status(session.id)['generation'] == 2 and
                manager.status(session.id)['state'] == 'synced')
@@ -74,9 +78,51 @@ def test_report_picker_replaces_unchanged_trial_and_same_path_again(report_setup
     opens = [r for r in transport.requests if r[0] == 'open']
     assert [r[4]['template'] for r in opens] == [first_source, str(template), str(template)]
     assert opens[-1][4]['blocks'][0]['values'] == [[18.25]]
-    assert len([r for r in transport.requests if r[0] == 'detach']) == 2
+    assert not [r for r in transport.requests if r[0] == 'detach']
+    assert panel.future is None
     assert session.to_dict() == previous
     assert template.read_bytes() == b'custom second at identical path'
+
+
+@pytest.mark.parametrize('mode', ['content', 'diameter'])
+def test_failed_same_path_picker_remains_visible_while_old_workbook_receives_new_measurements(report_setup, monkeypatch, mode):
+    make, manager, transport, app = report_setup
+    request = transport.request
+    def request_with_identity(operation, *args, **kwargs):
+        result = request(operation, *args, **kwargs)
+        payload = args[3] if len(args) > 3 else kwargs.get('payload')
+        if result.get('ok') and operation == 'open' and payload:
+            result['template_identity'] = payload['template_identity']
+        return result
+    monkeypatch.setattr(transport, 'request', request_with_identity)
+    window, panel = make(mode)
+    session = window.session
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    original = manager.template_binding(session)
+    source = panel.path().resolve()
+    source.write_bytes(b'new template contents at the same path')
+    monkeypatch.setattr(trial_report_panel.QFileDialog, 'getOpenFileName', lambda *a: (str(source), ''))
+    transport.failure = {'ok': False, 'error_code': 'template_mapping',
+                         'message': '所选模板缺少原始数据页', 'workbook_connected': True}
+    panel.choose()
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
+    session.add_measurement(21.5, 'a')
+    manager.update(session)
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'synced' and manager.flush(session))
+    assert manager.template_binding(session) == original
+    text = panel.live_template_label.text()
+    assert '更换未完成：' + str(source) in text
+    assert '所选模板缺少原始数据页' in text
+    assert '当前工作簿未替换' in text
+    assert original['identity']['sha256'][:16] in text
+
+    panel.choose()
+    wait_until(app, lambda: manager.status(session.id)['generation'] == 2 and manager.flush(session))
+    text = panel.live_template_label.text()
+    assert '更换未完成' not in text
+    assert '所选模板缺少原始数据页' not in text
+    assert manager.template_binding(session)['identity']['sha256'][:16] in text
 
 
 def test_selection_updates_new_trials_but_not_other_connected_books(report_setup, tmp_path, monkeypatch):
@@ -198,7 +244,7 @@ def test_late_inspect_response_is_discarded_after_source_changes(report_setup, t
         gate.set()
 
 
-def test_explicit_method_mapping_repairs_live_initialization_and_is_frozen(report_setup, tmp_path, monkeypatch):
+def test_method_mapping_is_frozen_without_overwriting_templates_initial_standard(report_setup, tmp_path, monkeypatch):
     make, manager, transport, app = report_setup
     window, panel = make()
     session = window.session
@@ -206,19 +252,9 @@ def test_explicit_method_mapping_repairs_live_initialization_and_is_frozen(repor
     wait_until(app, lambda: manager.flush(session))
     selected = tmp_path / 'custom methods.xlt'
     selected.write_bytes(b'template with custom method labels')
-    request = transport.request
-
-    def checked_request(operation, session_id='', generation=0, input_revision=0, payload=None, *, progress=None):
-        if operation == 'open' and payload['template'] == str(selected) and payload['report_settings']['method_label'] != '自定义标准':
-            transport.requests.append((operation, session_id, generation, input_revision, payload))
-            return {'ok': False, 'error_code': 'template_method', 'workbook_connected': True}
-        return request(operation, session_id, generation, input_revision, payload, progress=progress)
-
-    transport.request = checked_request
     monkeypatch.setattr(trial_report_panel.QFileDialog, 'getOpenFileName', lambda *a: (str(selected), ''))
     panel.choose()
-    wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
-    assert manager.status(session.id)['error_code'] == 'template_method'
+    wait_until(app, lambda: manager.status(session.id)['generation'] == 2 and manager.flush(session))
     panel._task_source = panel._methods_source
     panel.future = Future()
     panel.future.set_result({'methods': [{'label': '自定义标准'}]})
@@ -229,8 +265,88 @@ def test_explicit_method_mapping_repairs_live_initialization_and_is_frozen(repor
     save_template_preferences({'template': str(selected), 'method_labels': {session.method: '其他标签'}})
     wait_until(app, lambda: manager.status(session.id)['generation'] == 3 and manager.flush(session))
     opened = [item for item in transport.requests if item[0] == 'open']
-    assert opened[-1][4]['report_settings']['method_label'] == '自定义标准'
+    assert all(item[4].get('report_settings') is None for item in opened)
+    assert manager.template_binding(session)['preferences']['method_labels'][session.method] == '自定义标准'
     assert opened[-1][4]['template'] == str(selected)
     assert '旧工作簿保留' in panel.status.text()
     assert session.to_dict() == before
     assert not any(item[0] in ('close', 'save') for item in transport.requests)
+
+
+def test_one_shot_export_uses_current_workbook_source_not_later_default(report_setup, tmp_path, monkeypatch):
+    make, manager, transport, app = report_setup
+    window, panel = make()
+    manager.ensure(window.session)
+    wait_until(app, lambda: manager.flush(window.session))
+    bound = manager.status(window.session.id)['template_path']
+    other = tmp_path / 'later-default.xlt'
+    other.write_bytes(b'other workbook')
+    save_template_preferences({'template': str(other)})
+    captured = []
+    monkeypatch.setattr(trial_report_panel.QFileDialog, 'getSaveFileName', lambda *a: (str(tmp_path/'export.xls'), ''))
+    monkeypatch.setattr(trial_report_panel, 'run_excel_request', lambda request, **kwargs: captured.append(request) or {})
+    panel.export()
+    wait_until(app, lambda: bool(captured))
+    assert captured[0]['template'] == bound
+    assert captured[0]['template_identity']['sha256'] == manager.template_binding(window.session)['identity']['sha256']
+    assert template_preferences()['template'] == str(other)
+
+
+def test_report_page_can_repair_broken_config_and_diagnostic_is_bounded(report_setup, tmp_path, monkeypatch):
+    from fdm.live_experiment.excel_template import template_preferences_path
+    make, manager, transport, app = report_setup
+    preferences = template_preferences_path()
+    preferences.parent.mkdir(parents=True)
+    preferences.write_text('{broken')
+    window, panel = make()
+    assert '无法读取试验模板设置' in panel.path_label.text()
+    selected = tmp_path / 'repaired.xlt'
+    selected.write_bytes(b'repaired')
+    monkeypatch.setattr(trial_report_panel.QFileDialog, 'getOpenFileName', lambda *a: (str(selected), ''))
+    panel.choose()
+    assert template_preferences()['template'] == str(selected)
+    panel.collect_diagnostics()
+    first = json.loads(panel.diagnostics_text.toPlainText())
+    panel.collect_diagnostics()
+    second = json.loads(panel.diagnostics_text.toPlainText())
+    assert second['previous_operation'] == first['previous_operation']
+    assert second['selected_source']['sha256']
+    assert second['session_id'] == window.session.id
+
+
+def test_export_completion_uses_template_method_without_assuming_fdm_standard(report_setup, tmp_path):
+    make, _, _, _ = report_setup
+    window, panel = make()
+    result = {'destination': str(tmp_path / 'report.xls'), 'method_source': 'template',
+              'status': 'ready', 'warnings': [], 'comparisons': []}
+    panel.future = Future()
+    panel.future.set_result(result)
+    panel.poll()
+    assert panel.last_report == result
+    assert '报告方法：由模板当前设置决定' in panel.status.text()
+    assert '报告已生成' in window.statusBar().currentMessage()
+
+
+def test_oneoff_template_task_keeps_global_lease_until_close_cleanup_finishes(report_setup):
+    make, manager, transport, app = report_setup
+    window, first = make()
+    _, second = make()
+    gate = threading.Event()
+    first.start(lambda: gate.wait(3) or {'methods': []})
+    try:
+        with pytest.raises(ValueError, match='其他模板任务'):
+            second.start(lambda: {})
+        first.close()
+        assert not manager.begin_template_inspection()
+        gate.set()
+        wait_until(app, lambda: first.future.done())
+        # Completion callback queues release to the manager's owning Qt thread.
+        wait_until(app, lambda: manager.begin_template_inspection())
+        manager.end_template_inspection()
+        second.start(lambda: {'methods': []})
+        wait_until(app, lambda: second.future is None or second.future.done())
+        second.poll()
+        assert manager.begin_template_inspection()
+        manager.end_template_inspection()
+    finally:
+        gate.set()

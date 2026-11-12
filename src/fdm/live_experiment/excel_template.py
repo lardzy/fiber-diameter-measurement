@@ -5,6 +5,7 @@ from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 import base64
+import hashlib
 import json
 import locale
 import math
@@ -275,36 +276,114 @@ def template_preferences_path(trial_mode="content"):
 def template_preferences(trial_mode="content"):
     path = template_preferences_path(trial_mode)
     try:
-        result = json.loads(path.read_text(encoding="utf-8"))
-        return result if isinstance(result, dict) else {}
-    except (OSError, ValueError):
+        result = json.loads(path.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
         return {}
+    except (OSError, ValueError) as exc:
+        raise ExcelTemplateError(
+            f"无法读取试验模板设置：{path}。请重新选择模板；未使用其他默认模板。",
+            code="template_preferences", diagnostics={"preferences_path": str(path), "detail": str(exc)},
+        ) from exc
+    if (not isinstance(result, dict) or any(
+        key in result and not isinstance(result[key], str) for key in ("template", "mapping")
+    ) or any(key in result and not isinstance(result[key], dict)
+             for key in ("method_labels", "template_identity"))):
+        raise ExcelTemplateError(f"试验模板设置格式无效：{path}。请重新选择模板。",
+                                 code="template_preferences", diagnostics={"preferences_path": str(path)})
+    return result
 
 
 def save_template_preferences(values, trial_mode="content"):
-    path = template_preferences_path(trial_mode)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(path, json.dumps(values, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+    save_template_preferences_batch({trial_mode: values})
+
+
+def save_template_preferences_batch(changes):
+    """Validate all drafts first and roll back this call's writes on failure."""
+    prepared = []
+    for mode, values in changes.items():
+        path = template_preferences_path(mode)
+        text = json.dumps(values, ensure_ascii=False, indent=2, allow_nan=False)
+        try:
+            previous = path.read_bytes()
+        except FileNotFoundError:
+            previous = None
+        prepared.append((path, text, previous))
+    written = []
+    try:
+        for path, text, previous in prepared:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            atomic_write_text(path, text, encoding="utf-8")
+            written.append((path, text.encode("utf-8"), previous))
+    except Exception as exc:
+        failures = []
+        for path, expected, previous in reversed(written):
+            try:
+                if path.read_bytes() != expected:
+                    raise OSError("设置被其他操作改变，未覆盖")
+                if previous is None:
+                    path.unlink()
+                else:
+                    # Restore exact original bytes, including a possible BOM.
+                    from fdm.atomic_io import atomic_write_bytes
+                    atomic_write_bytes(path, previous)
+            except Exception as rollback_error:
+                failures.append({"path": str(path), "error": str(rollback_error)})
+        raise ExcelTemplateError("试验模板设置保存失败，已尝试恢复此前设置。请检查目录权限后重试。",
+            code="template_preferences_save", diagnostics={"detail": str(exc), "rollback_errors": failures}) from exc
+
+
+def default_template_path(trial_mode="content"):
+    """The installed template is the default; no invisible persistent copy."""
+    from fdm.settings import runtime_directory
+    if trial_mode not in ("content", "diameter"):
+        raise ValueError("未知试验模板类型")
+    filename = "sheet_dia.xlt" if trial_mode == "diameter" else "sheet.xlt"
+    return runtime_directory() / "content-templates" / filename
 
 
 def working_template(*, create=False, trial_mode="content"):
-    """Seed once; upgrades/new defaults never overwrite the user's working copy."""
-    from fdm.settings import runtime_directory, settings_directory
+    """Resolve the selected source. ``create`` remains a non-mutating compatibility argument."""
     preferences = template_preferences(trial_mode)
-    if preferences.get("template"):
-        return Path(preferences["template"])
-    filename = "sheet_dia.xlt" if trial_mode == "diameter" else "sheet.xlt"
-    source = runtime_directory() / "content-templates" / filename
-    target = settings_directory() / "templates" / filename
-    if create and not target.exists() and source.is_file():
-        target.parent.mkdir(parents=True, exist_ok=True)
-        # Exclusive creation prevents overwriting a concurrently edited copy.
+    return Path(preferences["template"]) if preferences.get("template") else default_template_path(trial_mode)
+
+
+def template_identity(path):
+    """Hash a source at selection/open boundaries, never in the measurement loop."""
+    source = Path(path).expanduser().resolve(strict=True)
+    if not source.is_file():
+        raise FileNotFoundError(f"所选模板不是文件：{source}")
+    before = source.stat()
+    digest = hashlib.sha256()
+    with source.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    after = source.stat()
+    if (before.st_size, before.st_mtime_ns, before.st_ino) != (after.st_size, after.st_mtime_ns, after.st_ino):
+        raise ExcelTemplateError("读取期间模板文件发生变化，请完成编辑后重试。", code="template_changed")
+    return {"path": str(source), "size": after.st_size, "mtime_ns": after.st_mtime_ns, "sha256": digest.hexdigest()}
+
+
+def selected_template_preferences(path, trial_mode="content", *, current=None):
+    """Prepare a deliberate choice; template-specific mappings never leak to a new file."""
+    if current is None:
         try:
-            with target.open("xb") as destination, source.open("rb") as original:
-                shutil.copyfileobj(original, destination)
-        except FileExistsError:
-            pass
-    return target
+            current = template_preferences(trial_mode)
+        except ExcelTemplateError:
+            # A deliberate new selection can repair malformed preferences.
+            current = {}
+    identity = template_identity(path)
+    values = dict(current)
+    previous = str(values.get("template") or default_template_path(trial_mode))
+    try:
+        same_path = Path(previous).expanduser().resolve() == Path(identity["path"])
+    except OSError:
+        same_path = False
+    if not same_path:
+        values.pop("mapping", None)
+    values.pop("method_label", None)
+    values.pop("method_labels", None)
+    values.update(template=identity["path"], template_identity=identity)
+    return values
 
 
 class ExcelTemplateError(RuntimeError):

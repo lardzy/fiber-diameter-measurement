@@ -12,6 +12,7 @@ $script:inputReader = [IO.StreamReader]::new([Console]::OpenStandardInput(), [Te
 $script:excel = $null
 $script:excelIdentity = $null
 $script:sessions = @{}
+$script:candidates = @{}
 $script:closed = @{}
 $script:request = $null
 $script:requestWatch = $null
@@ -109,6 +110,7 @@ function Start-Excel {
             return
         }
         foreach ($key in @($script:sessions.Keys)) { Forget-Book $key }
+        foreach ($entry in @($script:candidates.Keys)) { Forget-Candidate $entry }
         Release-Com $script:excel
         $script:excel = $null
     }
@@ -174,14 +176,115 @@ function Test-BookOpen($state) {
     return $false
 }
 
+function Release-BookState($state) {
+    # A released association never saves, closes or discards a user-visible book.
+    foreach ($sheet in @($state.sheets.Values)) { Release-Com $sheet }
+    $state.sheets.Clear()
+    Release-Com $state.book
+}
+
 function Forget-Book([string]$key) {
     if (!$script:sessions.ContainsKey($key)) { return }
     $state = $script:sessions[$key]
-    foreach ($sheet in @($state.sheets.Values)) { Release-Com $sheet }
-    $state.sheets.Clear()
     $script:sessions.Remove($key)
     $script:closed[$key] = $state.generation
-    Release-Com $state.book
+    Release-BookState $state
+}
+
+function Candidate-Key([string]$session, [int64]$generation) { return "$session|$generation" }
+function Forget-Candidate([string]$key) {
+    if (!$script:candidates.ContainsKey($key)) { return }
+    $state = $script:candidates[$key]
+    $script:candidates.Remove($key)
+    Release-BookState $state
+}
+
+function Template-Identity([string]$path, $expected) {
+    if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
+        Failure 'template_missing' 'The selected live-report template does not exist.'
+    }
+    $file = Get-Item -LiteralPath $path
+    $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($expected -and $expected.sha256 -and [string]$expected.sha256 -ne $hash) {
+        Failure 'template_changed' 'The selected template changed before Excel opened it. Select or recreate it again.'
+    }
+    return @{path=$file.FullName;size=$file.Length;mtime_utc=$file.LastWriteTimeUtc.ToString('o');sha256=$hash}
+}
+
+function Capture-BookView($state) {
+    $sheets=$null; $active=$null; $window=$null
+    $items=[Collections.Generic.List[object]]::new()
+    try {
+        $sheets=$state.book.Sheets
+        Require-Object $sheets 'Workbook.Sheets'
+        for ($index=1; $index -le [int]$sheets.Count; $index++) {
+            $sheet=$null
+            try {
+                $sheet=$sheets.Item($index)
+                $items.Add(@{name=[string]$sheet.Name;visible=[int]$sheet.Visible})
+            } finally { Release-Com $sheet }
+        }
+        $active=$state.book.ActiveSheet
+        Require-Object $active 'Workbook.ActiveSheet'
+        $view=@{sheets=@($items.ToArray());active_sheet=[string]$active.Name}
+        # The workbook view can be captured without selecting it. Window scroll
+        # positions are restored only for explicit macro actions, never per frame.
+        $windows=$null
+        try {
+            $windows=$state.book.Windows
+            if ([int]$windows.Count -gt 0) {
+                $window=$windows.Item(1)
+                $state.window_handle=[int64]$window.Hwnd
+                $view.scroll_row=[int]$window.ScrollRow; $view.scroll_column=[int]$window.ScrollColumn
+            }
+        } finally { Release-Com $windows }
+        return $view
+    } finally { Release-Com $window; Release-Com $active; Release-Com $sheets }
+}
+
+function Restore-BookView($state, $view) {
+    if (!$view) { return }
+    $sheets=$null; $window=$null; $windows=$null
+    try {
+        $sheets=$state.book.Sheets
+        # Restore visible pages before hidden pages so Excel always has one
+        # visible sheet, even if a CU macro temporarily hid every custom report.
+        foreach ($visible in @($true,$false)) {
+            foreach ($item in $view.sheets) {
+                if (([int]$item.visible -eq -1) -ne $visible) { continue }
+                $sheet=$null
+                try {
+                    $sheet=$sheets.Item([string]$item.name)
+                    if ([int]$sheet.Visible -ne [int]$item.visible) { $sheet.Visible=[int]$item.visible }
+                } finally { Release-Com $sheet }
+            }
+        }
+        $sheet=$null
+        try {
+            $sheet=$sheets.Item([string]$view.active_sheet)
+            if ([int]$sheet.Visible -eq -1) { [void]$sheet.Activate() }
+        } finally { Release-Com $sheet }
+        $windows=$state.book.Windows
+        if ([int]$windows.Count -gt 0 -and $view.ContainsKey('scroll_row')) {
+            $window=$windows.Item(1)
+            $window.ScrollRow=[int]$view.scroll_row; $window.ScrollColumn=[int]$view.scroll_column
+        }
+    } finally { Release-Com $window; Release-Com $windows; Release-Com $sheets }
+}
+
+function Open-TemplateBook([string]$path) {
+    $books=$null
+    try {
+        $books=$script:excel.Workbooks
+        Require-Object $books 'Excel.Workbooks'
+        if ([IO.Path]::GetExtension($path).ToLowerInvariant() -in @('.xlt','.xltx','.xltm')) {
+            $missing=[Type]::Missing
+            # CU's template-open semantics: a new workbook, not template editing.
+            return ,$books.Open($path,0,$false,$missing,$missing,$missing,$true,$missing,$missing,$false)
+        }
+        # A workbook chosen as a template must also produce a separate new book.
+        return ,$books.Add($path)
+    } finally { Release-Com $books }
 }
 
 function Get-State {
@@ -355,6 +458,9 @@ function Book-Metadata($state) {
         calculation_state = $calculationState
         metadata_checked_at = [DateTime]::UtcNow.ToString('o')
         last_input_at = $state.last_input_at
+        template_identity = $state.template_identity
+        initial_view = $state.initial_view
+        active_generation = $state.generation
         window_handle = $state.window_handle
     }
 }
@@ -367,7 +473,8 @@ function Safe-Metadata($state) {
         return @{save_state = 'unknown'; saved = $null; calculation_state = 'unknown';
             metadata_error = $_.Exception.Message; metadata_error_code = (Error-Code $_);
             metadata_error_stack = $_.ScriptStackTrace; metadata_stage=$state.stage; last_input_at = $state.last_input_at;
-            excel_pid = $script:excelIdentity.id; excel_created=$script:excelIdentity.created; excel_version = $state.excel_version}
+            excel_pid = $script:excelIdentity.id; excel_created=$script:excelIdentity.created; excel_version = $state.excel_version;
+            template_identity=$state.template_identity;initial_view=$state.initial_view;active_generation=$state.generation}
     }
 }
 
@@ -397,20 +504,30 @@ function Apply-ReportSettings($state, $settings, $profile) {
 }
 
 function Recalculate-Report($state, $profile) {
-    # Explicit initialization/user actions only. CU macros depend on ActiveWorkbook
-    # and Selection; normal quantitative batches never activate or select anything.
-    if ($profile.recalculate_macro) {
-        [void]$state.book.Activate()
-        $macro = "'" + ([string]$state.book.Name -replace "'", "''") + "'!" + [string]$profile.recalculate_macro
-        try { [void]$script:excel.Run($macro) }
-        catch {
-            if ((Error-Code $_) -eq 'excel_busy') { throw }
-            Failure 'template_macro' ("Template macro failed: " + $_.Exception.Message)
+    # Only an explicit user action runs the template macro. CU's grouping macro
+    # hides arbitrary custom reports, so restore the pre-action presentation even
+    # though its intentional formula/statistics changes remain in the workbook.
+    if (!$state.pending_view) { $state.pending_view=Capture-BookView $state }
+    $view=$state.pending_view
+    $original=$null
+    try {
+        if ($profile.recalculate_macro) {
+            [void]$state.book.Activate()
+            $macro = "'" + ([string]$state.book.Name -replace "'", "''") + "'!" + [string]$profile.recalculate_macro
+            try { [void]$script:excel.Run($macro) }
+            catch {
+                if ((Error-Code $_) -eq 'excel_busy') { throw }
+                Failure 'template_macro' ("Template macro failed: " + $_.Exception.Message)
+            }
         }
+        $script:excel.Calculate()
+    } catch { $original=$_ }
+    try { Restore-BookView $state $view; $state.pending_view=$null }
+    catch {
+        if (!$original) { throw }
+        $original.Exception.Data['view_restore_error']=$_.Exception.Message
     }
-    # A workbook has no Calculate method. Range/worksheet-only calculation can
-    # leave cross-sheet dependencies stale, so explicit requests calculate Excel.
-    $script:excel.Calculate()
+    if ($original) { throw $original }
 }
 
 function New-Batch($state, $payload, [string]$operation) {
@@ -434,7 +551,7 @@ function New-Batch($state, $payload, [string]$operation) {
         foreach ($cell in $payload.report_cells) {
             $ops.Add(@{kind='cell'; family='report'; sheet=(Get-SheetName $cell $payload.profile); address=[string]$cell.cell; value=$cell.value})
         }
-        if ($null -ne $payload.report_settings) {
+        if ($operation -eq 'update_report' -and $null -ne $payload.report_settings) {
             $ops.Add(@{kind='settings'; family='report'; settings=$payload.report_settings})
             $ops.Add(@{kind='macro'; family='macro'})
         }
@@ -498,7 +615,7 @@ function Invoke-BatchOperation($state, $op, $profile) {
     } finally { Release-Com $range; Release-Com $start }
 }
 
-function Run-Batch($state, $payload, [string]$operation) {
+function Run-Batch($state, $payload, [string]$operation, [bool]$suppressProgress=$false) {
     if ($operation -in @('open','sync') -and [int64]$script:request.input_revision -lt [int64]$state.revision) {
         Failure 'stale_revision' 'An older trial state cannot replace the displayed workbook.'
     }
@@ -526,7 +643,7 @@ function Run-Batch($state, $payload, [string]$operation) {
         $state.pending = $null
     }
     $state.stage = 'input complete'
-    if ($batch.input_written) {
+    if ($batch.input_written -and !$suppressProgress) {
         # ScreenUpdating was never disabled. This is an input ACK, not a promise
         # that every report formula or an independent user macro has completed.
         Reply @{event='inputs_written';input_written=$true;input_committed=$true;batch_id=$batch.id;
@@ -557,18 +674,17 @@ try {
         $state = $null
         $key = $null
         $payload = $null
+        $candidateKey = $null
         try {
             $script:request = $line | ConvertFrom-Json
-            if (!$script:request.request_id -or @('open','sync','status','show','update_report','recalculate','detach','shutdown') -notcontains $script:request.operation) {
+            if (!$script:request.request_id -or @('open','sync','status','show','update_report','recalculate','detach','discard_candidate','shutdown') -notcontains $script:request.operation) {
                 Failure 'invalid_request' 'A supported operation and request_id are required.'
             }
             $key = [string]$script:request.session_id
             $payload = $script:request.payload
             switch ([string]$script:request.operation) {
                 'open' {
-                    if (!$key -or !$payload.template -or !(Test-Path -LiteralPath $payload.template -PathType Leaf)) {
-                        Failure 'template_missing' 'The selected live-report template does not exist.'
-                    }
+                    if (!$key -or !$payload.template) { Failure 'template_missing' 'A selected template is required.' }
                     Start-Excel
                     Ensure-Ready
                     if ($script:sessions.ContainsKey($key)) {
@@ -581,29 +697,42 @@ try {
                         if ([int64]$previous.generation -gt [int64]$script:request.generation) {
                             Failure 'stale_generation' 'An older connection cannot replace this workbook.'
                         }
-                        Forget-Book $key
                     }
                     if ($script:closed.ContainsKey($key) -and [int64]$script:closed[$key] -ge [int64]$script:request.generation) {
                         Failure 'workbook_closed' 'The workbook was closed. A new connection generation is required.'
                     }
-                    $books = $script:excel.Workbooks
-                    try { Require-Object $books 'Excel.Workbooks'; $book = $books.Add([string]$payload.template) }
-                    finally { Release-Com $books }
-                    Require-Object $book 'new template workbook'
-                    $book.CheckCompatibility = $false
-                    $state = @{book=$book;generation=[int64]$script:request.generation;revision=-1;
-                        initialized=$false;sheets=@{};warnings=@();pending=$null;last_batch=$null;
-                        last_input_at=$null;trial_kind=[string]$payload.trial_kind;excel_version=[string]$script:excel.Version}
-                    $script:sessions[$key] = $state
-                    $windows=$null; $bookWindow=$null
-                    try {
-                        $windows=$book.Windows
-                        Require-Object $windows 'Workbook.Windows'
-                        $bookWindow=$windows.Item(1)
-                        Require-Object $bookWindow 'Workbook.Window'
-                        $state.window_handle=[int64]$bookWindow.Hwnd
-                    } finally { Release-Com $bookWindow; Release-Com $windows }
-                    Reply (Run-Batch $state $payload 'open')
+                    $candidateKey=Candidate-Key $key ([int64]$script:request.generation)
+                    if ($script:candidates.ContainsKey($candidateKey)) {
+                        $state=$script:candidates[$candidateKey]
+                        if (!(Test-BookOpen $state)) { Failure 'workbook_closed' 'The pending template workbook was closed.' }
+                    } else {
+                        $identity=Template-Identity ([string]$payload.template) $payload.template_identity
+                        $book=Open-TemplateBook ([string]$identity.path)
+                        Require-Object $book 'new template workbook'
+                        $state=@{book=$book;generation=[int64]$script:request.generation;revision=-1;
+                            initialized=$false;sheets=@{};warnings=@();pending=$null;last_batch=$null;
+                            last_input_at=$null;trial_kind=[string]$payload.trial_kind;excel_version=[string]$script:excel.Version;
+                            template_identity=$identity;initial_view=$null;candidate_name=$null;source_verified=$false;stage='verify opened template'}
+                        $script:candidates[$candidateKey]=$state
+                    }
+                    # Each step is resumable: an Excel busy response while reading
+                    # Name/view must not skip source verification on the retry.
+                    if (!$state.candidate_name) { $state.candidate_name=[string]$state.book.Name }
+                    if (!$state.source_verified) {
+                        [void](Template-Identity ([string]$state.template_identity.path) $state.template_identity)
+                        $state.source_verified=$true
+                    }
+                    if (!$state.initial_view) { $state.initial_view=Capture-BookView $state }
+                    $result=Run-Batch $state $payload 'open' $true
+                    # Switch only after the candidate's inputs are complete. The
+                    # previous workbook remains usable after any failed attempt.
+                    $replaced=$script:sessions.ContainsKey($key)
+                    if ($replaced) { Forget-Book $key }
+                    $script:sessions[$key]=$state
+                    $script:candidates.Remove($candidateKey)
+                    $result.template_replaced=$replaced
+                    $result.binding_committed=$true
+                    Reply $result
                 }
                 'sync' { $state=Get-State; Reply (Run-Batch $state $payload 'sync') }
                 'update_report' { $state=Get-State; Reply (Run-Batch $state $payload 'update_report') }
@@ -627,10 +756,18 @@ try {
                     # No protection or Excel state needs restoration. A user can
                     # stop synchronization while Excel is editing or saving.
                     Forget-Book $key
+                    foreach ($entry in @($script:candidates.Keys)) {
+                        if ($entry.StartsWith($key + '|', [StringComparison]::Ordinal)) { Forget-Candidate $entry }
+                    }
                     Reply @{ok=$true;status='detached'}
+                }
+                'discard_candidate' {
+                    Forget-Candidate (Candidate-Key $key ([int64]$script:request.generation))
+                    Reply @{ok=$true;status='candidate_discarded'}
                 }
                 'shutdown' {
                     foreach ($entry in @($script:sessions.Keys)) { Forget-Book $entry }
+                    foreach ($entry in @($script:candidates.Keys)) { Forget-Candidate $entry }
                     Reply @{ok=$true;status='stopped'}
                     $stopWorker=$true
                 }
@@ -639,7 +776,7 @@ try {
         } catch {
             $errorRecord = $_
             $code = Error-Code $errorRecord
-            if ($code -eq 'workbook_closed' -and $key -and $script:sessions.ContainsKey($key)) { Forget-Book $key }
+            if ($code -eq 'workbook_closed' -and !$candidateKey -and $key -and $script:sessions.ContainsKey($key)) { Forget-Book $key }
             $connected = [bool]($key -and $script:sessions.ContainsKey($key))
             if ($connected -and !$state) { $state=$script:sessions[$key] }
             $batch = $(if ($state) { $state.pending } else { $null })
@@ -659,7 +796,8 @@ try {
                 error=$errorRecord.Exception.Message;message=$errorRecord.Exception.Message;error_stack=$errorRecord.ScriptStackTrace;
                 stage=$(if($state){$state.stage}else{'connect'});workbook_connected=$connected;
                 input_written=$false;input_committed=$false;save_state='unknown';saved=$null;
-                calculation_state='unknown';needs_full_sync=($unknownInput -and $code -ne 'excel_busy');
+                calculation_state='unknown';view_restore_pending=[bool]($state -and $state.pending_view);
+                needs_full_sync=($unknownInput -and !$candidateKey -and $code -ne 'excel_busy');
                 batch_id=$(if($batch){$batch.id}else{$payload.batch_id});completed_ops=$(if($batch){$batch.index}else{0})}
             if ($script:excelIdentity) {
                 $failure.excel_pid=$script:excelIdentity.id
@@ -670,14 +808,27 @@ try {
             if ($connected) {
                 $failure.excel_pid=$script:excelIdentity.id
                 $failure.excel_created=$script:excelIdentity.created
-                $failure.last_input_at=$state.last_input_at
-                $failure.synced_revision=$state.revision
+                $active=$script:sessions[$key]
+                $failure.last_input_at=$active.last_input_at
+                $failure.synced_revision=$active.revision
+                $failure.active_generation=$active.generation
+            }
+            if ($candidateKey) {
+                $pendingCandidate=($code -eq 'excel_busy' -and $script:candidates.ContainsKey($candidateKey))
+                $failure.candidate_pending=$pendingCandidate
+                $failure.candidate_generation=[int64]$script:request.generation
+                if ($script:candidates.ContainsKey($candidateKey)) {
+                    $failure.candidate_template_identity=$script:candidates[$candidateKey].template_identity
+                    $failure.candidate_name=$script:candidates[$candidateKey].candidate_name
+                }
+                if (!$pendingCandidate) { Forget-Candidate $candidateKey }
             }
             Reply $failure
         }
     }
 } finally {
     foreach ($entry in @($script:sessions.Keys)) { Forget-Book $entry }
+    foreach ($entry in @($script:candidates.Keys)) { Forget-Candidate $entry }
     # Releasing only our references must never discard the user's unsaved book.
     Release-Com $script:excel
     [GC]::Collect()

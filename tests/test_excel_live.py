@@ -179,6 +179,133 @@ def test_manager_does_not_start_for_update_on_hidden_untracked_session(coordinat
     assert manager.status(session.id)['state'] == 'idle'
 
 
+def test_failed_inflight_template_does_not_block_latest_queued_selection(coordinator, tmp_path):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    old_binding = manager.template_binding(session)
+    first, latest = tmp_path/'invalid-a.xlt', tmp_path/'valid-b.xlt'
+    first.write_bytes(b'invalid mapping')
+    latest.write_bytes(b'latest template')
+    transport.gate.clear()
+    transport.failure = {'ok': False, 'error_code': 'template_mapping', 'message': 'A mapping invalid',
+                         'workbook_connected': True}
+    manager.replace_template(session, {'template': str(first)})
+    wait_until(app, lambda: len([r for r in transport.requests if r[0] == 'open']) == 2)
+    manager.replace_template(session, {'template': str(latest)})
+    assert manager.template_binding(session) == old_binding
+    transport.gate.set()
+    wait_until(app, lambda: manager.template_binding(session)['path'] == str(latest) and manager.flush(session))
+    opens = [r for r in transport.requests if r[0] == 'open']
+    assert [r[4]['template'] for r in opens][-2:] == [str(first), str(latest)]
+    assert manager.status(session.id)['generation'] == 2
+    assert not manager._links[session.id].failed_template
+    assert not manager.status(session.id)['pending_template_path']
+    assert not any(r[0] == 'detach' for r in transport.requests)
+
+
+def test_reconnect_after_transport_failure_uses_latest_selection_not_failed_earlier_one(coordinator, tmp_path, monkeypatch):
+    from fdm.ui import live_excel
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    first, latest = tmp_path/'failed-a.xlt', tmp_path/'latest-b.xlt'
+    first.write_bytes(b'first')
+    latest.write_bytes(b'latest')
+    recovered = FakeTransport()
+    monkeypatch.setattr(live_excel, 'PowerShellLiveTransport', lambda: recovered)
+    transport.gate.clear()
+    transport.failure = {'ok': False, 'error_code': 'worker_disconnected', 'message': 'lost transport'}
+    manager.replace_template(session, {'template': str(first)})
+    wait_until(app, lambda: len([r for r in transport.requests if r[0] == 'open']) == 2)
+    manager.replace_template(session, {'template': str(latest)})
+    transport.gate.set()
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
+    assert manager.status(session.id)['pending_template_path'] == str(latest)
+    manager.resync(session)
+    wait_until(app, lambda: manager.template_binding(session)['path'] == str(latest) and manager.flush(session))
+    assert [r[4]['template'] for r in recovered.requests if r[0] == 'open'] == [str(latest)]
+
+
+@pytest.mark.parametrize('resolution', ['recreate', 'resync', 'detach'])
+def test_same_path_replacement_failure_survives_old_workbook_sync_until_explicit_resolution(coordinator, resolution):
+    from fdm.ui.live_excel import LiveExcelControls
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    original = manager.template_binding(session)
+    source = Path(original['path'])
+    source.write_bytes(b'replaced source has invalid mapping')
+    transport.failure = {'ok': False, 'error_code': 'template_mapping',
+                         'message': 'new template is missing its data sheet', 'workbook_connected': True}
+    manager.replace_template(session, {'template': str(source)})
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
+    failure = manager.status(session.id)['template_replacement_message']
+    assert 'new template is missing its data sheet' in failure
+
+    measurement_at(session, 12, 'a')
+    manager.update(session)
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'synced' and manager.flush(session))
+    manager.show(session)
+    wait_until(app, lambda: not manager._busy and not manager._links[session.id].actions)
+    state = manager.status(session.id)
+    assert state['input_revision'] == session.revision
+    assert manager.template_binding(session) == original
+    assert state['generation'] == 1
+    assert state['template_replacement_failed'] is True
+    assert state['template_replacement_path'] == str(source)
+    assert state['pending_template_path'] == str(source)
+    assert state['template_replacement_message'] == failure
+    assert state['template_replacement_error_code'] == 'template_mapping'
+    assert 'raw_error' not in state  # Normal input/status errors are independent.
+    assert 'new template is missing its data sheet' in LiveExcelControls._diagnostics(state)
+
+    if resolution in ('recreate', 'resync'):
+        transport.gate.clear()
+        if resolution == 'recreate':
+            manager.replace_template(session, {'template': str(source)})
+        else:
+            manager.resync(session)
+        assert not manager.status(session.id)['template_replacement_failed']
+        assert not manager.status(session.id)['template_replacement_message']
+        transport.gate.set()
+        wait_until(app, lambda: manager.status(session.id)['generation'] == 2 and manager.flush(session))
+        assert manager.template_binding(session)['identity']['sha256'] != original['identity']['sha256']
+    else:
+        manager.stop(session)
+        wait_until(app, lambda: manager.is_detached(session))
+    final = manager.status(session.id)
+    assert not final['template_replacement_failed']
+    assert not final['template_replacement_path']
+    assert not final['template_replacement_message']
+    assert not final['pending_template_path']
+
+
+def test_disconnected_local_detach_clears_replacement_failure(coordinator):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    source = manager.template_binding(session)['path']
+    transport.failure = {'ok': False, 'error_code': 'workbook_closed',
+                         'message': 'workbook closed during replacement', 'workbook_connected': False}
+    manager.replace_template(session, {'template': source})
+    wait_until(app, lambda: manager.status(session.id)['template_replacement_failed'])
+    assert not manager.status(session.id)['connected']
+    manager.stop(session)
+    wait_until(app, lambda: manager.is_detached(session))
+    state = manager.status(session.id)
+    assert not any(request[0] == 'detach' for request in transport.requests)
+    assert not state['template_replacement_failed']
+    assert not state['template_replacement_path']
+    assert not state['template_replacement_message']
+    assert not state['pending_template_path']
+    assert manager._links[session.id].failed_template is None
+
+
 def test_manager_keeps_one_flight_latest_snapshot_and_reuses_workbook(coordinator):
     manager, transport, app = coordinator
     session = trial()
@@ -291,8 +418,7 @@ def test_explicit_template_selection_reassociates_with_new_generation(coordinato
     assert len(requests) == 2
     assert requests[-1][2] == old_generation + 1
     assert requests[-1][4]['template'] == str(replacement)
-    assert transport.requests[-2][0] == 'detach'
-    assert transport.requests[-2][2] == old_generation
+    assert not any(item[0] == 'detach' for item in transport.requests)
     assert manager.status(session.id)['template_path'] == str(replacement)
     assert not manager.status(session.id)['template_replacement_pending']
 
@@ -410,8 +536,9 @@ def test_failed_new_workbook_retry_keeps_selected_template(coordinator, tmp_path
     selected.write_bytes(b'new')
     manager.replace_template(session, {'template': str(selected)})
     wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
-    assert not manager.status(session.id)['connected']
-    assert manager.status(session.id)['template_path'] == ''
+    assert manager.status(session.id)['connected']
+    assert manager.status(session.id)['generation'] == old_generation
+    assert manager.status(session.id)['template_path'] != str(selected)
     manager.resync(session)
     wait_until(app, lambda: manager.flush(session))
     opens = [item for item in transport.requests if item[0] == 'open']
@@ -420,7 +547,7 @@ def test_failed_new_workbook_retry_keeps_selected_template(coordinator, tmp_path
     assert manager.status(session.id)['pending_template_path'] == ''
 
 
-def test_template_detach_busy_keeps_old_generation_until_retry(coordinator, tmp_path):
+def test_template_candidate_busy_keeps_old_generation_until_retry(coordinator, tmp_path):
     manager, transport, app = coordinator
     session = trial()
     manager.ensure(session)
@@ -437,7 +564,10 @@ def test_template_detach_busy_keeps_old_generation_until_retry(coordinator, tmp_
     wait_until(app, lambda: manager.flush(session))
     assert manager.status(session.id)['generation'] == old_generation + 1
     assert manager.status(session.id)['template_path'] == str(selected)
-    assert [item[2] for item in transport.requests if item[0] == 'detach'] == [old_generation, old_generation]
+    assert not any(item[0] == 'detach' for item in transport.requests)
+    attempts = [item for item in transport.requests if item[0] == 'open' and item[2] > old_generation]
+    assert len(attempts) == 2
+    assert attempts[0][4] == attempts[1][4]
 
 
 def test_busy_old_batch_finishes_before_latest_selected_template(coordinator, tmp_path):
@@ -466,7 +596,7 @@ def test_busy_old_batch_finishes_before_latest_selected_template(coordinator, tm
     transport.gate.set()
     wait_until(app, lambda: manager.flush(session))
     mutations = [item for item in transport.requests if item[0] in ('open', 'sync', 'detach')]
-    assert [item[0] for item in mutations] == ['open', 'sync', 'sync', 'detach', 'open']
+    assert [item[0] for item in mutations] == ['open', 'sync', 'sync', 'open']
     assert mutations[1][4]['batch_id'] == mutations[2][4]['batch_id'] == pending.payload['batch_id']
     assert mutations[-1][4]['template'] == str(latest)
     assert mutations[-1][4]['blocks'][0]['values'] == [[12], [24]]
@@ -515,12 +645,108 @@ def test_stop_during_new_template_busy_uses_actual_association_generation(coordi
     template.write_bytes(b'new')
     manager.replace_template(session, {'template': str(template)})
     wait_until(app, lambda: manager.status(session.id)['state'] == 'busy')
-    assert manager.status(session.id)['connected'] is new_workbook_connected
+    assert manager.status(session.id)['connected']
+    assert manager.status(session.id)['generation'] == old_generation
     manager.stop(session.id)
     wait_until(app, lambda: manager.is_detached(session.id))
     detaches = [item for item in transport.requests if item[0] == 'detach']
-    assert [item[2] for item in detaches] == ([old_generation, old_generation + 1]
-                                               if new_workbook_connected else [old_generation])
+    assert [item[2] for item in detaches] == [old_generation]
+    assert not manager.status(session.id)['template_replacement_pending']
+
+
+def test_open_preserves_template_settings_and_records_source_identity(coordinator):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    payload = next(item[4] for item in transport.requests if item[0] == 'open')
+    assert payload['report_settings'] is None
+    assert payload['report_cells']  # Initial sample/operator information is separate.
+    identity = payload['template_identity']
+    assert len(identity['sha256']) == 64
+    assert identity['size'] == len(b'fixture')
+    assert manager.template_binding(session)['identity'] == identity
+
+
+def test_inspection_lease_blocks_new_excel_creation_but_keeps_existing_sync(coordinator):
+    manager, transport, app = coordinator
+    first, second = trial(), trial()
+    manager.ensure(first)
+    wait_until(app, lambda: manager.flush(first))
+    assert manager.begin_template_inspection()
+    assert not manager.begin_template_inspection()
+    manager.ensure(second)
+    manager._pump()
+    assert len([item for item in transport.requests if item[0] == 'open']) == 1
+    measurement_at(first, 23, 'a')
+    manager.update(first)
+    wait_until(app, lambda: manager.flush(first))
+    assert len([item for item in transport.requests if item[0] == 'open']) == 1
+    manager.end_template_inspection()
+    wait_until(app, lambda: manager.flush(second))
+    assert len([item for item in transport.requests if item[0] == 'open']) == 2
+
+
+def test_inspection_cannot_acquire_lease_during_pending_workbook_creation(coordinator):
+    manager, transport, app = coordinator
+    transport.gate.clear()
+    manager.ensure(trial())
+    wait_until(app, lambda: len(transport.requests) == 1)
+    assert not manager.begin_template_inspection()
+    transport.gate.set()
+
+
+def test_reentry_detects_changed_source_without_recreating_existing_book(coordinator):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    original = manager.template_binding(session)
+    Path(original['path']).write_bytes(b'another template at the same filename')
+    manager.ensure(session)
+    wait_until(app, lambda: manager.status(session.id).get('template_source_changed'))
+    assert manager.template_binding(session) == original
+    assert len([item for item in transport.requests if item[0] == 'open']) == 1
+    assert manager.status(session.id)['connected']
+
+
+def test_missing_source_on_reentry_does_not_stop_existing_workbook(coordinator):
+    manager, transport, app = coordinator
+    session = trial()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    Path(manager.template_binding(session)['path']).unlink()
+    manager.ensure(session)
+    wait_until(app, lambda: manager.status(session.id).get('template_source_error'))
+    measurement_at(session, 19, 'a')
+    manager.update(session)
+    wait_until(app, lambda: manager.flush(session))
+    assert manager.status(session.id)['connected']
+    assert [item for item in transport.requests if item[0] == 'sync'][-1][4]['blocks'][0]['values'] == [[19]]
+
+
+def test_failed_replacement_keeps_exact_input_baseline_and_binding(coordinator, tmp_path):
+    manager, transport, app = coordinator
+    session = trial()
+    measurement_at(session, 17, 'a')
+    manager.ensure(session)
+    wait_until(app, lambda: manager.flush(session))
+    old_binding = manager.template_binding(session)
+    old_projection = manager._links[session.id].projection
+    selected = tmp_path / 'bad mapping.xlt'
+    selected.write_bytes(b'candidate')
+    transport.failure = {'ok': False, 'error_code': 'template_mapping', 'candidate_pending': False}
+    manager.replace_template(session, {'template': str(selected)})
+    wait_until(app, lambda: manager.status(session.id)['state'] == 'error')
+    assert manager.template_binding(session) == old_binding
+    assert manager._links[session.id].projection is old_projection
+    assert not any(item[0] == 'detach' for item in transport.requests)
+    measurement_at(session, 18, 'a')
+    manager.update(session)
+    wait_until(app, lambda: manager._links[session.id].acknowledged_revision == session.revision)
+    last = [item for item in transport.requests if item[0] == 'sync'][-1][4]
+    assert last['template'] == old_binding['path']
+    assert last['blocks'] == [{'sheet': '原始数据', 'cell': 'D26', 'values': [[18]]}]
 
 
 def test_never_established_workbook_does_not_block_exit(coordinator):
@@ -667,7 +893,8 @@ def test_template_label_mapping_is_scoped_to_current_method(coordinator, monkeyp
     manager.ensure(session)
     wait_until(app, lambda: manager.flush(session))
     first = [item for item in transport.requests if item[0] in ('open','sync')][-1]
-    assert first[4]['report_settings']['method_label'] == '自定义 GB 标签'
+    assert first[4]['report_settings'] is None
+    assert manager._links[session.id].projection.data()['report_settings']['method_label'] == '自定义 GB 标签'
     session.method = 'iso17751'
     session.revision += 1
     manager.update(session)
@@ -708,7 +935,8 @@ def test_template_method_labels_stay_with_this_book_after_defaults_change(coordi
     manager.resync(session)
     wait_until(app, lambda: manager.flush(session))
     reopened = [item for item in transport.requests if item[0] == 'open'][-1]
-    assert reopened[4]['report_settings']['method_label'] == '当前工作簿的标准标签'
+    assert reopened[4]['report_settings'] is None
+    assert manager.template_binding(session)['preferences']['method_labels']['gb16988'] == '当前工作簿的标准标签'
 
 
 def test_status_uses_cached_template_identity_without_decoding_trial_inputs(coordinator, monkeypatch):

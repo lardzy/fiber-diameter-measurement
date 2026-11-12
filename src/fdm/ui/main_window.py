@@ -21609,6 +21609,18 @@ class MainWindow(QMainWindow):
                 return
         new_settings = dialog.app_settings()
         new_screenshot_settings = dialog.screenshot_settings()
+        from fdm.live_experiment.excel_template import save_template_preferences_batch
+        try:
+            template_changes = dialog.trial_template_changes()
+            save_template_preferences_batch(template_changes)
+            dialog.mark_trial_templates_saved()
+            for mode, workspace in tuple(getattr(self, "_live_experiment_workspaces", {}).items()):
+                if mode in template_changes:
+                    workspace.report_panel.refresh_path()
+                    workspace.live_excel.ensure(workspace.session)
+        except (OSError, ValueError, RuntimeError) as exc:
+            QMessageBox.warning(dialog, "试验 Excel 模板", f"未能保存模板选择：\n{exc}")
+            return
         from fdm.ui.trial_preferences_binding import trial_preferences_binding
         try:
             trial_preferences_binding(self).commit_quantity_target_dialog(dialog)

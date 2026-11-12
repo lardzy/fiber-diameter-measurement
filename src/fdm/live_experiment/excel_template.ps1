@@ -46,12 +46,41 @@ function LiteralValue($value) {
     if ($value -is [string]) { return "'" + $value }
     return [double]$value
 }
+function TemplateIdentity([string]$path, $expected) {
+    $file=Get-Item -LiteralPath $path
+    if ($file.PSIsContainer) { throw 'The selected template is not a file.' }
+    $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($expected -and $expected.sha256 -and [string]$expected.sha256 -ne $hash) {
+        throw 'The selected template changed before it could be opened. Select it again.'
+    }
+    return @{path=$file.FullName;size=$file.Length;mtime_utc=$file.LastWriteTimeUtc.ToString('o');sha256=$hash}
+}
+function BookView($workbook) {
+    $sheets=$null; $active=$null
+    $items=[Collections.Generic.List[object]]::new()
+    try {
+        $sheets=$workbook.Sheets
+        for ($index=1; $index -le [int]$sheets.Count; $index++) {
+            $sheet=$null
+            try {
+                $sheet=$sheets.Item($index)
+                $items.Add(@{name=[string]$sheet.Name;visible=[int]$sheet.Visible})
+            } finally { if($sheet){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($sheet)} }
+        }
+        $active=$workbook.ActiveSheet
+        return @{sheets=@($items.ToArray());active_sheet=[string]$active.Name}
+    } finally {
+        if($active){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($active)}
+        if($sheets){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($sheets)}
+    }
+}
 try {
     $request = Get-Content -LiteralPath $RequestPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($null -eq $request -or @('edit', 'inspect', 'export') -notcontains $request.operation -or
         [string]::IsNullOrWhiteSpace([string]$request.template)) {
         throw 'Invalid template request: operation and template are required.'
     }
+    $templateIdentity=TemplateIdentity ([string]$request.template) $request.template_identity
     Stage '启动独立 Excel'
     $existing = @(Get-Process EXCEL -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
     Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class FdmExcelWindow { [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint id); }'
@@ -65,14 +94,24 @@ try {
     $owner | ConvertTo-Json | Set-Content -LiteralPath $ownerPath -Encoding UTF8
     $excel.Visible = $false
     $excel.DisplayAlerts = $false
-    $excel.EnableEvents = $false
+    # Read-only inspection suppresses workbook events. A real export/edit opens
+    # with normal template events, matching live Excel's own control setup.
+    $excel.EnableEvents = ($request.operation -ne 'inspect')
     # Respect the user's Office macro policy. Never change Trust Center settings.
     $excel.AutomationSecurity = 2
     $excelVersion = [string]$excel.Version
     $missing = [Type]::Missing
     Stage '打开模板副本'
-    $book = $excel.Workbooks.Open([string]$request.template, 0, $false, $missing, $missing,
-        $missing, $true, $missing, $missing, ($request.operation -eq 'edit'))
+    $books=$excel.Workbooks
+    try {
+        if ($request.operation -eq 'edit' -or [IO.Path]::GetExtension([string]$request.template).ToLowerInvariant() -in @('.xlt','.xltm','.xltx')) {
+            $book = $books.Open([string]$request.template, 0, $false, $missing, $missing,
+                $missing, $true, $missing, $missing, ($request.operation -eq 'edit'))
+        } else { $book=$books.Add([string]$request.template) }
+    } finally { if($books){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($books)} }
+    [void](TemplateIdentity ([string]$request.template) $templateIdentity)
+    $initialView=BookView $book
+    if ($request.operation -ne 'edit') { $excel.EnableEvents=$false }
     if ($request.operation -eq 'edit') {
         $excel.EnableEvents=$true; $excel.DisplayAlerts=$true; $excel.Visible=$true
         $handedOff=$true
@@ -86,7 +125,7 @@ try {
     $diameter = ($request.trial_kind -eq 'diameter' -or $profile.trial_kind -eq 'diameter')
     $data = $book.Worksheets.Item([string]$profile.data_sheet)
     $labels = @()
-    if (!$diameter) {
+    if (!$diameter -and $request.operation -eq 'inspect') {
         $standard = $book.Worksheets.Item([string]$profile.standard_sheet)
         $methods = $book.Worksheets.Item([string]$profile.method_sheet).Range([string]$profile.method_range).Value2
         for ($r = 1; $r -le $methods.GetLength(0); $r++) {
@@ -95,18 +134,16 @@ try {
         }
     }
     if ($request.operation -eq 'inspect') {
-        $result = @{ok=$true; methods=$labels; sheets=@($book.Worksheets | ForEach-Object {$_.Name});
+        $result = @{ok=$true; methods=$labels; sheets=@($initialView.sheets | ForEach-Object {$_.name});
             template=[string]$request.template}
     } else {
         if ([IO.Path]::GetFullPath($request.destination) -eq [IO.Path]::GetFullPath($request.template)) {
             throw 'The report must not overwrite its template.'
         }
-        $selected = @()
-        if (!$diameter) {
-            $selected = @($labels | Where-Object { ($_.label -replace '\s','') -eq ($request.method_label -replace '\s','') })
-            if ($selected.Count -ne 1) { throw ('Template standard is missing or ambiguous: ' + $request.method_label) }
-        }
-        $excel.Calculation = -4135 # manual while writing all input blocks
+        # Template settings and presentation are authoritative. Export changes
+        # only mapped inputs; choosing a template must not rebuild CU report tabs.
+        $calculationMode=$excel.Calculation
+        $excel.Calculation = -4135 # coalesce this snapshot's input writes
         Stage '清理原始输入区'
         foreach ($range in $request.clears) { $data.Range([string]$range).ClearContents() | Out-Null }
         Stage '写入试验记录'
@@ -117,27 +154,8 @@ try {
             for ($r=0; $r -lt $rows.Count; $r++) { $matrix.SetValue([double]$rows[$r][0], $r, 0) }
             $data.Range([string]$block.cell).Resize($rows.Count,1).Value2 = $matrix
         }
-        if ($diameter) {
-            $groupSheet = $book.Worksheets.Item([string]$profile.group_width_sheet)
-            SetCell $groupSheet ([string]$profile.group_width_cell) ([double]$request.group_width)
-        } else {
-            SetCell $standard ([string]$profile.method_index_cell) ([double]$selected[0].index)
-            SetCell $standard ([string]$profile.group_width_cell) $(if ($request.grouped) { [double]$request.group_width } else { '不分组' })
-        }
-        # The CU macro reads C10 and row-9 counts. Refresh those formulas before
-        # invoking it; manual calculation must not expose stale template values.
-        Stage '更新输入公式'
-        $excel.CalculateFull()
-        # Do not call Standard_Change: that resets the user's selected group width.
-        if ($profile.recalculate_macro) {
-            Stage ('运行模板宏：' + [string]$profile.recalculate_macro)
-            try {
-                $macro = "'" + ($book.Name -replace "'", "''") + "'!" + [string]$profile.recalculate_macro
-                $excel.Run($macro) | Out-Null
-            } catch { $warnings.Add('Template grouping macro did not complete: ' + $_.Exception.Message) }
-        }
-        Stage '重算模板结果'
-        $excel.CalculateFull()
+        Stage '更新模板公式'
+        $excel.Calculate()
         foreach ($warning in $request.warnings) { $warnings.Add([string]$warning) }
         foreach ($check in $request.checks) {
             $actual = $data.Range([string]$check.count_cell).Value2
@@ -154,7 +172,7 @@ try {
             if ($check.mean_cell) {
                 $comparison.local_mean=$check.local_mean
                 $comparison.template_mean=$data.Range([string]$check.mean_cell).Value2
-                $comparison.template_mean_semantics='grouped'
+                $comparison.template_mean_semantics='template_defined'
             }
             if ($check.raw_range) {
                 $comparison.raw_mean=[double]$excel.WorksheetFunction.Average($data.Range([string]$check.raw_range))
@@ -166,7 +184,6 @@ try {
             }
             $comparisons.Add($comparison)
         }
-        $data.Activate()
         $destination = [IO.Path]::GetFullPath($request.destination)
         $extension = [IO.Path]::GetExtension($destination).ToLowerInvariant()
         $format = switch ($extension) { '.xls' {56}; '.xlsm' {52}; '.xlsx' {51}; default {throw 'Unsupported report extension.'} }
@@ -178,12 +195,12 @@ try {
         $excel.DisplayAlerts = $false
         $excel.EnableEvents = $false
         $book.SaveAs($destination, $format)
-        $excel.Calculation = -4105
+        $excel.Calculation = $calculationMode
         $excel.EnableEvents = $true
         $excel.DisplayAlerts = $true
         $result = @{ok=$true; status=$(if($warnings.Count){'review_required'}else{'ready'});
             destination=$destination; warnings=@($warnings.ToArray()); comparisons=@($comparisons.ToArray());
-            method=$(if($diameter){''}else{[string]$selected[0].label}); snapshot_id=$request.snapshot_id; snapshot_revision=$request.snapshot_revision;
+            method_source='template'; snapshot_id=$request.snapshot_id; snapshot_revision=$request.snapshot_revision;
             sheets=@($book.Worksheets | ForEach-Object {$_.Name})}
         if ($request.show) {
             $excel.Visible=$true; $handedOff=$true
@@ -192,17 +209,28 @@ try {
         }
     }
     $result.excel_version = $excelVersion
+    $result.template_identity=$templateIdentity
+    $result.initial_view=$initialView
+    $result.final_view=BookView $book
+    $result.owner=$owner
     $result | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath $ResultPath -Encoding UTF8
 } catch {
     @{ok=$false; error=$_.Exception.Message; stack=$_.ScriptStackTrace;
         error_type=$_.Exception.GetType().FullName; error_id=$_.FullyQualifiedErrorId; phase=$phase; excel_version=$excelVersion;
-        code=$(if ($phase -eq 'request') {'invalid_request'} else {'excel_failed'})} | ConvertTo-Json -Depth 5 |
+        owner=$owner;template_identity=$templateIdentity;initial_view=$initialView;
+        code=$(if ($phase -eq 'request') {'invalid_request'} else {'excel_failed'})} | ConvertTo-Json -Depth 12 |
         Set-Content -LiteralPath $ResultPath -Encoding UTF8
     exit 1
 } finally {
     $closeErrors = [System.Collections.Generic.List[string]]::new()
     if ($owned -and !$handedOff) {
         if ($book) { try { $book.Close($false) } catch { $closeErrors.Add('Workbook.Close: ' + $_.Exception.Message) } }
+        if ($excel) {
+            try {
+                if ($null -ne $calculationMode) { $excel.Calculation=$calculationMode }
+                $excel.EnableEvents=$true; $excel.DisplayAlerts=$true
+            } catch { $closeErrors.Add('Excel.RestoreState: ' + $_.Exception.Message) }
+        }
         if ($excel) { try { $excel.Quit() } catch { $closeErrors.Add('Excel.Quit: ' + $_.Exception.Message) } }
     }
     if ($book) {

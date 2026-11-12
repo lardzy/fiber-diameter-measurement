@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 import json
 from pathlib import Path
+import sys
 import threading
 from PySide6.QtCore import QObject, QTimer, QUrl, QEvent, Qt
 from PySide6.QtGui import QDesktopServices
@@ -13,7 +14,8 @@ from fdm.atomic_io import atomic_write_text
 from fdm.ui.widgets import NoWheelComboBox
 from fdm.live_experiment.excel_template import (
     ExportSnapshot, TemplateProfile, run_excel_request, template_request,
-    template_preferences, save_template_preferences, working_template,
+    ExcelTemplateError, default_template_path, selected_template_preferences, template_identity,
+    template_preferences, template_preferences_path, save_template_preferences, working_template,
 )
 
 
@@ -22,8 +24,14 @@ class TrialReportPanel(QObject):
         super().__init__(workspace)
         self.workspace = workspace
         self.trial_mode = workspace.session.workspace_options["mode"]
-        self.preferences = template_preferences(self.trial_mode)
+        try:
+            self.preferences = template_preferences(self.trial_mode)
+        except ExcelTemplateError:
+            # The page must remain available so a deliberate choice can repair
+            # broken preferences. Operations still resolve and report the error.
+            self.preferences = {}
         self._live_manager = None
+        self._template_task_lease = None
         self._methods_source = None
         self._task_source = None
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-template-report")
@@ -50,6 +58,13 @@ class TrialReportPanel(QObject):
             row.addWidget(button)
         layout.addLayout(row)
         row = QHBoxLayout()
+        for title, callback in (("重新创建工作簿", self.recreate), ("使用程序默认", self.use_default)):
+            button = QPushButton(title, workspace)
+            button.setToolTip("旧工作簿保留供您保存；成功创建后切换当前关联。")
+            button.clicked.connect(lambda checked=False, fn=callback: workspace._guard(fn))
+            row.addWidget(button)
+        layout.addLayout(row)
+        row = QHBoxLayout()
         for title, callback in (("读取模板标准", self.inspect), ("选择输入映射", self.choose_mapping)):
             button = QPushButton(title)
             button.clicked.connect(lambda checked=False, fn=callback: workspace._guard(fn))
@@ -60,7 +75,7 @@ class TrialReportPanel(QObject):
         self.method.currentIndexChanged.connect(self.method_changed)
         layout.addWidget(self.method)
         self.method.setVisible(self.trial_mode == "content")
-        self.method.setToolTip("为当前试验方法指定模板中的同一标准标签。修改后将为当前试验新建实时工作簿，旧工作簿保留；后续试验使用此映射，其他已打开试验不变。")
+        self.method.setToolTip("指定主动“更新报表信息”时使用的标准标签。打开模板不会自动改标准、组距或执行分组。修改映射后为当前试验新建工作簿，旧工作簿保留。")
         self.status = QLabel("生成后请复核报告方法与结果，再编辑或打印。", workspace)
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
@@ -79,6 +94,9 @@ class TrialReportPanel(QObject):
         self.diagnostics_toggle.setEnabled(False)
         self.diagnostics_toggle.toggled.connect(self.toggle_diagnostics)
         row.addWidget(self.diagnostics_toggle)
+        self.collect_diagnostics_button = QPushButton("收集模板诊断", workspace)
+        self.collect_diagnostics_button.clicked.connect(self.collect_diagnostics)
+        row.addWidget(self.collect_diagnostics_button)
         layout.addLayout(row)
         self.diagnostics_widget = QWidget(workspace)
         self.diagnostics_widget.setObjectName("templateDiagnostics")
@@ -164,9 +182,13 @@ class TrialReportPanel(QObject):
         self.method.blockSignals(previous)
 
     def refresh_path(self):
-        path = self.path()
-        label = "后续试验模板" if self.preferences.get("template") else "后续试验模板（个人工作副本）"
-        self.path_label.setText(label + "：" + str(path))
+        try:
+            path = self.path()
+            label = "所选模板" if self.preferences.get("template") else "程序默认模板"
+            self.path_label.setText(label + "：" + str(path)
+                                   + "\n保留模板中的报表页和初始显示；打开时不自动执行分组。")
+        except (ExcelTemplateError, OSError, ValueError) as exc:
+            self.path_label.setText(str(exc))
 
     def bind_live_excel(self, manager):
         if self._live_manager is manager:
@@ -187,6 +209,21 @@ class TrialReportPanel(QObject):
         if state.get("pending_template_path"):
             prefix = "正在更换为：" if state.get("template_replacement_pending") else "更换未完成："
             lines.append(prefix + state["pending_template_path"])
+        name = state.get("workbook_name") or state.get("name")
+        if name:
+            lines.append("工作簿：" + str(name))
+        identity = state.get("template_identity") or {}
+        if identity.get("sha256"):
+            lines.append("模板 SHA-256：" + identity["sha256"][:16] + "…")
+        if state.get("template_source_changed"):
+            lines.append("模板文件内容已改变；当前工作簿保持原样，可点“重新创建工作簿”应用。")
+        if state.get("template_source_error"):
+            lines.append("模板来源核对失败：" + str(state["template_source_error"]))
+        if state.get("configured_template_path") and state["configured_template_path"] != path:
+            lines.append("后续工作簿使用：" + str(state["configured_template_path"]))
+        if state.get("state") == "error" or state.get("template_replacement_failed"):
+            lines.append(str(state.get("template_replacement_message") or state.get("message")
+                             or "模板创建失败，原工作簿保留。"))
         self.live_template_label.setText("\n".join(lines))
 
     def _replace_live_template(self):
@@ -199,26 +236,42 @@ class TrialReportPanel(QObject):
 
     def choose(self):
         self._require_idle_template_task()
-        path, _ = QFileDialog.getOpenFileName(self.workspace, "选择可编辑报告模板", str(self.path()),
+        try:
+            initial = self.path()
+        except (ExcelTemplateError, OSError, ValueError):
+            initial = default_template_path(self.trial_mode)
+        path, _ = QFileDialog.getOpenFileName(self.workspace, "选择可编辑报告模板", str(initial),
             "Excel 模板 (*.xlt *.xltm *.xltx);;Excel 工作簿 (*.xls *.xlsm *.xlsx)")
         if path:
             if not Path(path).is_file():
                 raise FileNotFoundError("所选模板不存在，请重新选择；当前工作簿保留。")
-            self.preferences = template_preferences(self.trial_mode)
-            self.preferences["template"] = path
-            self.preferences.pop("method_label", None)
-            self.preferences.pop("method_labels", None)
+            self.preferences = selected_template_preferences(path, self.trial_mode)
             save_template_preferences(self.preferences, trial_mode=self.trial_mode)
             self._reset_methods(self._template_source(self.preferences))
             self.refresh_path()
             self._replace_live_template()
-            self.inspect()
+            self._set_status("已选择模板，正在为当前试验创建工作簿；旧工作簿保留。模板标准可按需单独读取。")
+
+    def recreate(self):
+        self._require_idle_template_task()
+        path = self.path()
+        template_identity(path)
+        self._replace_live_template()
+
+    def use_default(self):
+        self._require_idle_template_task()
+        template_identity(default_template_path(self.trial_mode))
+        self.preferences = {}
+        save_template_preferences(self.preferences, trial_mode=self.trial_mode)
+        self.refresh_path()
+        self._replace_live_template()
 
     def open(self):
         path = self.path(create=True)
         if not path.is_file():
             raise FileNotFoundError("请先选择报告模板。")
         request = {"operation": "edit", "template": str(path),
+                   "template_identity": template_identity(path),
                    "profile": asdict(TemplateProfile.load(self.preferences.get("mapping"), trial_mode=self.trial_mode))}
         self.start(lambda: run_excel_request(request, cancel_event=self.cancel_event))
 
@@ -261,13 +314,27 @@ class TrialReportPanel(QObject):
     def start(self, function, *, source=None):
         if self.future is not None:
             raise ValueError("已有模板任务正在处理，测量可以继续。")
+        manager = self._live_manager
+        if manager is not None and hasattr(manager, "begin_template_inspection"):
+            if not manager.begin_template_inspection():
+                raise ValueError("Excel 工作簿正在创建或其他模板任务尚未完成，请稍后重试。")
+            self._template_task_lease = manager
         self.cancel_event.clear()
         self.set_diagnostics({})
         self._task_source = source
-        self.future = self.executor.submit(function)
+        try:
+            self.future = self.executor.submit(function)
+        except Exception:
+            self._release_template_task_lease()
+            raise
         self.cancel_button.setEnabled(True)
         self._set_status("Excel 正在后台处理，实时采集与计数继续。")
         self.timer.start()
+
+    def _release_template_task_lease(self):
+        manager, self._template_task_lease = self._template_task_lease, None
+        if manager is not None:
+            manager.end_template_inspection()
 
     def cancel(self):
         if self.future is not None:
@@ -290,12 +357,48 @@ class TrialReportPanel(QObject):
         QApplication.clipboard().setText(self.diagnostics_text.toPlainText())
 
     def export_diagnostics(self):
+        self.collect_diagnostics()
         path, _ = QFileDialog.getSaveFileName(self.workspace, "导出模板报告诊断", "模板报告诊断.json", "JSON (*.json)")
         if path:
             atomic_write_text(path, self.diagnostics_text.toPlainText(), encoding="utf-8")
 
+    def collect_diagnostics(self):
+        from fdm.settings import settings_directory
+        from fdm.version import __version__
+        previous = self.diagnostics.get("previous_operation", self.diagnostics)
+        details = {**previous, "version": __version__, "executable": sys.executable,
+                   "frozen": bool(getattr(sys, "frozen", False)), "session_id": self.workspace.session.id,
+                   "trial_mode": self.trial_mode, "settings_directory": str(settings_directory()),
+                   "preferences_path": str(template_preferences_path(self.trial_mode)),
+                   "previous_operation": previous}
+        try:
+            details["selected_source"] = template_identity(self.path())
+            details["preferences"] = self.preferences
+        except Exception as exc:
+            details["source_error"] = str(exc)
+        if self._live_manager is not None:
+            details["live_workbook"] = self._live_manager.status(self.workspace.session.id)
+        # A diagnostic is a small identity record, not a dump of arbitrary app
+        # settings, process command lines, template contents or user workbooks.
+        candidates = [Path(sys.executable).parent / "release-manifest.json"]
+        for candidate in candidates:
+            try:
+                manifest = json.loads(candidate.read_text(encoding="utf-8-sig"))
+                details["build"] = {key: manifest[key] for key in
+                    ("build_id", "source_commit", "source_dirty", "version", "built_at_utc") if key in manifest}
+                break
+            except (OSError, ValueError, TypeError):
+                continue
+        self.set_diagnostics(details)
+        self.diagnostics_toggle.setChecked(True)
+
     def inspect(self):
-        request = {"operation": "inspect", "template": str(self.path(create=True)),
+        if self._live_manager is not None:
+            state = self._live_manager.status(self.workspace.session.id)
+            if state.get("template_replacement_pending") or state.get("state") in {"connecting", "syncing"}:
+                raise ValueError("正在创建或同步实时工作簿，请完成后再读取模板标准。")
+        path = self.path(create=True)
+        request = {"operation": "inspect", "template": str(path), "template_identity": template_identity(path),
                    "profile": asdict(TemplateProfile.load(self.preferences.get("mapping"), trial_mode=self.trial_mode))}
         self.start(lambda: run_excel_request(request, cancel_event=self.cancel_event), source=self._methods_source)
 
@@ -305,22 +408,30 @@ class TrialReportPanel(QObject):
         flush = getattr(self.workspace, "commit_pending_edits", None)
         if flush is not None:
             flush()
-        template = self.path(create=True)
+        binding = self._live_manager.template_binding(self.workspace.session) if (
+            self._live_manager is not None and hasattr(self._live_manager, "template_binding")) else None
+        template = Path(binding["path"]) if binding else self.path(create=True)
+        preferences = binding["preferences"] if binding else self.preferences
+        identity = template_identity(template)
+        if binding and binding.get("identity") and identity["sha256"] != binding["identity"].get("sha256"):
+            raise ValueError("当前工作簿的源模板内容已改变。请先重新创建工作簿，或直接在 Excel 保存当前工作簿。")
         suffix = ".xlsx" if template.suffix.lower() == ".xltx" else ".xlsm" if template.suffix.lower() in {".xltm", ".xlsm"} else ".xls"
         path, _ = QFileDialog.getSaveFileName(self.workspace, "生成模板报告", "试验报告" + suffix,
                                              f"Excel (*{suffix})")
         if not path:
             return
-        profile = TemplateProfile.load(self.preferences.get("mapping"), trial_mode=self.trial_mode)
+        profile = TemplateProfile.load(preferences.get("mapping"), trial_mode=self.trial_mode)
         snapshot = ExportSnapshot.capture(self.workspace.session)
-        label = (self.preferences.get("method_labels") or {}).get(snapshot.method)
-        self.start(lambda: run_excel_request(template_request(snapshot, template, path, profile,
-                                                              method_label=label), cancel_event=self.cancel_event))
+        label = (preferences.get("method_labels") or {}).get(snapshot.method)
+        self.start(lambda: run_excel_request({**template_request(snapshot, template, path, profile,
+                                                              method_label=label), "template_identity": identity},
+                                            cancel_event=self.cancel_event))
 
     def poll(self):
         if self.future is None or not self.future.done():
             return
         future, self.future = self.future, None
+        self._release_template_task_lease()
         source, self._task_source = self._task_source, None
         self.timer.stop()
         self.cancel_button.setEnabled(False)
@@ -350,7 +461,9 @@ class TrialReportPanel(QObject):
             self._set_status(f"已读取 {len(result['methods'])} 个模板方法；未改动模板文件。"
                                 + ("\n" + "\n".join(result["warnings"]) if result.get("warnings") else ""))
             return
-        lines = ["报告已生成：" + result["destination"], "报告方法：" + result["method"]]
+        method_text = ("由模板当前设置决定" if result.get("method_source") == "template"
+                       else str(result.get("method") or "请在 Excel 中复核"))
+        lines = ["报告已生成：" + result["destination"], "报告方法：" + method_text]
         self.last_report = result
         self.last_report_label.setText("最近成功报告：" + result["destination"])
         self.last_report_label.show()
@@ -367,4 +480,19 @@ class TrialReportPanel(QObject):
     def close(self):
         self.timer.stop()
         self.cancel_event.set()
+        manager, self._template_task_lease = self._template_task_lease, None
+        if manager is not None:
+            if self.future is None or self.future.done():
+                manager.end_template_inspection()
+            else:
+                # A widget can close while PowerShell is cancelling/cleaning
+                # up its instance. Retain the lease until that work actually
+                # finishes; do not capture this soon-to-be-deleted QObject.
+                def release_after_cleanup(_future, owner=manager):
+                    try:
+                        QTimer.singleShot(0, owner, owner.end_template_inspection)
+                    except RuntimeError:
+                        # Application-owned manager has already been destroyed.
+                        pass
+                self.future.add_done_callback(release_after_cleanup)
         self.executor.shutdown(wait=False, cancel_futures=True)

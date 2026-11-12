@@ -130,6 +130,12 @@ def main(argv: list[str] | None = None) -> int:
     args = list(argv) if argv is not None else sys.argv
     if "--self-check" in args[1:]:
         return _run_release_self_check(json_output="--json" in args[1:])
+    if len(args) > 1 and args[1] == "--verify-trial-template-flow":
+        # Explicit acceptance only: the probe owns a fresh profile and validates
+        # its frozen/installed identity. Normal application state is untouched.
+        from fdm.validation.trial_template_flow import main as verify_trial_template_flow
+
+        return verify_trial_template_flow(args[2:])
     if len(args) > 1 and args[1] == "--microview-helper":
         try:
             from fdm.microview_helper import main as microview_helper_main
