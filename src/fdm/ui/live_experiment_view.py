@@ -158,6 +158,12 @@ def apply_trial_theme(view):
         #acquisitionTrial {{ background: {bg}; color: {ink}; font-size: 10.5pt; }}
         #acquisitionTrial QWidget {{ font-size: 10.5pt; }}
         #acquisitionTrial QLabel {{ color: {ink}; background: transparent; padding: 0; margin: 0; }}
+        #acquisitionTrial QLabel[statusTone="info"] {{ color: {colors.info}; }}
+        #acquisitionTrial QLabel[statusTone="warning"] {{ color: {colors.warning}; font-weight: 600; }}
+        #acquisitionTrial QLabel[statusTone="error"] {{ color: {colors.error}; font-weight: 600; }}
+        #acquisitionTrial QToolButton#trialExcelPrimary {{ min-height: 28px; padding: 0 12px 0 4px;
+            background: {colors.accent}; color: palette(highlighted-text); border: 1px solid {colors.accent}; border-radius: 4px; }}
+        #acquisitionTrial QToolButton#trialExcelPrimary:hover {{ background: palette(highlight); }}
         #trialSidebar, #trialHeader, #trialRecords {{ background: {surface}; border: 1px solid {border}; border-radius: 6px; }}
         #trialSidebar QLabel, #trialHeader QLabel, #trialRecords QLabel {{ border: none; }}
         #trialSidebar QPushButton, #trialHeader QPushButton {{ min-height: 30px; padding: 0 7px; border: 1px solid {border}; border-radius: 4px; background: {surface}; color: {ink}; }}
@@ -175,6 +181,9 @@ def apply_trial_theme(view):
         #trialSidebar QToolButton#trialEvidence::menu-button:hover {{ background: {select}; }}
         #trialSidebar QComboBox, #trialHeader QComboBox {{ min-height: 30px; border: 1px solid {border}; border-radius: 4px; padding-left: 7px; }}
         #acquisitionTrial #trialSubtitle, #acquisitionTrial #trialHint, #acquisitionTrial #trialColumnHeader {{ color: {muted}; font-size: 9pt; }}
+        #acquisitionTrial #trialHint[statusTone="info"] {{ color: {colors.info}; }}
+        #acquisitionTrial #trialHint[statusTone="warning"] {{ color: {colors.warning}; font-weight: 600; }}
+        #acquisitionTrial #trialHint[statusTone="error"] {{ color: {colors.error}; font-weight: 600; }}
         #acquisitionTrial #trialLastValue {{ font-size: 16pt; font-weight: 600; }}
         #acquisitionTrial #trialTitle {{ font-size: 12pt; font-weight: 600; }}
         #trialReadiness {{ padding: 4px 8px; border-radius: 4px; background: {surface}; }}

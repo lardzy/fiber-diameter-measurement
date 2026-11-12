@@ -878,7 +878,9 @@ def test_closed_workbook_status_is_chinese_with_original_exception_in_details(co
     assert status['message'] == '工作簿已关闭，重新同步可恢复。'
     assert status['raw_error'].startswith('The live workbook was closed.')
     controls._show_details()
-    assert controls._details.text() == status['message']
+    assert controls._details.text().startswith('工作簿已关闭 · 点击“打开 Excel”恢复同步')
+    assert status['message'] in controls._details.text()
+    assert controls.status_label.property('statusTone') == 'warning'
     assert 'The live workbook was closed.' in controls._details.detailedText()
     controls._details.close()
     controls.close()

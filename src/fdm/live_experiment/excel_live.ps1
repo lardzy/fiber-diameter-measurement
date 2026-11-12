@@ -22,6 +22,25 @@ using System.Runtime.InteropServices;
 public static class FdmLiveExcelWindow {
     [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
+    [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr window);
+    [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr window);
+    [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr window);
+    [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr window, int command);
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [StructLayout(LayoutKind.Sequential)] private struct FLASHWINFO {
+        public uint cbSize;
+        public IntPtr hwnd;
+        public uint dwFlags;
+        public uint uCount;
+        public uint dwTimeout;
+    }
+    [DllImport("user32.dll")] private static extern bool FlashWindowEx(ref FLASHWINFO info);
+    public static void FlashTaskbar(IntPtr window) {
+        var info = new FLASHWINFO { cbSize=(uint)Marshal.SizeOf(typeof(FLASHWINFO)),
+            hwnd=window, dwFlags=2, uCount=3, dwTimeout=0 };
+        FlashWindowEx(ref info);
+    }
 }
 '@
 
@@ -180,6 +199,82 @@ function Get-State {
     return $state
 }
 
+function Present-NativeWindow($state, [bool]$foreground) {
+    $window=[IntPtr]([int64]$state.window_handle)
+    $result=@{window_handle=[int64]$window;window_visible=$false;window_minimized=$false;foreground=$false}
+    # The cached HWND may have been destroyed or recycled. Never raise an
+    # unrelated application's window, even if it now uses the same handle.
+    if (!(Test-ExcelProcess) -or ![FdmLiveExcelWindow]::IsWindow($window)) { return $result }
+    [uint32]$owner=0
+    [void][FdmLiveExcelWindow]::GetWindowThreadProcessId($window,[ref]$owner)
+    if ($owner -ne [uint32]$script:excelIdentity.id) { return $result }
+    $command=$(if ([FdmLiveExcelWindow]::IsIconic($window)) {9} else {5})
+    [void][FdmLiveExcelWindow]::ShowWindowAsync($window,$command)
+    if ($foreground) { [void][FdmLiveExcelWindow]::SetForegroundWindow($window) }
+    $result.window_visible=[FdmLiveExcelWindow]::IsWindowVisible($window)
+    $result.window_minimized=[FdmLiveExcelWindow]::IsIconic($window)
+    $result.foreground=[FdmLiveExcelWindow]::GetForegroundWindow() -eq $window
+    return $result
+}
+
+function Show-Book($payload) {
+    $key=[string]$script:request.session_id
+    if (!$script:sessions.ContainsKey($key)) { Failure 'workbook_closed' 'The live workbook is no longer connected.' }
+    $state=$script:sessions[$key]
+    if ([int64]$state.generation -ne [int64]$script:request.generation) {
+        Failure 'stale_generation' 'This request belongs to an earlier workbook connection.'
+    }
+    if (!(Test-ExcelProcess)) { Failure 'workbook_closed' 'The associated Excel process has exited.' }
+    $foreground=($null -eq $payload.request_foreground -or [bool]$payload.request_foreground)
+    $state.stage='restore workbook window'
+    $window=Present-NativeWindow $state $foreground
+    try {
+        # Native restoration intentionally precedes COM readiness. A cell edit
+        # or modal dialog must not keep the Excel window minimized/invisible.
+        $state=Get-State
+        $state.stage='activate workbook'
+        $script:excel.Visible=$true
+        [void]$state.book.Activate()
+        $windows=$null; $bookWindow=$null
+        try {
+            $windows=$state.book.Windows
+            Require-Object $windows 'Workbook.Windows'
+            $bookWindow=$windows.Item(1)
+            Require-Object $bookWindow 'Workbook.Window'
+            $state.window_handle=[int64]$bookWindow.Hwnd
+        } finally { Release-Com $bookWindow; Release-Com $windows }
+        $window=Present-NativeWindow $state $foreground
+        $result=Safe-Metadata $state
+        $result.activation_deferred=$false
+        $result.presentation_status=$(if ($foreground -and !$window.foreground) {'attention_required'} else {'shown'})
+        $result.presentation_message=$(if ($result.presentation_status -eq 'attention_required') {
+            'Excel 窗口已恢复；Windows 未允许切到前台，请点击任务栏中的 Excel。'
+        } else {''})
+    } catch {
+        if ((Error-Code $_) -ne 'excel_busy') { throw }
+        $result=@{activation_deferred=$true;presentation_status='deferred';
+            presentation_message='等待 Excel 当前编辑或对话框结束后定位工作簿。'}
+    }
+    # A single finite taskbar notification follows a refused explicit request.
+    # Re-check ownership here; no topmost/foreground-lock workaround is used.
+    # Deferred activation retries carry request_foreground=false and never flash.
+    $result.attention_requested=$false
+    $handle=[IntPtr]([int64]$window.window_handle)
+    if ($foreground -and $window.window_visible -and !$window.foreground -and
+        (Test-ExcelProcess) -and [FdmLiveExcelWindow]::IsWindow($handle) -and
+        [FdmLiveExcelWindow]::GetForegroundWindow() -ne $handle) {
+        [uint32]$owner=0
+        [void][FdmLiveExcelWindow]::GetWindowThreadProcessId($handle,[ref]$owner)
+        if ($owner -eq [uint32]$script:excelIdentity.id) {
+            [FdmLiveExcelWindow]::FlashTaskbar($handle)
+            $result.attention_requested=$true
+        }
+    }
+    foreach ($field in $window.Keys) { $result[$field]=$window[$field] }
+    $result.ok=$true; $result.status='synced'
+    return $result
+}
+
 function Get-SheetName($item, $profile) {
     if ($item.sheet) { return [string]$item.sheet }
     return [string]$profile.data_sheet
@@ -260,6 +355,7 @@ function Book-Metadata($state) {
         calculation_state = $calculationState
         metadata_checked_at = [DateTime]::UtcNow.ToString('o')
         last_input_at = $state.last_input_at
+        window_handle = $state.window_handle
     }
 }
 
@@ -499,6 +595,14 @@ try {
                         initialized=$false;sheets=@{};warnings=@();pending=$null;last_batch=$null;
                         last_input_at=$null;trial_kind=[string]$payload.trial_kind;excel_version=[string]$script:excel.Version}
                     $script:sessions[$key] = $state
+                    $windows=$null; $bookWindow=$null
+                    try {
+                        $windows=$book.Windows
+                        Require-Object $windows 'Workbook.Windows'
+                        $bookWindow=$windows.Item(1)
+                        Require-Object $bookWindow 'Workbook.Window'
+                        $state.window_handle=[int64]$bookWindow.Hwnd
+                    } finally { Release-Com $bookWindow; Release-Com $windows }
                     Reply (Run-Batch $state $payload 'open')
                 }
                 'sync' { $state=Get-State; Reply (Run-Batch $state $payload 'sync') }
@@ -513,12 +617,7 @@ try {
                     Reply $result
                 }
                 'show' {
-                    $state=Get-State; $state.stage='show workbook'
-                    $script:excel.Visible=$true
-                    [void]$state.book.Activate()
-                    $result=Safe-Metadata $state
-                    $result.ok=$true; $result.status='synced'
-                    Reply $result
+                    Reply (Show-Book $payload)
                 }
                 'detach' {
                     if ($script:sessions.ContainsKey($key) -and

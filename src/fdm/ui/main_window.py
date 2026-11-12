@@ -576,6 +576,7 @@ except ModuleNotFoundError as exc:
             self._selected_device_id = selected_device_id
             self.devicesChanged = _SignalProxy()
             self.previewStateChanged = _SignalProxy()
+            self.captureStateChanged = _SignalProxy()
             self.frameReady = _SignalProxy()
             self.analysisFrameReady = _SignalProxy()
             self.analysisFrameFailed = _SignalProxy()
@@ -592,6 +593,28 @@ except ModuleNotFoundError as exc:
             return None
 
         def is_preview_active(self) -> bool:
+            return False
+
+        def is_starting(self):
+            return False
+
+        def is_stopping(self):
+            return False
+
+        def current_capture_state(self):
+            return "stopped"
+
+        def cancel_pending_operations(self):
+            return None
+
+        def refresh_devices_async(self, on_done=None):
+            self.devicesChanged.emit([])
+            if on_done is not None:
+                QTimer.singleShot(0, lambda: on_done([]))
+
+        def start_preview_async(self, *, preview_target=None, on_done=None):
+            if on_done is not None:
+                QTimer.singleShot(0, lambda: on_done(False))
             return False
 
         def last_frame(self) -> QImage | None:
@@ -2283,6 +2306,7 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._refresh_theme_sensitive_icons()
         self._capture_manager.devicesChanged.connect(self._on_capture_devices_changed)
+        self._capture_manager.captureStateChanged.connect(self._on_capture_async_state_changed)
         self._capture_manager.previewStateChanged.connect(self._on_live_preview_state_changed)
         self._capture_manager.frameReady.connect(self._on_live_preview_frame_ready)
         self._capture_manager.analysisFrameReady.connect(self._on_preview_analysis_frame_ready)
@@ -3544,33 +3568,35 @@ class MainWindow(QMainWindow):
         self._open_acquisition_workbench()
 
     def _open_acquisition_workbench(self, trial_index=None, *, select=True, auto_start=True):
+        requested_at = perf_counter()
         already_visible = (self._acquisition_workbench is not None
                            and self._center_stack.currentWidget() is self._acquisition_workbench)
+        created = self._acquisition_workbench is None
         if self._acquisition_workbench is None:
             from fdm.ui.acquisition_workbench import AcquisitionWorkbench
             self._center_stack.removeWidget(self._preview_page)
             self._acquisition_workbench = AcquisitionWorkbench(self, self._preview_page)
             self._center_stack.addWidget(self._acquisition_workbench)
-            if trial_index is None:
-                self._acquisition_workbench.restore_page()
         if select:
             self._acquisition_workspace_selected = True
+        if created and trial_index is None:
+            self._acquisition_workbench.restore_page(requested_at=requested_at)
         if already_visible and trial_index is None:
             self.acquisition_workspace_action.blockSignals(True)
             self.acquisition_workspace_action.setChecked(True)
             self.acquisition_workspace_action.blockSignals(False)
             if select:
-                self._acquisition_workbench.enter(auto_start=auto_start)
+                self._acquisition_workbench.enter(auto_start=auto_start, requested_at=requested_at)
             return self._acquisition_workbench
         if trial_index is not None:
-            self._acquisition_workbench.select_page(trial_index)
+            self._acquisition_workbench.select_page(trial_index, requested_at=requested_at)
         # Remove measurement-only chrome before exposing the taller workbench.
         # Otherwise Qt can permanently enlarge the top-level window for one
         # transient layout combining both workspaces' minimum heights.
         self._sync_workspace_mode()
         self._center_stack.setCurrentWidget(self._acquisition_workbench)
         if select:
-            self._acquisition_workbench.enter(auto_start=auto_start)
+            self._acquisition_workbench.enter(auto_start=auto_start, requested_at=requested_at)
         return self._acquisition_workbench
 
     def _open_live_experiment(self) -> None:
@@ -3602,7 +3628,7 @@ class MainWindow(QMainWindow):
                            else "实时试验原图正在保存，请完成后重试。")
                 self.statusBar().showMessage(message, 6000)
                 return False
-        if windows and self._acquisition_workbench is not None:
+        if self._acquisition_workbench is not None:
             self._acquisition_workbench.clear_trial_pages()
             self._sync_workspace_mode()
         return detach_all_trial_excel(self)
@@ -13677,8 +13703,8 @@ class MainWindow(QMainWindow):
 
     def _active_acquisition_display_binding(self):
         hub = self._acquisition_workbench
-        if hub is not None and hub.pages.currentWidget() is not hub.capture_page:
-            return hub.pages.currentWidget().display_binding
+        if hub is not None and hub._current_trial() is not None:
+            return hub._current_trial().display_binding
         return self._preview_display_binding
 
     def _select_preview_display_mode(self, index):
@@ -15484,17 +15510,75 @@ class MainWindow(QMainWindow):
         self._sync_digital_slide_camera_label()
         self._update_action_states()
 
-    def _refresh_capture_devices(self) -> None:
-        self._capture_devices = self._capture_manager.refresh_devices()
-        selected = self._selected_capture_device()
-        if selected is not None and not self._app_settings.selected_capture_device_id:
-            self._app_settings.selected_capture_device_id = selected.id
-        self._update_capture_device_ui()
-        self._sync_digital_slide_camera_label()
-        self._update_action_states()
+    def _refresh_capture_devices(self, on_done=None) -> None:
+        hub = getattr(self, "_acquisition_workbench", None)
+        if hub is not None and hasattr(hub, "record_transition_phase"):
+            hub.record_transition_phase("device_enumeration_started")
+        def completed(devices):
+            if hub is not None and hasattr(hub, "record_transition_phase"):
+                hub.record_transition_phase("device_enumeration_finished")
+            if on_done is not None:
+                on_done(devices)
+        self._capture_manager.refresh_devices_async(completed)
+
+    def _cancel_pending_capture_start(self, *, reason="") -> None:
+        self._capture_start_serial = getattr(self, "_capture_start_serial", 0) + 1
+        self._capture_start_context = None
+        self._capture_pending_device = None
+        self._digital_slide_entry_request = None
+        self._capture_after_stop = None
+        self._capture_manager.cancel_pending_operations()
+
+    def _capture_start_is_current(self, context) -> bool:
+        if context is not getattr(self, "_capture_start_context", None):
+            return False
+        if context["project"] is not self.project:
+            return False
+        hub = getattr(self, "_acquisition_workbench", None)
+        if context.get("hub_generation") is not None and hub is not None:
+            return self._acquisition_workspace_selected and hub.is_entry_current(context["hub_generation"])
+        return True
+
+    def _on_capture_async_state_changed(self, state) -> None:
+        if state.state == "streaming":
+            hub = getattr(self, "_acquisition_workbench", None)
+            if hub is not None and hasattr(hub, "record_transition_phase"):
+                hub.record_transition_phase("first_frame")
+        if state.state != "stopped":
+            return
+        after_stop = getattr(self, "_capture_after_stop", None)
+        if after_stop is not None:
+            self._capture_after_stop = None
+            QTimer.singleShot(0, self, after_stop)
+            return
+        pending = getattr(self, "_capture_pending_device", None)
+        if pending is not None:
+            QTimer.singleShot(0, self, lambda: self._finish_capture_device_switch(pending))
+            return
+        context = getattr(self, "_capture_start_context", None)
+        if context is not None and self._capture_start_is_current(context):
+            QTimer.singleShot(0, self, lambda: self._continue_capture_start(context))
 
     def _set_selected_capture_device(self, device_id: str) -> None:
-        restart_preview = self._capture_manager.is_preview_active()
+        if not any(device.id == device_id for device in self._capture_manager.devices()):
+            return
+        restart_preview = (self._capture_manager.is_preview_active() or self._capture_manager.is_starting()
+                           or getattr(self, "_capture_start_context", None) is not None)
+        self._cancel_pending_capture_start(reason="switch_device")
+        pending = {"id": device_id, "restart": restart_preview, "project": self.project}
+        self._capture_pending_device = pending
+        if self._capture_manager.is_preview_active() or self._capture_manager.is_stopping():
+            self._capture_manager.request_stop_preview()
+            return
+        self._finish_capture_device_switch(pending)
+
+    def _finish_capture_device_switch(self, pending) -> None:
+        if pending is not getattr(self, "_capture_pending_device", None) or pending["project"] is not self.project:
+            return
+        if self._capture_manager.is_stopping():
+            return
+        self._capture_pending_device = None
+        device_id = pending["id"]
         transition = self._prepare_transition(TransitionIntent.SWITCH_DEVICE)
         if not transition.completed:
             if transition.reason:
@@ -15512,7 +15596,7 @@ class MainWindow(QMainWindow):
         self._update_capture_device_ui()
         self._sync_digital_slide_camera_label()
         self._update_action_states()
-        if restart_preview:
+        if pending["restart"]:
             self.start_live_preview()
 
     def _on_active_capture_device_lost(self, device_id: str) -> None:
@@ -15542,19 +15626,26 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"采集设备已断开并已释放会话: {device_id or '未知设备'}", 6000)
 
     def show_capture_device_menu(self) -> None:
-        self._refresh_capture_devices()
-        if not self._capture_devices:
-            QMessageBox.information(self, "切换采集设备", self._capture_refresh_message())
-            return
         menu = QMenu(self)
-        for device in self._capture_devices:
-            action = menu.addAction(device.name)
-            action.setCheckable(True)
-            action.setChecked(device.id == self._capture_manager.selected_device_id())
-            action.triggered.connect(
-                lambda checked=False, device_id=device.id: self._set_selected_capture_device(device_id)
-            )
-        menu.exec(self.cursor().pos())
+        self._capture_device_menu = menu
+        def populate(devices, *, loading=False):
+            if getattr(self, "_capture_device_menu", None) is not menu:
+                return
+            menu.clear()
+            for device in devices:
+                action = menu.addAction(device.name)
+                action.setCheckable(True)
+                action.setChecked(device.id == self._capture_manager.selected_device_id())
+                action.triggered.connect(lambda checked=False, device_id=device.id: self._set_selected_capture_device(device_id))
+            if loading or not devices:
+                message = menu.addAction("正在查找设备…" if loading else "未发现采集设备")
+                message.setEnabled(False)
+            if not loading:
+                menu.addSeparator()
+                menu.addAction("刷新设备列表", lambda: self.show_capture_device_menu())
+        populate(self._capture_manager.devices(), loading=True)
+        menu.popup(self.cursor().pos())
+        self._refresh_capture_devices(lambda devices: populate(devices))
 
     def toggle_live_preview(self, checked: bool) -> None:
         if checked:
@@ -15562,23 +15653,16 @@ class MainWindow(QMainWindow):
             return
         self.stop_live_preview()
 
-    def start_live_preview(self, *, automatic=False) -> None:
-        if self._capture_manager.is_stopping():
-            if self._acquisition_workbench is not None:
-                self._acquisition_workbench._restart_pending = True
-                self._acquisition_workbench._want_capture = True
+    def start_live_preview(self, *, automatic=False, on_ready=None) -> None:
+        if self._capture_manager.is_preview_active() and not self._capture_manager.is_stopping():
+            if on_ready is not None:
+                on_ready()
             return
-        if self._capture_manager.is_preview_active():
+        current = getattr(self, "_capture_start_context", None)
+        if current is not None and self._capture_start_is_current(current):
+            if on_ready is not None:
+                current["ready_callbacks"].append(on_ready)
             return
-        self._refresh_capture_devices()
-        if not self._capture_devices:
-            if self._acquisition_workbench is not None:
-                self._acquisition_workbench.show_error(self._capture_refresh_message())
-            elif not automatic:
-                QMessageBox.information(self, "实时预览", self._capture_refresh_message())
-            self._sync_live_preview_action()
-            return
-        preview_kind = self._preview_kind()
         if self._center_stack is not None and self._preview_page is not None:
             # A direct preview command starts on capture. Entering through the
             # workbench itself has already restored the user's chosen tab.
@@ -15586,6 +15670,29 @@ class MainWindow(QMainWindow):
                 trial_index=0 if self._acquisition_workbench is None else None,
                 auto_start=False,
             )
+        hub = getattr(self, "_acquisition_workbench", None)
+        context = {"project": self.project, "automatic": automatic, "refreshed": False,
+                   "hub_generation": getattr(hub, "entry_generation", None), "connecting": False,
+                   "ready_callbacks": [on_ready] if on_ready is not None else []}
+        self._capture_start_context = context
+        if self._capture_manager.is_stopping() and self._capture_manager.current_capture_state() == "faulted":
+            self._capture_manager.request_stop_preview()
+        QTimer.singleShot(0, self, lambda: self._continue_capture_start(context))
+
+    def _continue_capture_start(self, context) -> None:
+        if (not self._capture_start_is_current(context) or context["connecting"]
+                or context.get("enumerating")):
+            return
+        if self._capture_manager.is_stopping() or self._capture_manager.is_starting():
+            return
+        if self._capture_manager.is_preview_active():
+            self._capture_start_context = None
+            return
+        if not self._capture_manager.devices():
+            self._refresh_for_capture_start(context)
+            return
+        context["connecting"] = True
+        preview_kind = self._preview_kind()
         self._apply_preview_surface(preview_kind)
         selected = self._selected_capture_device()
         if (preview_kind == "native_embed" or (selected is not None and selected.backend_key == "microview")) and self._microview_preview_host is not None:
@@ -15593,18 +15700,41 @@ class MainWindow(QMainWindow):
             self._microview_preview_host.ensure_native_handle()
         preview_target = self._current_preview_target()
         self._capture_manager.set_native_preview_visible(False)
-        if not self._capture_manager.start_preview(preview_target=preview_target):
+        hub = getattr(self, "_acquisition_workbench", None)
+        if hub is not None and hasattr(hub, "record_transition_phase"):
+            hub.record_transition_phase("device_connect_started")
+        def started(success):
+            if not self._capture_start_is_current(context):
+                return
+            context["connecting"] = False
+            if success:
+                self._capture_start_context = None
+                if hub is not None and hasattr(hub, "record_transition_phase"):
+                    hub.record_transition_phase("device_connect_finished")
+                for callback in context["ready_callbacks"]:
+                    callback()
+                return
+            self._refresh_for_capture_start(context)
+        self._capture_manager.start_preview_async(preview_target=preview_target, on_done=started)
+        if self._preview_status_label is not None:
+            self._preview_status_label.setText(f"正在连接: {selected.name if selected is not None else '采集设备'}")
+
+    def _refresh_for_capture_start(self, context) -> None:
+        if not self._capture_start_is_current(context):
+            return
+        if context["refreshed"]:
+            self._capture_start_context = None
+            hub = getattr(self, "_acquisition_workbench", None)
+            if hub is not None:
+                hub.show_error(self._capture_refresh_message())
             self._sync_live_preview_action()
             return
-        selected = self._selected_capture_device()
-        if self._preview_status_label is not None:
-            if preview_kind == "native_embed":
-                self._preview_status_label.setText(
-                    f"正在连接: {selected.name if selected is not None else '采集设备'}"
-                )
-            else:
-                self._preview_status_label.setText(f"正在预览: {selected.name if selected is not None else '采集设备'}")
-        self.statusBar().showMessage("实时预览已启动", 3000)
+        context["refreshed"] = True
+        context["enumerating"] = True
+        def refreshed(devices):
+            context["enumerating"] = False
+            self._continue_capture_start(context)
+        self._refresh_capture_devices(refreshed)
 
     def stop_live_preview(self) -> None:
         if self._slide_acquisition_active():
@@ -15612,6 +15742,7 @@ class MainWindow(QMainWindow):
             return
         if self._preview_analysis_mode != "none":
             self._cancel_preview_analysis_session()
+        self._cancel_pending_capture_start(reason="stop_preview")
         if not self._capture_manager.is_preview_active():
             self._preview_active = False
             self._clear_preview_surface_state()
@@ -15831,20 +15962,32 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "优化采集参数", "当前设备不支持自动优化采集参数。")
             return
         restart_preview = self._capture_manager.is_preview_active()
-        if restart_preview:
-            self.stop_live_preview()
-        try:
-            message = self._capture_manager.optimize_signal()
-        except Exception as exc:
-            QMessageBox.warning(self, "优化采集参数", str(exc))
+        project = self.project
+        self._cancel_pending_capture_start(reason="optimize_signal")
+        epoch = self._capture_start_serial
+        def current():
+            return self.project is project and self._capture_start_serial == epoch
+        def completed(message, error):
+            if not current():
+                return
+            if error is not None:
+                QMessageBox.warning(self, "优化采集参数", str(error))
+            else:
+                QMessageBox.information(self, "优化采集参数", str(message))
             if restart_preview:
                 self.start_live_preview()
-            return
-        QMessageBox.information(self, "优化采集参数", message)
+        def run():
+            if current():
+                self._capture_manager.optimize_signal_async(completed)
         if restart_preview:
-            self.start_live_preview()
+            self._capture_after_stop = run
+            self._capture_manager.request_stop_preview()
+            return
+        run()
 
     def _toggle_digital_slide_mode(self, checked: bool) -> None:
+        if not checked:
+            self._digital_slide_entry_request = None
         if checked and self._acquisition_workbench is not None:
             hub = self._acquisition_workbench
             hub.select_page(0)
@@ -15853,11 +15996,18 @@ class MainWindow(QMainWindow):
                 return
             if self._preview_active and not self._acquisition_workspace_selected:
                 self._open_acquisition_workbench(trial_index=0, auto_start=False)
-        if checked and not self._preview_active:
-            self.start_live_preview()
-            if not self._preview_active:
-                self._sync_digital_slide_mode_ui()
-                return
+        if checked and (not self._preview_active or self._capture_manager.is_stopping()):
+            request = object()
+            self._digital_slide_entry_request = request
+            project = self.project
+            def camera_ready():
+                if (getattr(self, "_digital_slide_entry_request", None) is request
+                        and self.project is project):
+                    self._digital_slide_entry_request = None
+                    self._toggle_digital_slide_mode(True)
+            self.start_live_preview(on_ready=camera_ready)
+            self._sync_digital_slide_mode_ui()
+            return
         if not checked and self._slide_acquisition_active():
             if self.digital_slide_action is not None:
                 self.digital_slide_action.blockSignals(True)
@@ -29438,12 +29588,12 @@ class MainWindow(QMainWindow):
                     task_results=tuple(task_results),
                 )
             if self._capture_manager.is_preview_active():
-                capture_result = self._capture_manager.stop_preview()
-                if not capture_result:
+                self._capture_manager.request_stop_preview()
+                if self._capture_manager.is_preview_active() or self._capture_manager.is_stopping():
                     return TransitionResult(
                         intent=intent,
                         completed=False,
-                        reason=capture_result.message or "相机 backend 未能确认退出。",
+                        reason="正在停止采集设备，界面仍可操作；设备释放后请重试。",
                         task_results=tuple(task_results),
                     )
             else:

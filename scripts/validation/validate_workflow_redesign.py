@@ -69,6 +69,7 @@ if __name__ == "__main__":
 from PySide6.QtCore import QCoreApplication, QEvent, QObject, QPointF, Qt
 from PySide6.QtGui import QColor, QFontDatabase, QFontInfo, QFontMetrics, QImage, QPainter, QPen
 from PySide6.QtTest import QTest
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
 
 from fdm.services.capture import CaptureBackend, CaptureDevice
@@ -84,6 +85,16 @@ def dimensions(text):
 def settle(rounds=8):
     for _ in range(rounds):
         QApplication.processEvents()
+
+
+def wait_ready(predicate, timeout=5):
+    """Wait for the production asynchronous handoff, without forcing it inline."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        QTest.qWait(5)
+        if predicate():
+            return
+    raise AssertionError("Asynchronous workspace/camera did not become ready")
 
 
 def synthetic_frame(size=(768, 576), sequence=0):
@@ -256,8 +267,9 @@ class WorkflowHarness:
 
     def enter(self, *, frame=True):
         self.window.acquisition_workspace_action.trigger()
-        settle()
+        wait_ready(lambda: self.hub is not None and self.hub._page_load_state == "ready")
         if frame:
+            wait_ready(self.window._capture_manager.is_preview_active)
             self.backend.tick()
         self.assert_size()
         return self.hub
@@ -265,8 +277,9 @@ class WorkflowHarness:
     def select(self, index, *, frame=True):
         QTest.mouseClick(self.hub.navigation, Qt.MouseButton.LeftButton,
                         pos=self.hub.navigation.tabRect(index).center())
-        settle()
+        wait_ready(lambda: self.hub._selected == index and self.hub._page_load_state == "ready")
         if frame:
+            wait_ready(self.window._capture_manager.is_preview_active)
             self.backend.tick()
         assert self.hub.navigation.currentIndex() == index
         expected = (self.hub.capture_page if index == 0 else
@@ -356,7 +369,8 @@ def validate_transitions(harness, cycles=200, roundtrips=20):
         harness.assert_navigation()
         check_center()
     assert backend.starts == first_starts == 1
-    assert harness.hub.pages.count() == 3
+    assert sum(harness.hub.pages.widget(index) is not harness.hub.loading_page
+               for index in range(harness.hub.pages.count())) == 3
     assert len(w.findChildren(LiveExperimentWorkspace)) == 2
     assert not harness.observer.unexpected(), harness.observer.unexpected()
     for _ in range(roundtrips):

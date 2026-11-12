@@ -1,8 +1,11 @@
 from unittest.mock import patch
+from time import monotonic
 
 import pytest
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtWidgets import QApplication
+from PySide6.QtTest import QTest
+from acquisition_test_support import wait_workbench_ready
 
 from fdm.services.capture import CaptureBackend, CaptureDevice
 from fdm.ui.main_window import MainWindow
@@ -44,6 +47,10 @@ def start_stream(window, backend="opencv"):
     window._capture_manager._backends = [camera]
     hub = window._open_acquisition_workbench(trial_index=0, auto_start=False)
     hub.request_start()
+    deadline = monotonic() + 3
+    while not window._capture_manager.is_preview_active():
+        assert monotonic() < deadline, "Asynchronous camera did not start"
+        QTest.qWait(2)
     camera.publish("#fefefe")
     return hub, camera
 
@@ -96,6 +103,7 @@ def test_no_false_receipt_for_cancelled_or_failed_snapshot(window, interrupt):
         hub.toggle_capture()
     elif interrupt == "leave":
         hub.select_page(1)
+        wait_workbench_ready(hub)
     elif interrupt == "timeout":
         control.timeout.timeout.emit()
     else:

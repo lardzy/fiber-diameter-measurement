@@ -61,6 +61,19 @@ def image(color="red", width=64, height=48):
     return result
 
 
+def enter_slide(window, camera):
+    window._toggle_digital_slide_mode(True)
+    deadline = perf_counter() + 3
+    while not window._capture_manager.is_preview_active():
+        assert perf_counter() < deadline, "Asynchronous capture did not start"
+        QTest.qWait(2)
+    camera.send(image())
+    QApplication.processEvents()
+    while not window._digital_slide_mode:
+        assert perf_counter() < deadline, "Digital slide entry did not resume after the first frame"
+        QTest.qWait(2)
+
+
 @pytest.fixture
 def manager():
     camera = Camera()
@@ -89,9 +102,7 @@ def workspace(monkeypatch, tmp_path):
     window = MainWindow()
     window.resize(1280, 800)
     window.show()
-    window._toggle_digital_slide_mode(True)
-    camera.send(image())
-    QApplication.processEvents()
+    enter_slide(window, camera)
     monkeypatch.setattr(window, "_show_digital_slide_completion_dialog", lambda **kwargs: None)
     monkeypatch.setattr(window, "_confirm_close_documents", lambda *args, **kwargs: True)
     yield window, camera
@@ -216,9 +227,7 @@ def test_transition_and_device_loss_reenable_motor_on_reentry(workspace):
         result = window._prepare_transition(TransitionIntent.SWITCH_DEVICE)
         assert result.completed
         assert not window._digital_slide_motor_enable.isChecked()
-        window._toggle_digital_slide_mode(True)
-        camera.send(image())
-        QApplication.processEvents()
+        enter_slide(window, camera)
         assert window._digital_slide_motor_enable.isChecked()
         assert window._slide_motion.move(AXIS_X, 1, DIR_POS)
         assert window._slide_motion.move(AXIS_Z, 1, DIR_POS)
@@ -373,7 +382,9 @@ def test_slide_page_retains_its_controls_when_preview_stops_and_trial_tabs_obey_
     window._begin_digital_slide_jog(AXIS_X, DIR_POS)
     assert window._slide_jog_request is None
     with monkeypatch.context() as rejected:
-        rejected.setattr("fdm.ui.live_experiment_workspace.open_live_experiment", lambda *args, **kwargs: None)
+        # Reject navigation before it commits; a later asynchronous page-build
+        # failure instead keeps the accepted target's recoverable loading page.
+        rejected.setattr(hub, "suspend_trial", lambda reason: False)
         hub.navigation.setCurrentIndex(1)
         assert window._adaptive_layout.page is WorkspacePage.DIGITAL_SLIDE_ACQUIRE
         assert hub.pages.currentWidget() is hub.capture_page and hub.navigation.currentIndex() == 0

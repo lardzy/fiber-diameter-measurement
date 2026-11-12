@@ -1,5 +1,6 @@
 """Real navigation, stopped cameras and restored Qt state share one policy."""
 import pytest
+from acquisition_test_support import wait_workbench_ready
 from PySide6.QtWidgets import QApplication
 
 from fdm.ui.workspace import WorkspacePage
@@ -44,6 +45,7 @@ def test_open_document_waits_for_accepted_trial_navigation(entry, mounted_window
 
     window, original, _, _ = mounted_window()
     hub = window._open_acquisition_workbench(trial_index=1, auto_start=False)
+    wait_workbench_ready(hub)
     folder = tmp_path / "图片"
     folder.mkdir()
     slide = folder / "样品.fdmslide"
@@ -103,6 +105,7 @@ def test_project_or_standalone_request_respects_retained_trial(mounted_window, t
 
     window, original, _, _ = mounted_window()
     hub = window._open_acquisition_workbench(trial_index=2, auto_start=False)
+    wait_workbench_ready(hub)
     trial = hub.pages.currentWidget()
     monkeypatch.setattr(trial, "_confirm_trial_navigation", lambda: False)
     slide = tmp_path / "standalone.fdmslide"
@@ -128,6 +131,7 @@ def test_replacement_asks_once_and_preserves_page_if_cancelled(replacement, conf
 
     window, original, _, _ = mounted_window()
     hub = window._open_acquisition_workbench(trial_index=2, auto_start=False)
+    wait_workbench_ready(hub)
     trial = hub.pages.currentWidget()
     confirmations = []
     monkeypatch.setattr(trial, "_confirm_trial_navigation",
@@ -177,6 +181,7 @@ def test_real_navigation_blocks_dock_search_actions_and_background_tools(mounted
     for index, page in ((0, WorkspacePage.CAPTURE), (1, WorkspacePage.CONTENT_TRIAL),
                         (2, WorkspacePage.DIAMETER_TRIAL), (0, WorkspacePage.CAPTURE)):
         hub.select_page(index)
+        wait_workbench_ready(hub)
         settle()
         assert not window._preview_active
         assert layout.page is page
@@ -219,6 +224,7 @@ def test_real_navigation_blocks_dock_search_actions_and_background_tools(mounted
 def test_cancelled_trial_or_measure_navigation_keeps_policy_and_records(mounted_window, monkeypatch):
     window, document, professional, _ = mounted_window()
     hub = window._open_acquisition_workbench(trial_index=1, auto_start=False)
+    wait_workbench_ready(hub)
     settle()
     trial = hub.pages.currentWidget()
     monkeypatch.setattr(trial, "_confirm_trial_navigation", lambda: False)

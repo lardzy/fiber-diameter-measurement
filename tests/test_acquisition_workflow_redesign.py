@@ -167,7 +167,7 @@ def test_camera_error_is_inline_retry_works_and_stale_callbacks_are_ignored(harn
     assert "验证" in harness.hub.feedback.text()
     assert not harness.modal_messages
     harness.hub.capture_button.click()
-    workflow.settle()
+    workflow.wait_ready(manager.is_preview_active)
     harness.backend.tick()
     assert manager.current_capture_state() == "streaming"
     latest = manager.latest_preview_frame()
@@ -191,9 +191,11 @@ def test_fast_reentry_waits_for_async_stop_then_restarts_once(tmp_path):
         harness.leave()
         assert harness.window._capture_manager.is_stopping()
         harness.enter(frame=False)
+        workflow.wait_ready(lambda: harness.hub._restart_pending)
         assert backend.starts == 1
         assert harness.hub._restart_pending
         backend.finish_stop()
+        workflow.wait_ready(harness.window._capture_manager.is_preview_active)
         assert backend.starts == 2
         backend.tick()
         assert harness.window._capture_manager.current_capture_state() == "streaming"
@@ -218,7 +220,7 @@ def test_review_and_reports_keep_same_image_rectangle(harness):
 
 def test_digital_slide_entry_probes_no_real_motor_and_returns_to_measurement(harness):
     harness.window.digital_slide_action.trigger()
-    workflow.settle()
+    workflow.wait_ready(harness.window._capture_manager.is_preview_active)
     harness.backend.tick()
     assert harness.window._digital_slide_mode
     assert harness.window._slide_motion._serial is None
@@ -256,6 +258,7 @@ def test_slide_camera_display_modes_and_nine_anchors_without_another_frame(harne
     save_ruler(viewport_key(source_id, size), CalibrationSnapshot(.5, .5))
     save_screen_ruler(window.screen(), 125)
     window._toggle_digital_slide_mode(True)
+    workflow.wait_ready(window._capture_manager.is_preview_active)
     harness.backend.tick(image=native)
     canvas = window._preview_canvas
     binding = window._preview_display_binding
@@ -312,6 +315,7 @@ def test_slide_camera_display_modes_and_nine_anchors_without_another_frame(harne
 def test_slide_fitted_pan_uses_native_zoom_and_center_between_frames(harness):
     window = harness.window
     harness.enter(frame=False)
+    workflow.wait_ready(window._capture_manager.is_preview_active)
     native = _pixel_grid()
     harness.backend.tick(image=native)
     binding, canvas = window._preview_display_binding, window._preview_canvas
@@ -365,12 +369,13 @@ def test_slide_fitted_pan_uses_native_zoom_and_center_between_frames(harness):
 def test_no_device_entry_has_inline_guidance_and_retry(harness):
     harness.backend.available = False
     harness.enter(frame=False)
+    workflow.wait_ready(lambda: not harness.window._capture_manager.device_operations_pending())
     assert not harness.window._capture_manager.is_preview_active()
     assert harness.hub.feedback.isVisible()
     assert not harness.modal_messages
     harness.backend.available = True
     harness.hub.capture_button.click()
-    workflow.settle()
+    workflow.wait_ready(harness.window._capture_manager.is_preview_active)
     harness.backend.tick()
     assert harness.window._capture_manager.is_preview_active()
     harness.assert_clean()

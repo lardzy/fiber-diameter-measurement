@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QApplication
 from fdm.ui.main_window import MainWindow
 from fdm.live_experiment.models import ExperimentSession, MaterialSnapshot
 import pytest
+from acquisition_test_support import wait_workbench_ready
 
 
 @pytest.fixture(autouse=True)
@@ -33,6 +34,7 @@ def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(
         assert not hub.testAttribute(Qt.WidgetAttribute.WA_NativeWindow)
         QTest.mouseClick(hub.navigation, Qt.MouseButton.LeftButton, pos=hub.navigation.tabRect(1).center())
         QApplication.processEvents()
+        wait_workbench_ready(hub)
         page = window._live_experiment_workspace
         frame = FrameHandle.snapshot(np.zeros((576, 768, 3), np.uint8),
                                      source_id="camera:microview:1", generation=1, live=True)
@@ -60,10 +62,11 @@ def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(
         for index in (2, 1) * 20:
             QTest.mouseClick(hub.navigation, Qt.MouseButton.LeftButton, pos=hub.navigation.tabRect(index).center())
             QApplication.processEvents()
+            wait_workbench_ready(hub)
             current = window._live_experiment_workspace
             current._receive_frame(frame)
             assert current.controller.calibration == value
-            assert hub.pages.count() == 3
+            assert hub.pages.count() == 4  # Three business pages and the loading shell.
             assert not window.statusBar().isVisible()
             from PySide6.QtCore import QCoreApplication, QEvent
             QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
@@ -87,12 +90,14 @@ def test_workspace_entry_and_trial_pages_keep_one_session(monkeypatch):
         window.show(); window.resize(1280,720)
         hub=window._open_acquisition_workbench(trial_index=1)
         QApplication.processEvents()
+        wait_workbench_ready(hub)
         page=window._live_experiment_workspace
         assert page.embedded and hub.pages.currentWidget() is page
         assert len(page.material_rows)==9 and not page.keep_images.isChecked()
         assert not window._inspector_dock.isVisible()
         manager=window._capture_manager
         hub.select_page(0); hub.select_page(2)
+        wait_workbench_ready(hub)
         assert window._capture_manager is manager
         assert window._live_experiment_workspace.session.workspace_options['mode']=='diameter'
         hub.select_page(1)
@@ -107,6 +112,7 @@ def test_workspace_entry_and_trial_pages_keep_one_session(monkeypatch):
         if os.environ.get('FDM_LAYOUT_OUTPUT'):
             window.grab().save(os.environ['FDM_LAYOUT_OUTPUT'])
         assert window.width()<=1280 and window.height()<=720
+        wait_workbench_ready(hub)
         page=window._live_experiment_workspace
         page.pending_label.setText('直径超出类别提示范围，请保留、改类或放弃本次结果。')
         page.pending_panel.show()

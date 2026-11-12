@@ -330,8 +330,10 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
     frameArrived = Signal()
     sourceFailed = Signal(object)
 
-    def __init__(self, host, session, *, embedded=False):
+    def __init__(self, host, session, *, embedded=False, deferred=False):
         super().__init__(host)
+        self._initialized = False
+        self._initialization_step = 0
         self.embedded = embedded
         self._bare_ctrl_pending = False
         self.setWindowFlags(Qt.WindowType.Widget if embedded else Qt.WindowType.Window)
@@ -384,7 +386,23 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
                 self._rulers = {}
                 self._feedback.showMessage(str(exc))
             host._capture_rulers = self._rulers
-        self._build()
+        if not deferred:
+            while not self.initialize_next_stage():
+                pass
+
+    def initialize_next_stage(self):
+        """Build bounded GUI stages; the workbench returns to Qt between them."""
+        stages = (self._build, self._initialize_display, self._initialize_report,
+                  self._initialize_connections)
+        if self._closed:
+            raise RuntimeError("试验页面准备已取消")
+        if self._initialization_step < len(stages):
+            stages[self._initialization_step]()
+            self._initialization_step += 1
+        self._initialized = self._initialization_step == len(stages)
+        return self._initialized
+
+    def _initialize_display(self):
         self._refresh_sample_summary()
         presenter = self._records_presenter()
         if presenter is not None:
@@ -396,7 +414,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self._init_assistance()
         from fdm.ui.display_preferences import acquisition_display_store, AcquisitionDisplayBinding
         self.display_binding = AcquisitionDisplayBinding(self.canvas,
-            store=acquisition_display_store(host), scroll_area=self.image_scroll,
+            store=acquisition_display_store(self.host), scroll_area=self.image_scroll,
             calibration_provider=lambda: self.controller.calibration,
             status_callback=lambda text: self.statusBar().showMessage(text, 8000), parent=self)
         self.display_binding.applied.connect(self._sync_display_controls)
@@ -404,17 +422,22 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self._sync_display_controls()
         self._display_busy = False
         self._refresh_ruler_choices()
+
+    def _initialize_report(self):
         from fdm.ui.trial_report_panel import TrialReportPanel
         self.report_panel = TrialReportPanel(self)
         from fdm.ui.trial_excel_lifecycle import live_excel_manager
         from fdm.ui.live_excel import LiveExcelControls
-        self.live_excel = live_excel_manager(host)
+        self.live_excel = live_excel_manager(self.host)
+        self.live_excel.changed.connect(self._record_excel_ready)
         self.report_panel.bind_live_excel(self.live_excel)
-        self.live_excel_controls = LiveExcelControls(self.live_excel, session, self,
+        self.live_excel_controls = LiveExcelControls(self.live_excel, self.session, self,
             compact=True, status_label=self.report_status_label)
+        self.live_excel_controls.templateSettingsRequested.connect(
+            lambda: self._guard(self.report_panel.choose))
         self.live_excel_layout.addWidget(self.live_excel_controls)
-        if getattr(session, "_defaults_error", None):
-            self.statusBar().showMessage(session._defaults_error, 15000)
+        if getattr(self.session, "_defaults_error", None):
+            self.statusBar().showMessage(self.session._defaults_error, 15000)
         self.live_state_label = QLabel(self)
         self.live_state_label.setMaximumWidth(360)
         self.statusBar().addPermanentWidget(self.live_state_label)
@@ -425,6 +448,8 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.statusBar().addPermanentWidget(self.statistics_cancel)
         self.statistics_progress.hide()
         self.statistics_cancel.hide()
+
+    def _initialize_connections(self):
         self.frameArrived.connect(self._drain_frame_mailbox, Qt.ConnectionType.QueuedConnection)
         self.sourceFailed.connect(self._receive_source_error, Qt.ConnectionType.QueuedConnection)
         self.canvas.pointPressed.connect(self._press)
@@ -451,13 +476,28 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self._refresh_timer.timeout.connect(self._refresh_summary)
         self._refresh_timer.start()
         self._refresh_operators()
-        self.history_model.reset_ids(session.measurements)
-        self._record_model_revision = session.revision
-        if not embedded:
+        self.history_model.reset_ids(self.session.measurements)
+        self._record_model_revision = self.session.revision
+        if not self.embedded:
             self._guard(self._load_static)
         self._check_reminders(announce=False)
         self._refresh_persistence_state()
         QApplication.instance().installEventFilter(self)
+
+    def discard_initialization(self):
+        """Dispose an unpublished page without saving layout or ending a field."""
+        self._closed = True
+        for name in ("_refresh_timer", "_view_preferences_timer"):
+            timer = getattr(self, name, None)
+            if timer is not None:
+                timer.stop()
+        for name in ("report_panel", "evidence_review", "display_binding"):
+            owner = getattr(self, name, None)
+            if owner is not None:
+                owner.close()
+        QApplication.instance().removeEventFilter(self)
+        self.controller.close(record_end=False)
+        self.deleteLater()
 
     def statusBar(self):
         """Inline feedback beneath the command row, never a nested main window."""
@@ -620,13 +660,30 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self.close()
 
     def ensure_live_excel(self):
-        if (self._closed or id(self.host.project) != self.project_identity or not self.isVisible()):
+        if (not self._initialized or self._closed or id(self.host.project) != self.project_identity or not self.isVisible()):
             return
         hub = getattr(self.host, "_acquisition_workbench", None)
         if self.embedded and (hub is None or not hub._entered or hub.pages.currentWidget() is not self):
             return
         from fdm.ui.trial_excel_lifecycle import ensure_live_excel
         ensure_live_excel(self.host, self.session)
+        self._record_excel_ready()
+
+    def _record_excel_ready(self, session_id=None):
+        """Time the current visible page only after its latest inputs are acknowledged."""
+        if (session_id is not None and session_id != self.session.id
+                or not self._initialized or self._closed
+                or id(self.host.project) != self.project_identity or not self.isVisible()):
+            return
+        hub = getattr(self.host, "_acquisition_workbench", None)
+        if (not self.embedded or hub is None or not hub._entered
+                or not self.host._acquisition_workspace_selected or hub._current_trial() is not self):
+            return
+        status = self.live_excel.status(self.session.id)
+        if (status.get("connected") and status.get("active")
+                and not status.get("input_pending") and not status.get("unsynced")
+                and status.get("input_revision", -1) >= max(0, self.session.revision)):
+            hub.record_transition_phase("excel_ready", once=True)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -2341,9 +2398,11 @@ def _new_trial_session(mode):
     return session
 
 
-def open_live_experiment(host, *, embedded=False, trial_mode=None):
+def open_live_experiment(host, *, embedded=False, trial_mode=None, deferred=False):
     """Reuse each trial page; a fresh untouched session remains outside the project."""
     if host.project.is_read_only_compatible:
+        if deferred:
+            raise ValueError("当前项目以只读兼容模式打开，请先另存为可编辑项目。")
         QMessageBox.information(host, "实时试验", "当前项目以只读兼容模式打开，请先另存可编辑项目。")
         return None
     cache = getattr(host, "_live_experiment_workspaces", None)
@@ -2367,7 +2426,10 @@ def open_live_experiment(host, *, embedded=False, trial_mode=None):
         session = matching[-1]
     else:
         session = _new_trial_session(mode)
-    window = LiveExperimentWorkspace(host, session, embedded=embedded)
+    window = LiveExperimentWorkspace(host, session, embedded=embedded, deferred=deferred)
+    if deferred:
+        # Publication is owned by the workbench after all GUI stages succeed.
+        return window
     cache[mode] = window
     host._live_experiment_workspace = window
     if not embedded:

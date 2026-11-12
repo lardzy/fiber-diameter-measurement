@@ -42,6 +42,9 @@ _EXCEL_ERROR_MESSAGES = {
     'excel_failed': 'Excel 同步失败，请查看同步详情并重试。',
 }
 
+_CONFIGURATION_ERRORS = frozenset({'template_missing', 'template_mapping', 'template_method',
+    'template_changed', 'template_protected', 'unsupported_platform'})
+
 
 @dataclass(frozen=True)
 class _Batch:
@@ -78,6 +81,7 @@ class _Link:
     pending_template: dict | None = None
     replacing_template: dict | None = None
     template_selection: dict | None = None
+    presentation: dict | None = None
 
 
 class LiveExcelManager(QObject):
@@ -194,7 +198,8 @@ class LiveExcelManager(QObject):
                         result = self._transport.request(operation, sid, used_generation, revision, payload,
                             progress=lambda value: self._emit_progress((value, batch, generation)))
                 else:
-                    result = self._transport.request(operation, sid, generation, revision)
+                    result = self._transport.request(operation, sid, generation, revision,
+                        options if operation == 'show' and options else None)
             except Exception as exc:
                 result = {'ok': False, 'error_code': getattr(exc, 'code', 'excel_failed'),
                           'message': str(exc)}
@@ -202,6 +207,8 @@ class LiveExcelManager(QObject):
                 result = {**result, 'template_replaced': True}
             if binding_selection is not None:
                 result = {**result, 'binding_selection': binding_selection}
+            if operation == 'show':
+                result = {**result, 'presentation_request': options.get('presentation_request')}
             if self._destroyed_event.is_set():
                 try:
                     self._transport.close()
@@ -271,16 +278,65 @@ class LiveExcelManager(QObject):
                 'input_pending': input_pending,
                 'input_revision': link.acknowledged_revision, 'target_revision': link.session.revision,
                 'generation': link.generation,
+                'presentation_pending': link.presentation is not None,
                 'template_path': link.metadata.get('template_path', ''),
                 'pending_template_path': replacing['path'] if replacing else link.metadata.get('failed_template_path', ''),
+                'template_replacement_failed': bool(link.metadata.get('failed_template_path')),
+                'template_replacement_message': link.message if link.metadata.get('failed_template_path') else '',
                 'template_replacement_pending': bool(replacing)}
 
     def show(self, session_id):
         link = self._links.get(self._sid(session_id))
         if link and link.connected and not link.detaching:
-            if not any(action[0] == 'show' for action in link.actions):
+            if not any(action[0] == 'show' for action in link.actions) and not (
+                    self._busy and self._busy[0] == link.session.id and self._busy[2] == 'show'):
                 link.actions.append(('show', None, {}))
             self._pump()
+
+    def cancel_presentation(self, session_id=None):
+        """Retire a user display intent without stopping data synchronization."""
+        for sid, link in self._links.items():
+            if session_id is None or sid == self._sid(session_id):
+                changed = link.presentation is not None or any(action[0] == 'show' for action in link.actions)
+                link.presentation = None
+                link.actions[:] = [action for action in link.actions if action[0] != 'show']
+                if link.metadata.get('presentation_status') == 'deferred':
+                    link.metadata.pop('presentation_status', None)
+                    link.metadata.pop('presentation_message', None)
+                if changed:
+                    self.changed.emit(sid)
+
+    def _want_presentation(self, link, *, wait_for_input):
+        self.cancel_presentation()
+        link.presentation = {'id': uuid4().hex, 'generation': link.generation,
+                             'revision': link.session.revision, 'wait_for_input': wait_for_input,
+                             'recovered': False, 'window_presented': False}
+        for key in ('presentation_status', 'presentation_message', 'presentation_error', 'presentation_error_code'):
+            link.metadata.pop(key, None)
+        self.changed.emit(link.session.id)
+
+    def present(self, session):
+        """An explicit click opens/reconnects once, then presents the confirmed book."""
+        if self._closing:
+            return
+        sid = self._sid(session)
+        link = self._links.get(sid)
+        if link and (link.detaching or link.presentation is not None):
+            return
+        if isinstance(session, str):
+            if link is None:
+                return
+            session = link.session
+        if link is None:
+            self.ensure(session)
+            link = self._links[sid]
+        if (not link.connected and
+                (not link.active or link.state in ('error', 'stopped', 'detached', 'unsupported'))):
+            self.resync(session, present_after=True)
+        else:
+            self._want_presentation(link, wait_for_input=not link.connected or
+                                    bool(link.pending_template or link.replacing_template))
+        self._pump()
 
     def update_report(self, session, *, information=True, settings=False, snapshot=None):
         """Only an explicit user confirmation may overwrite Excel report fields."""
@@ -312,7 +368,7 @@ class LiveExcelManager(QObject):
         self.update(link.session)
         self._pump()
 
-    def resync(self, session):
+    def resync(self, session, *, present_after=False):
         sid = self._sid(session)
         if isinstance(session, str):
             link = self._links.get(sid)
@@ -321,8 +377,22 @@ class LiveExcelManager(QObject):
             session = link.session
         if sid not in self._links:
             self.ensure(session)
+            if present_after:
+                self._want_presentation(self._links[sid], wait_for_input=True)
             return
         link = self._links[sid]
+        if link.detaching or self._closing:
+            return
+        if present_after and link.presentation and link.presentation['wait_for_input']:
+            return
+        self.cancel_presentation(sid)
+        if link.pending_template is not None:
+            # A newer explicit selection supersedes an earlier failed attempt,
+            # including when a transport failure required a manual reconnect.
+            self.replace_template(session, link.pending_template['preferences'])
+            if present_after:
+                self._want_presentation(link, wait_for_input=True)
+            return
         if link.state == 'error' and link.metadata.get('error_code') != 'excel_busy':
             link.pending_batch = None
         link.session = session
@@ -343,6 +413,8 @@ class LiveExcelManager(QObject):
             link.reopen = True
         # Busy/partly applied batches must finish unchanged before this rebuild.
         # Their cursor and absolute addresses make replay safe after an undo.
+        if present_after:
+            self._want_presentation(link, wait_for_input=True)
         self.changed.emit(sid)
 
     def replace_template(self, session, preferences=None):
@@ -353,6 +425,7 @@ class LiveExcelManager(QObject):
         """
         if self._closing:
             return
+        self.cancel_presentation(session.id)
         self.ensure(session)
         link = self._links[session.id]
         mode = session.workspace_options.get('mode', 'content')
@@ -375,6 +448,7 @@ class LiveExcelManager(QObject):
         self._pump()
 
     def stop(self, session_id):
+        self.cancel_presentation(session_id)
         link = self._links.get(self._sid(session_id))
         if link:
             self.detach(link.session, force=True)
@@ -400,6 +474,7 @@ class LiveExcelManager(QObject):
     ready_to_detach = flush
 
     def detach(self, session, *, force=False):
+        self.cancel_presentation(self._sid(session))
         link = self._links.get(self._sid(session))
         if not link:
             return True
@@ -434,6 +509,7 @@ class LiveExcelManager(QObject):
         if self._closed:
             return True
         self._closing = True
+        self.cancel_presentation()
         for link in self._links.values():
             if link.state != 'detached':
                 self.detach(link.session, force=True)
@@ -471,6 +547,22 @@ class LiveExcelManager(QObject):
                     continue
                 self._dispatch(sid, link, 'detach')
                 return
+            intent = link.presentation
+            if intent and intent['generation'] != link.generation:
+                link.presentation = intent = None
+            # A display click can restore the known Excel window even while a
+            # data batch is waiting on editing. A rebuild intent waits for its
+            # full input acknowledgement instead of exposing a partial report.
+            if intent and link.connected and now >= intent.get('retry_at', 0):
+                ready = (not intent['wait_for_input'] or
+                         (link.acknowledged_revision >= intent['revision'] and not link.force_full
+                          and not link.reopen and not link.pending_batch and not link.pending_template
+                          and not link.replacing_template))
+                if ready:
+                    self._dispatch(sid, link, 'show', options={
+                        'presentation_request': intent['id'],
+                        'request_foreground': not intent['window_presented']})
+                    return
             if (link.active and link.pending_auxiliary is not None and now >= link.retry_at
                     and link.state not in ('error', 'stopped', 'unsupported')):
                 self._dispatch(sid, link, link.pending_auxiliary.operation, batch=link.pending_auxiliary)
@@ -575,6 +667,72 @@ class LiveExcelManager(QObject):
             if key in result:
                 link.metadata[key] = result[key]
 
+        for key in ('window_handle', 'window_visible', 'window_minimized', 'foreground',
+                    'presentation_status', 'presentation_message', 'activation_deferred', 'attention_requested'):
+            if key in result:
+                link.metadata[key] = result[key]
+    def _complete_show(self, link, result):
+        intent = link.presentation
+        request_id = result.get('presentation_request')
+        if request_id and (not intent or intent['id'] != request_id):
+            return  # Cancelled page/session intention must not resurface.
+        code = result.get('error_code', 'excel_failed')
+        if not result.get('ok'):
+            for key in ('stage', 'error_stack'):
+                if key in result:
+                    link.metadata[key] = result[key]
+        if result.get('ok') or code == 'excel_busy':
+            self._metadata(link, result)
+            if (result.get('ok') and 'save_state' in result and not result.get('metadata_error')
+                    and link.metadata.get('error_operation') in ('status', 'show', 'metadata')):
+                for key in ('raw_error', 'error_code', 'error_stack', 'stage', 'error_operation'):
+                    link.metadata.pop(key, None)
+                link.state, link.message = 'synced', '测量数据已输出；报表由 Excel 计算'
+            elif not result.get('ok'):
+                link.metadata.update(save_state='unknown', saved=None)
+            deferred = result.get('activation_deferred') or code == 'excel_busy'
+            if deferred:
+                link.metadata.update(presentation_status='deferred',
+                    presentation_message=('Excel 窗口已恢复；' if result.get('window_visible') else '') +
+                    '等待当前编辑或对话框结束后定位工作簿。')
+                if intent and request_id:
+                    intent['retry_at'] = time.monotonic() + .5
+                    intent['window_presented'] |= bool(result.get('window_visible'))
+            else:
+                link.metadata['presentation_status'] = result.get('presentation_status', 'shown')
+                if request_id:
+                    link.presentation = None
+            self.changed.emit(link.session.id)
+            return
+        if code == 'workbook_closed':
+            link.connected = link.active = False
+            link.pending_batch = link.pending_auxiliary = None
+            link.state, link.message = 'stopped', _EXCEL_ERROR_MESSAGES[code]
+            link.metadata.update(error_code=code, raw_error=result.get('message', ''),
+                                 error_operation='show', save_state='unknown', saved=None)
+            if intent and not intent['recovered'] and not link.detaching and not self._closing:
+                # Only this explicit click may repair a stale COM reference;
+                # polls and show-only actions never reopen a user's workbook.
+                self.resync(link.session)
+                intent.update(generation=link.generation, wait_for_input=True,
+                              revision=link.session.revision, recovered=True,
+                              window_presented=False, retry_at=0)
+                link.presentation = intent
+                self.changed.emit(link.session.id)
+                return
+            if not intent:
+                self.changed.emit(link.session.id)
+                return
+        if request_id:
+            link.presentation = None
+        link.metadata.update(save_state='unknown', saved=None)
+        link.metadata.update(presentation_status='error',
+            presentation_message=_EXCEL_ERROR_MESSAGES.get(code, '无法显示 Excel，请查看同步详情。'),
+            presentation_error=result.get('message') or result.get('error', ''),
+            presentation_error_code=code)
+        self.changed.emit(link.session.id)
+
+
     def _complete(self, value):
         sid, generation, operation, revision, projection, result, used_generation, batch = value
         self._busy = None
@@ -591,7 +749,13 @@ class LiveExcelManager(QObject):
         if not link or generation != link.generation:
             self._pump()
             return
+        if operation == 'show' and result.get('error_code') not in (
+                'worker_timeout', 'worker_exited', 'worker_disconnected', 'protocol_mismatch'):
+            self._complete_show(link, result)
+            return
         link.generation = used_generation
+        if link.presentation:
+            link.presentation['generation'] = used_generation
         selection = link.replacing_template
         if selection is not None:
             link.replacing_template = None
@@ -702,13 +866,27 @@ class LiveExcelManager(QObject):
                 # expands the next write into a report-wide synchronization.
             elif operation == 'detach':
                 link.detaching = False
+            elif code != 'workbook_closed':
+                link.presentation = None
             if code in ('workbook_closed', 'worker_timeout', 'worker_exited', 'worker_disconnected',
                         'protocol_mismatch', 'unsupported_platform'):
                 link.connected = link.active = False
                 link.pending_batch = link.pending_auxiliary = None
+                # A stale connection can be noticed by a status poll or input
+                # retry immediately before the queued explicit show action.
+                if code == 'workbook_closed' and link.presentation and not link.presentation['recovered']:
+                    intent = link.presentation
+                    self.resync(link.session)
+                    intent.update(generation=link.generation, wait_for_input=True,
+                                  revision=link.session.revision, recovered=True,
+                                  window_presented=False, retry_at=0)
+                    link.presentation = intent
+                else:
+                    link.presentation = None
             if code in ('worker_timeout', 'worker_exited', 'worker_disconnected', 'protocol_mismatch'):
                 for other in self._links.values():
                     other.connected = other.active = False
+                    other.presentation = None
                     other.state, other.message = 'error', link.message
                     other.metadata.update(error_code=code, raw_error=raw_error, save_state='unknown', saved=None)
                     other.pending_batch = other.pending_auxiliary = None
@@ -762,22 +940,27 @@ class ReportInformationDialog(QDialog):
 
 
 class LiveExcelControls(QWidget):
+    templateSettingsRequested = Signal()
+
     def __init__(self, manager, session, parent=None, *, compact=False, status_label=None):
         super().__init__(parent)
         self.manager, self.session = manager, session
         self.compact = compact
         self._full_status = ''
+        self._status_tone = ''
         self._details = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0 if compact else 6)
         if compact:
             self.excel_button = QToolButton(self)
-            self.excel_button.setText('Excel')
+            self.excel_button.setText('打开 Excel')
+            self.excel_button.setObjectName('trialExcelPrimary')
+            self.excel_button.setProperty('emphasis', 'primary')
+            self.excel_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             self.excel_button.setAccessibleName('查看 Excel 与实时同步操作')
             self.excel_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
-            indicator = self.excel_button.style().pixelMetric(QStyle.PixelMetric.PM_MenuButtonIndicator, None, self.excel_button)
-            self.excel_button.setMinimumWidth(max(80, self.excel_button.fontMetrics().horizontalAdvance('Excel') + indicator + 28))
+            self._style_button()
             menu = QMenu(self.excel_button)
             self.show_button = menu.addAction('查看 Excel')
             self.resync_button = menu.addAction('重新输出测量数据')
@@ -787,11 +970,13 @@ class LiveExcelControls(QWidget):
             menu.addSeparator()
             self.details_action = menu.addAction('同步详情')
             self.details_action.triggered.connect(self._show_details)
+            self.template_settings_action = menu.addAction('模板设置…')
+            self.template_settings_action.triggered.connect(self.templateSettingsRequested.emit)
             self.excel_button.setMenu(menu)
             # Keep the menu available even if the show action is disabled.
-            self.excel_button.clicked.connect(lambda: manager.show(session.id))
+            self.excel_button.clicked.connect(self._primary_action)
             self.show_button.triggered.connect(lambda: manager.show(session.id))
-            self.resync_button.triggered.connect(lambda: manager.resync(session))
+            self.resync_button.triggered.connect(lambda: manager.resync(session, present_after=True))
             self.update_report_action.triggered.connect(self._update_report)
             self.recalculate_action.triggered.connect(lambda: manager.recalculate(session))
             self.stop_button.triggered.connect(lambda: manager.stop(session.id))
@@ -808,8 +993,8 @@ class LiveExcelControls(QWidget):
                 row.addWidget(button)
             row.addStretch(1)
             layout.addLayout(row)
-            self.show_button.clicked.connect(lambda: manager.show(session.id))
-            self.resync_button.clicked.connect(lambda: manager.resync(session))
+            self.show_button.clicked.connect(self._primary_action)
+            self.resync_button.clicked.connect(lambda: manager.resync(session, present_after=True))
             self.update_report_action.clicked.connect(self._update_report)
             self.recalculate_action.clicked.connect(lambda: manager.recalculate(session))
             self.stop_button.clicked.connect(lambda: manager.stop(session.id))
@@ -833,6 +1018,33 @@ class LiveExcelControls(QWidget):
             self._render_status()
         return super().eventFilter(watched, event)
 
+    def _style_button(self):
+        from fdm.ui.icons import themed_icon
+        button = self.excel_button
+        color = button.palette().color(button.palette().ColorRole.HighlightedText).name()
+        button.setIcon(themed_icon('results', color=color))
+        indicator = button.style().pixelMetric(QStyle.PixelMetric.PM_MenuButtonIndicator, None, button)
+        text_width = max(button.fontMetrics().horizontalAdvance(text) for text in
+                         ('查看 Excel', '打开 Excel', '恢复同步', '连接中…', '查看异常'))
+        button.setFixedWidth(max(116, text_width + indicator + button.iconSize().width() + 28))
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if hasattr(self, 'excel_button') and event.type() in (QEvent.Type.PaletteChange, QEvent.Type.FontChange):
+            self._style_button()
+
+    def hideEvent(self, event):
+        self.manager.cancel_presentation(self.session.id)
+        super().hideEvent(event)
+
+    def _primary_action(self):
+        status = self.manager.status(self.session.id)
+        if (not status.get('connected') and status['state'] in ('error', 'unsupported')
+                and status.get('error_code') in _CONFIGURATION_ERRORS):
+            self._show_details()
+        else:
+            self.manager.present(self.session)
+
     def _update_report(self):
         dialog = ReportInformationDialog(self.session, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -846,21 +1058,24 @@ class LiveExcelControls(QWidget):
             text = self.status_label.fontMetrics().elidedText(single_line, Qt.TextElideMode.ElideRight,
                                                               max(0, self.status_label.contentsRect().width()))
             self.status_label.setText(text)
-            self.excel_button.setToolTip(self._full_status + '\n主按钮：查看 Excel；下拉：同步操作与详情')
+            self.excel_button.setToolTip(self._full_status + '\n主按钮：打开或查看本试验 Excel；下拉：同步操作与详情')
         else:
             self.status_label.setText(self._full_status)
         self.status_label.setToolTip(self._full_status)
         self.status_label.setAccessibleDescription(self._full_status)
 
     def _show_details(self):
-        details = self._details if self._details is not None else QMessageBox(self)
+        fresh = self._details is None
+        details = self._details if not fresh else QMessageBox(self)
         details.setWindowTitle('Excel 同步详情')
         details.setTextFormat(Qt.TextFormat.PlainText)
-        details.setIcon(QMessageBox.Icon.Information)
+        details.setIcon(self._details_icon())
         details.setText(self._full_status)
         status = self.manager.status(self.session.id)
         lines = ['测量数据已输出只表示原始输入已写入；报表计算及文件保存分别显示。',
                  '重新输出只重建测量数据；样品、人员、标准及组距由 Excel 维护，需明确选择更新。']
+        if status.get('error_code') in _CONFIGURATION_ERRORS or status.get('template_replacement_failed'):
+            lines.append('可在“报告 → 选择模板”修正模板，再从下拉菜单“重新输出测量数据”重试。')
         if status.get('template_path'):
             lines.append('当前工作簿使用的模板：' + str(status['template_path']))
         if status.get('pending_template_path'):
@@ -875,16 +1090,29 @@ class LiveExcelControls(QWidget):
         details.setDetailedText(self._diagnostics(status))
         details.setStandardButtons(QMessageBox.StandardButton.Close)
         details.button(QMessageBox.StandardButton.Close).setText('关闭')
+        if fresh:
+            self._template_details_button = details.addButton('模板设置…', QMessageBox.ButtonRole.ActionRole)
+            self._template_details_button.clicked.connect(self.templateSettingsRequested.emit)
+            self._retry_details_button = details.addButton('重新输出', QMessageBox.ButtonRole.ActionRole)
+            self._retry_details_button.clicked.connect(lambda: self.manager.resync(self.session, present_after=True))
+        self._template_details_button.setVisible(status.get('error_code') in _CONFIGURATION_ERRORS or
+                                                status.get('template_replacement_failed', False))
+        self._retry_details_button.setEnabled(status['state'] != 'detaching')
         # Reuse the parent-owned dialog. Deleting a QMessageBox with an expanded
         # details widget from its finished callback is unsafe on some Qt builds.
         self._details = details
         details.open()
+
+    def _details_icon(self):
+        return {'error': QMessageBox.Icon.Critical, 'warning': QMessageBox.Icon.Warning}.get(
+            self._status_tone, QMessageBox.Icon.Information)
 
     @staticmethod
     def _diagnostics(status):
         labels = (('template_path', '当前工作簿模板'), ('pending_template_path', '待切换／尚未生效模板'),
                   ('raw_error', '原始错误'), ('metadata_error', '状态读取错误'),
                   ('report_error', '报表操作错误'), ('report_error_stack', '报表操作位置'),
+                  ('presentation_error', '窗口显示错误'), ('presentation_error_code', '窗口显示错误代码'),
                   ('metadata_stage', '状态读取阶段'), ('metadata_error_stack', '状态读取位置'),
                   ('stage', '操作阶段'), ('error_stack', '调用位置'),
                   ('metadata_checked_at', '状态检查时间'), ('last_input_at', '最近输入时间'))
@@ -909,16 +1137,58 @@ class LiveExcelControls(QWidget):
             if self.session.workspace_options.get('mode') == 'diameter':
                 message += '\nExcel 模板均值按分组计算；FDM 面板显示原始均值，两者可能不同。'
         warnings = status.get('warnings') or []
+        urgent = []
+        tone = 'info' if status['state'] in ('connecting', 'syncing', 'template_pending', 'replacing_template') else ''
+        if status.get('template_replacement_failed'):
+            urgent.append(('模板更换失败 · 仍使用旧工作簿' if status.get('connected') else '模板更换失败') +
+                          '\n' + status['template_replacement_message'])
+            tone = 'error'
         if status.get('report_error'):
-            message += '\n报表操作未完成：' + status['report_error']
+            urgent.append('报表操作失败 · ' + status['report_error'])
+            tone = 'error'
+        if status['state'] in ('error', 'unsupported'):
+            title = '模板不可用' if status.get('error_code') in _CONFIGURATION_ERRORS else '测量数据输出失败'
+            urgent.append(title + ' · ' + status['message'])
+            tone = 'error'
+        if status.get('presentation_status') == 'error':
+            urgent.append('Excel 显示异常：' + status.get('presentation_message', '请查看同步详情'))
+            tone = 'error'
+        notices = []
+        if status['state'] == 'stopped' and status.get('error_code') == 'workbook_closed':
+            notices.append('工作簿已关闭 · 点击“打开 Excel”恢复同步')
+        if status['state'] == 'busy':
+            notices.append('等待 Excel：' + status['message'])
+        if status.get('presentation_status') in ('deferred', 'attention_required'):
+            notices.append('Excel 提示：' + status.get('presentation_message', '请查看 Excel 窗口'))
+        if status.get('metadata_error'):
+            notices.append('Excel 提示：状态暂不可读取；已确认写入的数据保持有效。')
+        elif status.get('connected') and status.get('save_state') == 'unknown':
+            notices.append('Excel 提示：文件保存状态暂不可知。')
         if warnings:
-            message += '\n' + '\n'.join(warnings)
+            notices.extend('Excel 提示：' + warning for warning in warnings)
+        if status.get('calculation_state') == 'manual':
+            notices.append('Excel 提示：手动计算，报表可能尚未更新。')
+        if notices and tone != 'error':
+            tone = 'warning'
+        message = '\n'.join(urgent + notices + [message])
+        self._status_tone = tone
+        if self.status_label.property('statusTone') != tone:
+            self.status_label.setProperty('statusTone', tone)
+            self.status_label.style().unpolish(self.status_label)
+            self.status_label.style().polish(self.status_label)
         self._full_status = message
+        if self.compact:
+            self.excel_button.setText('查看异常' if not status.get('connected') and status['state'] in ('error', 'unsupported')
+                and status.get('error_code') in _CONFIGURATION_ERRORS
+                else '连接中…' if not status.get('connected') and (status.get('presentation_pending') or
+                    status['state'] in ('connecting', 'syncing', 'template_pending', 'replacing_template'))
+                else '查看 Excel' if status.get('connected') else '恢复同步' if status['state'] == 'detached' else '打开 Excel')
         self._render_status()
         if self._details is not None:
             self._details.setText(message)
+            self._details.setIcon(self._details_icon())
             self._details.setDetailedText(self._diagnostics(status))
-        self.show_button.setEnabled(status.get('connected', False))
+        self.show_button.setEnabled(status.get('connected', False) if self.compact else status['state'] != 'detaching')
         self.stop_button.setEnabled(status.get('active', False) or status.get('connected', False))
         self.resync_button.setEnabled(status['state'] != 'detaching')
         for action in (self.update_report_action, self.recalculate_action):

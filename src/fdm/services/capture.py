@@ -41,6 +41,10 @@ class CaptureDevice:
 
 class CaptureBackend:
     backend_key = "unknown"
+    enumerate_in_worker = True
+    lifecycle_in_worker = False
+    start_stage_callback = None
+    enumerate_while_active = True
 
     def list_devices(self) -> list[CaptureDevice]:
         return []
@@ -159,10 +163,13 @@ class CaptureSessionManager(QObject):
     analysisFrameFailed = Signal(int, str)
     errorOccurred = Signal(str)
     activeDeviceLost = Signal(str)
+    deviceOperationTiming = Signal(object)
+    devicesRefreshFinished = Signal(object)
     _deliverFrame = Signal(int)
     _deliverError = Signal(int, str)
     _deliverAnalysisFrame = Signal(int, int, object)
     _deliverAnalysisError = Signal(int, int, str)
+    _deliverDeviceStage = Signal(int, str)
 
     def __init__(
         self,
@@ -172,7 +179,7 @@ class CaptureSessionManager(QObject):
         refresh_on_init: bool = True,
     ) -> None:
         super().__init__()
-        self._backends = backends or available_capture_backends()
+        self._backends = backends if backends is not None else available_capture_backends()
         self._devices: list[CaptureDevice] = []
         self._selected_device_id = selected_device_id
         self._active_device_id = ""
@@ -193,14 +200,29 @@ class CaptureSessionManager(QObject):
         self._subscriptions = {}
         self._subscription_owns_preview = False
         self._session_state = "stopped"
+        self._session_stage = ""
         self._session_shape = None
         self._frame_identity_generation = 0
         self._stopping = False
         self._native_preview_visible = True
+        from fdm.services.capture_device_jobs import CaptureDeviceJobs
+        self._device_jobs = CaptureDeviceJobs(self)
+        self._device_jobs.timing.connect(self._record_device_timing)
+        self._device_timings = []
+        self._refresh_request = None
+        self._opening_capture = None
+        self._opening_job = None
+        self._opening_releasing = False
+        self._open_release_retry = None
+        self._opening_started_at = None
+        self._first_frame_started_at = None
+        self._preview_start_callback = None
+        self._after_stop_callbacks = []
         self._deliverFrame.connect(self._drain_preview_frame, Qt.ConnectionType.QueuedConnection)
         self._deliverError.connect(self._on_backend_error, Qt.ConnectionType.QueuedConnection)
         self._deliverAnalysisFrame.connect(self._on_analysis_frame_ready, Qt.ConnectionType.QueuedConnection)
         self._deliverAnalysisError.connect(self._on_analysis_error, Qt.ConnectionType.QueuedConnection)
+        self._deliverDeviceStage.connect(self._on_device_stage, Qt.ConnectionType.QueuedConnection)
         if refresh_on_init:
             self.refresh_devices()
 
@@ -222,7 +244,7 @@ class CaptureSessionManager(QObject):
 
     def _start_for_subscribers(self):
         if self._subscriptions and not self.is_preview_active() and not self._stopping:
-            self.start_preview()
+            self.start_preview_async()
 
     def _release_subscription(self, subscription):
         if self._subscriptions.get(subscription.owner_id) is subscription:
@@ -234,20 +256,227 @@ class CaptureSessionManager(QObject):
     def _notify_capture_state(self, state, message="", stage=""):
         from fdm.services.capture_subscription import CaptureState
         self._session_state = state
+        self._session_stage = stage
         value = CaptureState(state, self._preview_generation, stage, message)
         self.captureStateChanged.emit(value)
         for subscriber in tuple(self._subscriptions.values()):
             if not subscriber.closed:
                 subscriber.on_state(value)
+        if state == "stopped":
+            callbacks, self._after_stop_callbacks = self._after_stop_callbacks, []
+            for callback in callbacks:
+                callback()
 
     def current_capture_state(self):
         return self._session_state
 
+    def current_capture_stage(self):
+        return self._session_stage
+
     def is_stopping(self):
         return self._stopping
 
+    def is_starting(self):
+        return self._opening_capture is not None
+
+    def device_operations_pending(self):
+        return self._device_jobs.busy
+
+    def device_operation_timings(self):
+        return list(self._device_timings)
+
+    def _record_device_timing(self, value):
+        self._device_timings.append(dict(value))
+        del self._device_timings[:-100]
+        self.deviceOperationTiming.emit(value)
+        append_runtime_log("camera-device", json.dumps(value, ensure_ascii=False))
+
+    @Slot(int, str)
+    def _on_device_stage(self, generation, stage):
+        if generation != self._preview_generation:
+            return
+        self._notify_capture_state("starting", "等待第一帧" if stage == "first_frame" else "正在连接设备", stage)
+
+    def cancel_pending_operations(self):
+        """Invalidate late enumeration/open replies without racing driver I/O."""
+        self._device_jobs.cancel()
+        self._refresh_request = None
+        self._preview_start_callback = None
+        if self._opening_capture is not None:
+            running = self._device_jobs.is_running(self._opening_job) or self._opening_releasing
+            self._stopping = True
+            self._preview_generation += 1
+            self._reset_preview_frames(None)
+            if running:
+                self._notify_capture_state("stopping", "正在取消设备连接", "cancel_open")
+            else:
+                self._opening_capture = self._opening_job = None
+                self._active_device_id = ""
+                self._stopping = False
+                self._notify_capture_state("stopped")
+
+    def refresh_devices_async(self, on_done=None):
+        """Probe serially off Qt, except Qt-owned device enumeration itself."""
+        if self._refresh_request is not None:
+            if on_done is not None:
+                self._refresh_request["callbacks"].append(on_done)
+            return
+        request = {"devices": [], "warnings": [], "remaining": len(self._backends),
+                   "callbacks": [on_done] if on_done is not None else [],
+                   "epoch": self._device_jobs.epoch, "started": perf_counter()}
+        self._refresh_request = request
+        if not self.is_preview_active():
+            self._notify_capture_state("starting", "正在查找采集设备", "enumerate")
+
+        def received(backend, devices, error, stale):
+            if stale or self._refresh_request is not request:
+                return
+            if error is not None:
+                request["warnings"].append(_format_backend_error(backend, error))
+            else:
+                request["devices"].extend(list(devices or []))
+            request["remaining"] -= 1
+            if request["remaining"]:
+                return
+            self._refresh_request = None
+            self._devices = request["devices"]
+            self._device_refresh_warnings = request["warnings"]
+            active_id = self._active_capture.device.id if self._active_capture is not None else ""
+            lost = bool(active_id and not any(item.id == active_id for item in self._devices))
+            if not any(item.id == self._selected_device_id for item in self._devices):
+                self._selected_device_id = self._devices[0].id if self._devices else ""
+            self.devicesChanged.emit(self.devices())
+            if not self.is_preview_active() and not self.is_starting():
+                if self._devices:
+                    self._notify_capture_state("stopped", "设备列表已更新", "enumerate_complete")
+                else:
+                    self._notify_capture_state("faulted", "当前未检测到可用的采集设备。", "enumerate_complete")
+            self._record_device_timing({"stage": "enumerate", "epoch": request["epoch"],
+                "elapsed_ms": (perf_counter() - request["started"]) * 1000, "ok": bool(self._devices)})
+            self.devicesRefreshFinished.emit(self.devices())
+            if lost:
+                self.request_stop_preview()
+                self.activeDeviceLost.emit(active_id)
+            for callback in request["callbacks"]:
+                callback(self.devices())
+
+        if not self._backends:
+            request["remaining"] = 1
+            QTimer.singleShot(0, self, lambda: received(None, [], None, False))
+        for backend in self._backends:
+            # Enumerating OpenCV reopens devices. Never probe a backend that
+            # already owns a preview; its current listing stays usable.
+            if self.is_preview_active() and not backend.enumerate_while_active:
+                devices = [item for item in self._devices if item.backend_key == backend.backend_key]
+                self._device_jobs.submit("enumerate_cached_" + backend.backend_key,
+                    lambda devices=devices: devices,
+                    lambda value, error, stale, backend=backend: received(backend, value, error, stale), worker=False)
+            else:
+                self._device_jobs.submit("enumerate_" + backend.backend_key, backend.list_devices,
+                    lambda value, error, stale, backend=backend: received(backend, value, error, stale),
+                    worker=backend.enumerate_in_worker)
+
+    def start_preview_async(self, *, preview_target=None, on_done=None):
+        """Start one device; callbacks, HWND binding and Qt objects stay on Qt."""
+        if self._opening_capture is not None or self._stopping:
+            return False
+        if self.is_preview_active():
+            if on_done is not None:
+                on_done(True)
+            return True
+        if self._refresh_request is not None:
+            self._refresh_request["callbacks"].append(lambda devices: self.start_preview_async(
+                preview_target=preview_target, on_done=on_done) if devices else on_done(False) if on_done else None)
+            return True
+        device = self.selected_device()
+        if device is None:
+            self.refresh_devices_async(lambda devices: self.start_preview_async(
+                preview_target=preview_target, on_done=on_done) if devices else on_done(False) if on_done else None)
+            return True
+        backend = self._backend_for_device(device)
+        if backend is None:
+            if on_done is not None:
+                on_done(False)
+            return False
+        self._preview_generation += 1
+        generation = self._preview_generation
+        opening = ActiveCapture(device, backend, generation, backend.preview_kind(device), preview_target)
+        self._opening_capture = opening
+        self._opening_started_at = perf_counter()
+        self._first_frame_started_at = self._opening_started_at
+        self._last_frame = None
+        self._active_device_id = device.id
+        self._reset_preview_frames(generation)
+        self._notify_capture_state("starting", "正在连接设备", "open_device")
+
+        def open_device():
+            backend.start_stage_callback = lambda stage: self._deliverDeviceStage.emit(generation, stage)
+            backend.set_native_preview_visible(self._native_preview_visible)
+            backend.start_preview(device, preview_target=preview_target,
+                frame_callback=lambda image: self._deliver_frame_threadsafe(generation, image),
+                error_callback=lambda message: self._deliver_error_threadsafe(generation, message))
+
+        def released(_value, error, _stale):
+            if error is not None:
+                self._stopping = True
+                self._open_release_retry = lambda: self._device_jobs.submit(
+                    "retry_release_open", backend.stop_preview, released,
+                    worker=backend.lifecycle_in_worker, always=True, first=True)
+                self._notify_capture_state("faulted", "设备尚未释放：" + str(error), "stop")
+                self.errorOccurred.emit(str(error))
+                return
+            if self._opening_capture is opening:
+                self._opening_capture = None
+                self._opening_job = None
+            self._opening_releasing = False
+            self._open_release_retry = None
+            self._stopping = False
+            if not self.is_preview_active():
+                self._active_device_id = ""
+                self._notify_capture_state("stopped")
+
+        def opened(_value, error, stale):
+            if stale or generation != self._preview_generation or error is not None:
+                # Keep the serial lease until cleanup confirms this particular
+                # open has released its device. A newer request cannot overlap.
+                self._stopping = True
+                self._opening_releasing = True
+                self._device_jobs.submit("release_cancelled_open", backend.stop_preview, released,
+                    worker=backend.lifecycle_in_worker, always=True, first=True)
+                if not stale and error is not None:
+                    self._notify_capture_state("faulted", str(error), "open_device")
+                    self.errorOccurred.emit(str(error))
+                    if on_done is not None:
+                        # Run retry policy only after release, never while an
+                        # unsuccessful open may still own the device.
+                        self._device_jobs.submit("open_failed", lambda: None,
+                            lambda *_: on_done(False), worker=False)
+                return
+            self._opening_capture = None
+            self._opening_job = None
+            self._active_capture = opening
+            self._active_backend = backend
+            self._active_preview_kind = opening.preview_kind
+            self._active_preview_target = preview_target
+            self._preview_start_callback = (generation, on_done) if on_done is not None else None
+            self.previewStateChanged.emit(True)
+            self._notify_capture_state("starting", "等待第一帧", "first_frame")
+            if self.latest_preview_frame() is not None:
+                self._drain_preview_frame(generation)
+
+        self._opening_job = self._device_jobs.submit("connect_" + backend.backend_key, open_device, opened,
+            worker=backend.lifecycle_in_worker,
+            orphan_cleanup=backend.stop_preview if backend.lifecycle_in_worker else None)
+        return True
+
     def request_stop_preview(self):
         """Nonblocking GUI stop; keep the backend owner until process exit."""
+        if self._open_release_retry is not None:
+            retry, self._open_release_retry = self._open_release_retry, None
+            self._notify_capture_state("stopping", "正在重试停止设备", "stop")
+            retry()
+            return
+        self.cancel_pending_operations()
         if self._stopping:
             return
         if not self.is_preview_active():
@@ -257,6 +486,25 @@ class CaptureSessionManager(QObject):
         self._notify_capture_state("stopping")
         self._reset_preview_frames(None)
         backend = self._active_backend
+        if backend is not None and backend.lifecycle_in_worker:
+            self._preview_generation += 1
+            def stopped(_value, error, _stale):
+                if error is not None:
+                    self._stopping = False
+                    self._notify_capture_state("faulted", str(error), "stop")
+                    self.errorOccurred.emit(str(error))
+                    return
+                self._active_capture = self._active_backend = None
+                self._active_device_id = ""
+                self._active_preview_target = None
+                self._active_preview_kind = "frame_stream"
+                self._last_frame = None
+                self._stopping = False
+                self.previewStateChanged.emit(False)
+                self._notify_capture_state("stopped")
+            self._device_jobs.submit("stop_" + backend.backend_key, backend.stop_preview,
+                stopped, worker=True, always=True, first=True)
+            return
         stop_async = getattr(backend, "stop_preview_async", None)
         if stop_async is None:
             # Qt/OpenCV backends retain their existing bounded stop contract.
@@ -264,8 +512,22 @@ class CaptureSessionManager(QObject):
             self.stop_preview()
             return
         def complete():
+            try:
+                backend.stop_preview()
+            except Exception as exc:
+                self._stopping = False
+                self._notify_capture_state("faulted", str(exc), "stop")
+                self.errorOccurred.emit(str(exc))
+                return
+            self._recreate_backend_if_needed(backend)
+            self._active_capture = self._active_backend = None
+            self._active_device_id = ""
+            self._active_preview_target = None
+            self._active_preview_kind = "frame_stream"
+            self._last_frame = None
             self._stopping = False
-            self.stop_preview()
+            self.previewStateChanged.emit(False)
+            self._notify_capture_state("stopped")
         stop_async(complete)
 
     def devices(self) -> list[CaptureDevice]:
@@ -424,6 +686,17 @@ class CaptureSessionManager(QObject):
             raise RuntimeError("当前没有可优化的采集设备。")
         return backend.optimize_signal(device)
 
+    def optimize_signal_async(self, on_done):
+        device = self.selected_device()
+        backend = self._backend_for_device(device)
+        if device is None or backend is None:
+            on_done(None, RuntimeError("当前没有可用的采集设备。"))
+            return
+        self._device_jobs.submit("optimize_" + backend.backend_key,
+            lambda: backend.optimize_signal(device),
+            lambda value, error, stale: on_done(value, error) if not stale else None,
+            worker=backend.enumerate_in_worker)
+
     def active_warning(self) -> str:
         if self._active_backend is None:
             return ""
@@ -473,6 +746,9 @@ class CaptureSessionManager(QObject):
         return True
 
     def start_preview(self, *, preview_target: object | None = None) -> bool:
+        if self._opening_capture is not None or self._device_jobs.busy:
+            self.errorOccurred.emit("设备操作尚未结束，请稍候。")
+            return False
         if self._stopping:
             self.errorOccurred.emit("采集设备仍在停止，请稍候。")
             return False
@@ -546,6 +822,10 @@ class CaptureSessionManager(QObject):
             backend.set_native_preview_visible(self._native_preview_visible)
 
     def stop_preview(self) -> CaptureStopResult:
+        if self._opening_capture is not None or self._device_jobs.busy:
+            self.cancel_pending_operations()
+            return CaptureStopResult(False, self.is_preview_active(), self._preview_generation,
+                                     "设备后台操作尚未释放，正在停止；完成后可继续。")
         was_active = self.is_preview_active()
         self._reset_preview_frames(None)
         if not self.is_preview_active():
@@ -617,6 +897,8 @@ class CaptureSessionManager(QObject):
 
     @Slot(int)
     def _drain_preview_frame(self, generation: int) -> None:
+        if not self.is_preview_active() or generation != self._preview_generation:
+            return
         with self._frame_lock:
             if generation != self._frame_generation:
                 return
@@ -628,6 +910,14 @@ class CaptureSessionManager(QObject):
         self._on_frame_ready(generation, frame.image)
         if self._session_state != "streaming":
             self._notify_capture_state("streaming")
+            if self._first_frame_started_at is not None:
+                self._record_device_timing({"stage": "first_frame", "epoch": self._device_jobs.epoch,
+                    "elapsed_ms": (perf_counter() - self._first_frame_started_at) * 1000, "ok": True})
+                self._first_frame_started_at = None
+        pending = self._preview_start_callback
+        if pending is not None and pending[0] == generation:
+            self._preview_start_callback = None
+            pending[1](True)
         if self._subscriptions:
             handle = frame.handle
             if handle is None:
@@ -644,7 +934,12 @@ class CaptureSessionManager(QObject):
         if generation != self._preview_generation:
             return
         if self.is_preview_active():
+            lost_id = self._active_device_id
+            pending = self._preview_start_callback
+            if pending is not None and pending[0] == generation:
+                self._after_stop_callbacks.append(lambda: pending[1](False))
             self.request_stop_preview()
+            self.activeDeviceLost.emit(lost_id)
         self._notify_capture_state("faulted", message, "stream")
         self.errorOccurred.emit(message)
 
@@ -703,6 +998,8 @@ class CaptureSessionManager(QObject):
 
 
 class OpenCVCaptureBackend(CaptureBackend):
+    lifecycle_in_worker = True
+    enumerate_while_active = False
     backend_key = "opencv"
     _DEFAULT_CAMERA_INDICES = range(5)
     _PREVIEW_INTERVAL_SECONDS = 1.0 / 30.0
@@ -788,6 +1085,8 @@ class OpenCVCaptureBackend(CaptureBackend):
         if opened is None:
             raise RuntimeError(self._last_capture_diagnostics or "OpenCV 相机打开失败。")
         capture, _api = opened
+        if self.start_stage_callback is not None:
+            self.start_stage_callback("first_frame")
         first_image = self._read_qimage_from_capture(capture, timeout_ms=1500)
         if first_image is None or first_image.isNull():
             self._release_capture(capture)
@@ -972,6 +1271,7 @@ class OpenCVCaptureBackend(CaptureBackend):
 
 
 class QtVideoCaptureBackend(CaptureBackend):
+    enumerate_in_worker = False
     backend_key = "qt_multimedia"
 
     def __init__(self) -> None:
@@ -1797,6 +2097,7 @@ class MicroviewCaptureBackend(CaptureBackend):
 
 class MicroviewIsolatedBackend(CaptureBackend):
     backend_key = "microview"
+    enumerate_while_active = False
 
     def __init__(self) -> None:
         self._native_preview_visible = True

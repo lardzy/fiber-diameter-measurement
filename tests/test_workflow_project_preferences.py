@@ -2,6 +2,7 @@
 import json
 
 import pytest
+from acquisition_test_support import wait_workbench_ready
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from fdm.ui.main_window import MainWindow
@@ -24,6 +25,7 @@ def test_empty_trial_visits_and_display_choices_do_not_offer_project_save(window
     hub = window._acquisition_workbench
     for index in (1, 2, 0, 1):
         hub.select_page(index)
+        wait_workbench_ready(hub)
         QApplication.processEvents()
     window._active_acquisition_display_binding().set_mode("percent", 175)
     window.measure_workspace_action.trigger()
@@ -38,6 +40,7 @@ def test_empty_trial_visits_and_display_choices_do_not_offer_project_save(window
 
 def test_save_summary_names_only_changed_trial_and_rebases_after_save(window):
     window._open_acquisition_workbench(trial_index=1)
+    wait_workbench_ready(window._acquisition_workbench)
     content = window._live_experiment_workspace
     content._configure(sample_name="羊毛样品 A")
     assert window.project.live_experiments == [content.session]
@@ -47,6 +50,7 @@ def test_save_summary_names_only_changed_trial_and_rebases_after_save(window):
     window._mark_project_saved()
     assert window._unsaved_project_summary() == []
     window._acquisition_workbench.select_page(2)
+    wait_workbench_ready(window._acquisition_workbench)
     diameter = window._live_experiment_workspace
     diameter._configure(sample_name="直径样品 B")
     summary = "\n".join(window._unsaved_project_summary())
