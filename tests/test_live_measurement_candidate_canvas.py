@@ -70,6 +70,15 @@ class CanvasController(QObject):
     def candidate_interaction_started(self):
         self.candidate_interactions += 1
 
+    def motion_draft_is_current(self):
+        return False
+
+    def motion_draft_waiting_for_frame(self):
+        return False
+
+    def retained_manual_pointer(self, lease):
+        return None
+
 
 @pytest.fixture
 def canvas():

@@ -137,8 +137,10 @@ def test_submitted_measurement_does_not_chase_unpresented_arrivals(controller):
     assert c.presented.frame.sequence == 1
 
 
-def test_moving_frame_clears_draft_pending_and_markers_before_presentation(controller):
+@pytest.mark.parametrize("mode", ["content", "diameter"])
+def test_moving_frame_keeps_only_content_draft_and_clears_markers_before_presentation(controller, mode):
     c = controller
+    c.session.configure(workspace_options={"mode": mode})
     ready(c)
     c.start((20, 10))
     c.finish((20, 30), 'wool', method='free')
@@ -152,9 +154,40 @@ def test_moving_frame_clears_draft_pending_and_markers_before_presentation(contr
     c.frameReady.connect(lambda value: observed.append((value.sequence, c.field_epoch, c.draft, list(c.current_records))))
     receive(c, frame(2))
     finish_motion(c, 2)
-    assert observed == [(2, epoch + 1, None, [])]
+    assert len(observed) == 1
+    sequence, field_epoch, draft, records = observed[0]
+    assert (sequence, field_epoch, records) == (2, epoch + 1, [])
+    if mode == "content":
+        assert draft[1] == (21, 10) and draft[0].field_epoch == field_epoch
+    else:
+        assert draft is None
     assert set(record_ids) <= c.session.measurements.keys()
     assert c.state == 'stabilizing'
+
+
+def test_kept_manual_start_does_not_keep_old_submissions_or_candidates(controller):
+    c = controller
+    ready(c)
+    c.start((20, 10))
+    c.finish((20, 30), 'wool', method='free')
+    intent, future = c._jobs[0]
+    future.result(timeout=2)
+    # A result is ready but has not been published; the next manual action is
+    # already underway when movement is detected.
+    c.start((21, 10))
+    draft_identity = c._classification_target['id']
+    c.candidates = [dict(candidate_id='old:1', ordinal=1,
+        start=(30, 10), end=(30, 30), state='available')]
+    c._motion.compare_prepared = lambda _p, _k, identity, sequence: MotionResult(identity, sequence, False, 'translation')
+    receive(c, frame(2))
+    c._prepare_pool.run(2)
+    c._advance_motion_pipeline()
+    c._motion_pool.run(2)
+    c.poll()
+    assert intent.cancel.is_set()
+    assert not c.session.measurements and not c._jobs and not c.candidates
+    assert c.draft[1] == (21, 10)
+    assert c._classification_target['id'] == draft_identity
 
 
 def test_old_source_prepare_and_decision_are_discarded(controller):

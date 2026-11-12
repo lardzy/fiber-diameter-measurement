@@ -1107,6 +1107,10 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
     def _manual_finish(self, point):
         draft = self.controller.draft
         if draft is not None and tuple(point) != tuple(draft[1]):
+            if self.controller.motion_draft_waiting_for_frame():
+                self.controller.statusChanged.emit(self.controller.motion_draft_wait_message)
+                self.canvas.update()
+                return
             if self._manual_ready():
                 self._measurement_guard(lambda: self.controller.finish(point, self.material.currentData(), method=self.measure_mode.currentData()))
             # A rejected second endpoint must not be silently completed by

@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 import math
 import threading
@@ -128,6 +128,7 @@ class LiveExperimentController(QObject):
         self.state = "unavailable"
         self.draft: tuple[PresentedFrameToken, tuple[float, float]] | None = None
         self._draft_context = None
+        self._draft_after_motion = False
         self.current_records: list[str] = []
         # Identity/state only: never retain a completed intent's full frame.
         self._classification_target = None
@@ -399,13 +400,18 @@ class LiveExperimentController(QObject):
         self.state = "unavailable"
         self.statusChanged.emit(reason)
 
-    def _cancel_unfinished_measurements(self):
-        self.draft = None
-        self._draft_context = None
-        self._release_frame_reference("_draft_lease")
+    def _cancel_unfinished_measurements(self, *, preserve_draft=False):
+        draft_token = self.draft[0] if preserve_draft and self.draft else None
+        if not preserve_draft:
+            self.draft = None
+            self._draft_context = None
+            self._draft_after_motion = False
+            self._release_frame_reference("_draft_lease")
         for lease in tuple(self._pointer_frames):
-            self.release_pointer_frame(lease)
-        if self._classification_target and self._classification_target["state"] in {"draft", "pending"}:
+            if self._pointer_frames[lease][0] is not draft_token:
+                self.release_pointer_frame(lease)
+        if (not preserve_draft and self._classification_target
+                and self._classification_target["state"] in {"draft", "pending"}):
             self._classification_target = None
         for intent, _ in self._jobs:
             intent.cancel.set()
@@ -436,19 +442,38 @@ class LiveExperimentController(QObject):
     def end_field(self, reason="视场已变化，请重新测量", *, record_end=True,
                   cause=FieldEndCause.CONTEXT):
         cause = FieldEndCause(cause)
+        preserve_draft = bool(cause == FieldEndCause.MOTION
+            and self.session.workspace_options["mode"] == "content"
+            and self.draft is not None and self._draft_context is not None
+            and self._context_current(self.draft[0], *self._draft_context))
+        previous_number = self._measurement_number
         self.selection_retention.end_field(cause)
         if record_end and self.field_id in self.session.fields:
             self.session.update_field(self.field_id, ended_at=datetime.now(timezone.utc).isoformat(), end_reason=reason)
         self.field_epoch += 1
         self.field_id = uuid.uuid4().hex
-        self._cancel_unfinished_measurements()
+        self._cancel_unfinished_measurements(preserve_draft=preserve_draft)
+        if preserve_draft:
+            # Preserve the user's image-coordinate start, never old candidates
+            # or submitted results. The eventual finish uses one newly painted
+            # frame for both endpoints, fitting and evidence.
+            old_token, point = self.draft
+            token = replace(old_token, field_epoch=self.field_epoch)
+            self.draft = (token, point)
+            self._draft_after_motion = True
+            for lease, (saved, context) in tuple(self._pointer_frames.items()):
+                if saved is old_token:
+                    self._pointer_frames[lease] = (token, context)
+            if self._classification_target is not None:
+                self._classification_target["field_epoch"] = self.field_epoch
         self.current_records.clear()
         self._automatic_cycle_done = False
         self._automatic_cycle_id += 1
         self._analysis_events.append({"at": time.perf_counter(), "event": "new_cycle",
                                      "cycle": self._automatic_cycle_id, "reason": reason})
-        self._classification_target = None
-        self._measurement_number = 0
+        if not preserve_draft:
+            self._classification_target = None
+        self._measurement_number = previous_number if preserve_draft else 0
         self._motion_reset = True
         self._motion_sequence = -1
         self._last_prepare_sequence = -1
@@ -457,8 +482,34 @@ class LiveExperimentController(QObject):
         self.feedbackInvalidated.emit("field_changed")
         self.fieldChanged.emit(self.field_epoch, reason)
         self.candidatesChanged.emit([])
-        (self.routineStatusChanged if cause == FieldEndCause.MOTION else self.statusChanged).emit(reason)
+        if preserve_draft:
+            self.statusChanged.emit(self.motion_draft_wait_message)
+        else:
+            (self.routineStatusChanged if cause == FieldEndCause.MOTION else self.statusChanged).emit(reason)
         self.changed.emit()
+
+    motion_draft_wait_message = "视场变化，起点已保留；请等待画面稳定后落下终点。"
+
+    def motion_draft_is_current(self):
+        return bool(self._draft_after_motion and self.draft is not None
+                    and self._draft_context is not None
+                    and self._context_current(self.draft[0], *self._draft_context))
+
+    def motion_draft_waiting_for_frame(self):
+        """Only movement is a recoverable pause of an existing manual gesture."""
+        if not self.motion_draft_is_current():
+            return False
+        return bool(self.state != "ready" or self.presented is None
+                    or self.presented.field_epoch != self.field_epoch
+                    or self._presented_context != self._draft_context)
+
+    def retained_manual_pointer(self, lease):
+        """Return the rebased token only for the retained manual start lease."""
+        pair = self._pointer_frames.get(lease)
+        if (self.motion_draft_is_current() and pair is not None
+                and pair[0] is self.draft[0] and pair[1] == self._draft_context):
+            return pair[0]
+        return None
 
     def _pointer_context(self, token):
         retained = next((context for saved, context in self._pointer_frames.values() if saved is token), None)
@@ -521,6 +572,7 @@ class LiveExperimentController(QObject):
         self._draft_lease = lease
         self.draft = (token, point)
         self._draft_context = self._pointer_context(token)
+        self._draft_after_motion = False
         self._draft_evidence_options = self.effective_evidence_options
         self._measurement_number += 1
         self._classification_generation += 1
@@ -538,6 +590,7 @@ class LiveExperimentController(QObject):
             self._classification_target["state"] = "cancelled"
         self.draft = None
         self._draft_context = None
+        self._draft_after_motion = False
         self._release_frame_reference("_draft_lease")
         self.changed.emit()
 
@@ -553,6 +606,10 @@ class LiveExperimentController(QObject):
         if self.draft is None:
             raise ValueError("请先选择起点。")
         token, start = self.draft
+        if self.motion_draft_waiting_for_frame():
+            raise ValueError(self.motion_draft_wait_message)
+        if self.motion_draft_is_current():
+            token = self.presented
         if (token.field_epoch != self.field_epoch or self.state != "ready"
                 or self._draft_context is None or not self._context_current(token, *self._draft_context)):
             raise ValueError("视场已变化，请重新测量。")
@@ -571,6 +628,7 @@ class LiveExperimentController(QObject):
         lease = self._acquire_intent_frame(token.frame)
         self.draft = None
         self._draft_context = None
+        self._draft_after_motion = False
         self._release_frame_reference("_draft_lease")
         identity = self._classification_target["id"] if self._classification_target else uuid.uuid4().hex
         intent = MeasurementIntent(identity, token, start, tuple(point), self.calibration,
@@ -880,7 +938,10 @@ class LiveExperimentController(QObject):
                         self._stable_count += 1
                         if self._stable_count >= 2:
                             if self.state != "ready":
-                                self.routineStatusChanged.emit("视场稳定，可以测量")
+                                if self.motion_draft_is_current():
+                                    self.statusChanged.emit("视场已稳定，起点已保留；请继续落下终点。")
+                                else:
+                                    self.routineStatusChanged.emit("视场稳定，可以测量")
                             self.state = "ready"
                     if item is not None:
                         self._present_motion_frame(item)

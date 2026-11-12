@@ -233,9 +233,17 @@ class LiveMeasurementCanvas(QWidget):
                                 max(240, math.ceil(self.frame.size[1] * scale)))
 
     def _field_changed(self, *_):
-        self.cancel_pointer_gesture()
+        gesture = self._pointer_gesture
+        retained = (self.controller.retained_manual_pointer(gesture["lease"])
+                    if gesture is not None and gesture.get("started") else None)
+        if retained is not None:
+            gesture["token"] = retained
+            gesture["draft"] = self.controller.draft
+        else:
+            self.cancel_pointer_gesture()
         self._last_candidate_click = None
-        self.cursor_point = None
+        if not self.controller.motion_draft_is_current():
+            self.cursor_point = None
         self.selected_candidate_id = None
         self._hovered_record_id = None
         self._set_hovered_candidate(None)
@@ -650,7 +658,7 @@ class LiveMeasurementCanvas(QWidget):
         token = self.controller.presented
         if token is None or self.frame is None:
             self._trace_pointer("press_blocked", event, reason="no_presented_image")
-            self._cancel_rejected_second_point()
+            self._cancel_rejected_second_point(preserve_motion_wait=True)
             return
         # set_frame schedules a repaint; until then the user still sees the
         # previous token. A newer preview in the same context must not swallow
@@ -661,7 +669,7 @@ class LiveMeasurementCanvas(QWidget):
                 or token.display_revision != self.display_revision):
             self._trace_pointer("press_blocked", event, reason="presentation_context_changed",
                                 presented_frame=token.frame.frame_id, preview_frame=self.frame.frame_id)
-            self._cancel_rejected_second_point()
+            self._cancel_rejected_second_point(preserve_motion_wait=True)
             return
         position = QPointF(event.position())
         point = token.image_point(position.x(), position.y())
@@ -697,6 +705,9 @@ class LiveMeasurementCanvas(QWidget):
                 self._trace_pointer("press_blocked", event, reason="second_point_outside_image")
                 self._cancel_rejected_second_point()
             return
+        if kind == "finish" and self.controller.motion_draft_waiting_for_frame():
+            self.gestureRejected.emit(self.controller.motion_draft_wait_message)
+            return
         try:
             lease = self.controller.retain_pointer_frame(token)
         except (ValueError, RuntimeError) as exc:
@@ -711,10 +722,14 @@ class LiveMeasurementCanvas(QWidget):
                                  "batch": self._candidate_batch_identity(), "pointer_id": uuid.uuid4().hex}
         self._trace_pointer("press", event, presented_frame=token.frame.frame_id,
                             preview_frame=self.frame.frame_id, manual_gesture=self.manual_gesture)
-        if self.manual_gesture == "click" and kind in {"manual", "finish"}:
+        if ((self.manual_gesture == "click" and kind in {"manual", "finish"})
+                or (kind == "finish" and self.controller.motion_draft_is_current())):
             self._apply_manual_click(event)
 
-    def _cancel_rejected_second_point(self):
+    def _cancel_rejected_second_point(self, *, preserve_motion_wait=False):
+        if preserve_motion_wait and self.controller.motion_draft_waiting_for_frame():
+            self.gestureRejected.emit(self.controller.motion_draft_wait_message)
+            return
         if (self.input_mode != "candidate" and self.manual_gesture == "click"
                 and self.controller.draft is not None):
             self.gestureCancelled.emit()
@@ -737,6 +752,10 @@ class LiveMeasurementCanvas(QWidget):
             self.update()
 
     def _pointer_current(self, gesture):
+        retained = (self.controller.retained_manual_pointer(gesture["lease"])
+                    if gesture.get("started") else None)
+        if retained is not None:
+            return retained.display_revision == self.display_revision
         return (self.controller.pointer_token_is_current(gesture["token"])
                 and gesture["token"].display_revision == self.display_revision
                 and (gesture["kind"] not in {"candidate", "blocked"} or gesture["started"]
