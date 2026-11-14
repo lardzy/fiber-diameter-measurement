@@ -36,8 +36,8 @@ class LiveSnapshotControls(QWidget):
         self.notice = QLabel(self)
         self.notice.setObjectName("liveSnapshotNotice")
         self.view = QToolButton(self)
-        self.view.setText("查看")
-        self.view.setAccessibleName("查看刚拍的图像")
+        self.view.setText("查看刚拍图像")
+        self.view.setAccessibleName("查看刚拍图像")
         self.view.clicked.connect(self.view_latest)
         self.view.hide()
         row = QHBoxLayout()
@@ -104,7 +104,7 @@ class LiveSnapshotControls(QWidget):
 
     def page_changed(self, page):
         if page is not WorkspacePage.CAPTURE:
-            self.cancel("已离开实时采集，抓拍取消。")
+            self.cancel("已离开预览与抓拍，抓拍取消。")
 
     def _frame_ready(self, _image):
         pending = self.request

@@ -245,7 +245,7 @@ def test_next_step_links_route_to_the_relevant_control(trial_host, monkeypatch):
     assert not trial_host.project.live_experiments
 
 
-def test_pending_measurement_opens_review_in_sidebar_without_covering_image(workspace):
+def test_pending_measurement_opens_mandatory_centered_dialog(workspace):
     from PySide6.QtTest import QTest
     workspace.workflow_tabs.setCurrentIndex(2)
     QApplication.processEvents()
@@ -255,13 +255,17 @@ def test_pending_measurement_opens_review_in_sidebar_without_covering_image(work
     for _ in range(100):
         QTest.qWait(2)
         workspace.controller.poll()
-        if workspace.controller.pending_classification:
+        if workspace.controller.has_range_decisions:
             break
-    assert workspace.controller.pending_classification
+    assert workspace.controller.has_range_decisions
     workspace._refresh_summary()
     QApplication.processEvents()
-    assert workspace.workflow_tabs.currentIndex() == 0
-    assert workspace.pending_panel.isVisible()
+    assert workspace.workflow_tabs.currentIndex() == 2
+    assert not workspace.pending_panel.isVisible()
+    dialog = workspace._range_dialog
+    assert dialog.isVisible()
+    assert dialog.windowModality() == Qt.WindowModality.ApplicationModal
+    assert (dialog.frameGeometry().center() - dialog.screen().availableGeometry().center()).manhattanLength() <= 2
     assert workspace.image_scroll.geometry() == image_geometry
-    scroll = workspace.workflow_tabs.widget(0)
-    assert scroll.viewport().rect().contains(workspace.pending_buttons[0].mapTo(scroll.viewport(), QPoint(1, 1)))
+    dialog.discard.click()
+    assert not workspace.controller.has_range_decisions

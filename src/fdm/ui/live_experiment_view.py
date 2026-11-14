@@ -542,6 +542,8 @@ def build_trial_view(v):
     v.pending_suggestion.hide()
     v.pending_panel.hide()
     controls.addWidget(v.pending_panel)
+    v.range_rules_button = button("本次越限规则…", v._show_range_rules, controls)
+    v.range_rules_button.setVisible(v.session.workspace_options["mode"] == "content")
     v.candidate_feedback = QLabel(operations)
     v.candidate_feedback.setWordWrap(True)
     v.candidate_feedback.hide()

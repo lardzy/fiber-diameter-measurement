@@ -7,7 +7,7 @@ import time
 import weakref
 
 from PySide6.QtCore import QTimer, QSize, QEvent, Qt, Signal
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabBar, QPushButton, QLabel, QProgressBar
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabBar, QPushButton, QLabel, QProgressBar, QToolButton, QMenu
 
 from fdm.ui.icons import themed_icon
 from fdm.ui.workspace_stack import WorkspaceStack
@@ -60,11 +60,20 @@ class AcquisitionWorkbench(QWidget):
         self.navigation.setAccessibleName("采集与试验功能")
         self.navigation.setExpanding(False)
         self.navigation.setIconSize(QSize(20, 20))
-        self.navigation.addTab("实时采集")
+        self.navigation.addTab("预览与抓拍")
         for trial in TRIALS:
             self.navigation.addTab(trial.title)
         row.addWidget(self.navigation)
         row.addStretch()
+        self.trial_panel_button = QToolButton(self)
+        self.trial_panel_button.setText("试验面板")
+        self.trial_panel_button.setAccessibleName("显示或隐藏含量试验面板")
+        self.trial_panel_button.setCheckable(True)
+        self.trial_panel_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        self.trial_panel_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.trial_panel_button.clicked.connect(self._toggle_trial_panel)
+        self.trial_panel_button.hide()
+        row.addWidget(self.trial_panel_button)
         self.device_status = QLabel("采集未启动", self)
         self.device_status.setMaximumWidth(280)
         row.addWidget(self.device_status)
@@ -90,6 +99,19 @@ class AcquisitionWorkbench(QWidget):
                 and not workspace._closed and self.host._acquisition_workspace_selected
                 and workspace.project_identity == id(self.host.project)),
             action_callback=lambda workspace, action, key: workspace._guard(lambda: workspace._record_action(action, key)))
+        from fdm.ui.trial_sidebar import TrialSidebarPresentationController
+        self.trial_sidebar = TrialSidebarPresentationController(self.body_host,
+            is_current=lambda workspace: (self.pages.currentWidget() is workspace
+                and not workspace._closed and self.host._acquisition_workspace_selected
+                and workspace.project_identity == id(self.host.project)))
+        self.trial_sidebar.visibilityChanged.connect(self._trial_panel_visibility)
+        menu = QMenu(self.trial_panel_button)
+        for label, position in (("停靠左侧", "left"), ("停靠右侧", "right"),
+                                ("停靠底部", "bottom"), ("浮动窗口", "floating")):
+            menu.addAction(label, lambda checked=False, value=position: self.trial_sidebar.set_position(value))
+        menu.addSeparator()
+        menu.addAction("恢复默认位置", self.trial_sidebar.reset_layout)
+        self.trial_panel_button.setMenu(menu)
         self.capture_page = capture_page
         self.pages.addWidget(capture_page)
         self.loading_page = QWidget(self.pages)
@@ -134,6 +156,25 @@ class AcquisitionWorkbench(QWidget):
         manager.devicesChanged.connect(self.refresh_capture_state)
         self.refresh_capture_state()
         self._refresh_icons()
+
+    def _toggle_trial_panel(self, checked):
+        if checked:
+            self.trial_sidebar.open()
+        else:
+            self.trial_sidebar.close()
+
+    def _trial_panel_visibility(self, visible):
+        self.trial_panel_button.blockSignals(True)
+        self.trial_panel_button.setChecked(visible)
+        self.trial_panel_button.blockSignals(False)
+
+    def _present_trial_sidebar(self, page):
+        content = page is not None and page.session.workspace_options.get("mode") == "content"
+        self.trial_panel_button.setVisible(content)
+        if content:
+            self.trial_sidebar.bind(page)
+        else:
+            self.trial_sidebar.suspend()
 
     @property
     def entry_generation(self):
@@ -263,6 +304,7 @@ class AcquisitionWorkbench(QWidget):
             self.pages.addWidget(page)
         self.pages.setCurrentWidget(page)
         self.records.bind(page)
+        self._present_trial_sidebar(page)
         self.apply_sidebar_width()
         QTimer.singleShot(0, self, self.apply_sidebar_width)
         self._set_load_state("ready")
@@ -279,6 +321,7 @@ class AcquisitionWorkbench(QWidget):
         color = self.palette().windowText().color().name()
         for index, icon in enumerate(("acquisition", "content_trial", "diameter_trial")):
             self.navigation.setTabIcon(index, themed_icon(icon, color=color))
+        self.trial_panel_button.setIcon(themed_icon("content_trial", color=color))
         self.device_button.setIcon(themed_icon("capture_device", color=color))
         self.capture_button.setIcon(themed_icon(
             "stop_capture" if self.host._capture_manager.is_preview_active() else "start_capture", color=color))
@@ -317,6 +360,8 @@ class AcquisitionWorkbench(QWidget):
         self.apply_sidebar_width()
 
     def _sidebar_moved(self, splitter):
+        if splitter.count() < 2:
+            return
         self._sidebar_width = max(390, min(520, splitter.sizes()[1]))
         self.apply_sidebar_width()
         self._save_page()
@@ -327,6 +372,8 @@ class AcquisitionWorkbench(QWidget):
         for ref in self._splitters:
             splitter = ref()
             if splitter is None or not isValid(splitter):
+                continue
+            if splitter.count() < 2:
                 continue
             live.append(ref)
             splitter.setSizes([max(320, splitter.width() - splitter.handleWidth() - self._sidebar_width),
@@ -345,6 +392,7 @@ class AcquisitionWorkbench(QWidget):
         trial = self._current_trial()
         if trial is not None:
             self.records.bind(trial)
+            self._present_trial_sidebar(trial)
             QTimer.singleShot(0, trial, trial.ensure_live_excel)
         if first_entry and auto_start:
             self._want_capture = True
@@ -393,6 +441,7 @@ class AcquisitionWorkbench(QWidget):
         self._want_capture = False
         self._restart_pending = False
         self.records.suspend()
+        self.trial_sidebar.suspend()
 
     def suspend_trial(self, reason):
         trial = self._current_trial()
@@ -407,6 +456,8 @@ class AcquisitionWorkbench(QWidget):
         self._switching = True
         self.retire_entry()
         self.records.suspend()
+        self.trial_sidebar.detach()
+        self.trial_panel_button.hide()
         try:
             for index in range(self.pages.count() - 1, -1, -1):
                 page = self.pages.widget(index)
@@ -421,34 +472,34 @@ class AcquisitionWorkbench(QWidget):
 
     def select_page(self, index, *, requested_at=None):
         if self._switching or not 0 <= index <= len(TRIALS):
-            return
+            return False
         current = self._current_trial()
         if index == self._selected and self._page_load_state != "error" and (
                 self._page_load is not None or (index == 0 and self.pages.currentWidget() is self.capture_page)
                 or (current is not None and current.session.workspace_options.get("mode") == TRIALS[index - 1].id)):
-            return
+            return True
         self._switching = True
         try:
             if index and self.host._digital_slide_mode and self.host._slide_acquisition_active():
                 self.navigation.setCurrentIndex(self._selected)
                 self.host.statusBar().showMessage("请先停止当前数字化切片采集，再切换试验页面。", 5000)
-                return
+                return False
             if current is not None and not current._confirm_trial_navigation():
                 self.navigation.setCurrentIndex(self._selected)
-                return
+                return False
             if current is not None:
                 try:
                     current.commit_pending_edits()
                 except (ValueError, RuntimeError, OSError) as exc:
                     current.statusBar().showMessage(str(exc), 8000)
                     self.navigation.setCurrentIndex(self._selected)
-                    return
+                    return False
             binding = getattr(self.host, "_preview_display_binding", None)
             if self.pages.currentWidget() is self.capture_page and binding is not None:
                 binding.flush()
             if not self.suspend_trial("已切换试验页面，累计记录保留"):
                 self.navigation.setCurrentIndex(self._selected)
-                return
+                return False
             self._cancel_page_load()
             self._cancel_external_presentation()
             self._entry_generation += 1
@@ -460,6 +511,8 @@ class AcquisitionWorkbench(QWidget):
             self.navigation.setCurrentIndex(index)
             self._begin_timing(index, requested_at)
             self.records.suspend()
+            self.trial_sidebar.suspend()
+            self.trial_panel_button.hide()
             if self.host._digital_slide_mode and index:
                 self.host._toggle_digital_slide_mode(False)
             # Target-page policy applies before preparing or exposing its body.
@@ -491,6 +544,7 @@ class AcquisitionWorkbench(QWidget):
             self.apply_sidebar_width()
             self._save_page()
             self.update()
+            return True
         finally:
             self._switching = False
 

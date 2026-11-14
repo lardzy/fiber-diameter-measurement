@@ -217,6 +217,9 @@ class CandidatesModel(QAbstractTableModel):
     def range_confirmed(self, row):
         return self.range_status(row) == "越限，需核对" and self.range_confirmations.get(row) == self.range_signature(row)
 
+    def inline_range_confirmation(self):
+        return self.session is None or self.session.workspace_options["mode"] != "content"
+
     def range_description(self, row):
         material = self.assigned_material(row)
         if material is None:
@@ -234,7 +237,7 @@ class CandidatesModel(QAbstractTableModel):
             if state not in {"available", "excluded"}:
                 return None
             return Qt.CheckState.Unchecked if index.row() in self.excluded or state == "excluded" else Qt.CheckState.Checked
-        if index.column() == 5 and role == Qt.ItemDataRole.CheckStateRole and self.range_status(index.row()) == "越限，需核对":
+        if index.column() == 5 and role == Qt.ItemDataRole.CheckStateRole and self.inline_range_confirmation() and self.range_status(index.row()) == "越限，需核对":
             return Qt.CheckState.Checked if self.range_confirmed(index.row()) else Qt.CheckState.Unchecked
         if index.column() == 3 and role in (Qt.ItemDataRole.EditRole, Qt.ItemDataRole.UserRole):
             return self.material_id(index.row())
@@ -256,7 +259,7 @@ class CandidatesModel(QAbstractTableModel):
             return ({"accepted": "已计入", "confirming": "待计入", "excluded": "已排除"}.get(state, ""),
                     f"C{self.candidates[index.row()].get('ordinal', index.row() + 1)}", diameter,
                     material.name if material else "未赋类 · 双击选择", self.range_description(index.row()),
-                    "确认保留" if self.range_status(index.row()) == "越限，需核对" else "")[index.column()]
+                    ("确认保留" if self.inline_range_confirmation() else "接受时确认") if self.range_status(index.row()) == "越限，需核对" else "")[index.column()]
         if role == Qt.ItemDataRole.ForegroundRole and index.column() in (3, 4) and self.range_status(index.row()) != "范围内":
             from fdm.ui.theme import semantic_colors
             colors = semantic_colors()
@@ -271,7 +274,7 @@ class CandidatesModel(QAbstractTableModel):
             return flags & ~Qt.ItemFlag.ItemIsEditable & ~Qt.ItemFlag.ItemIsUserCheckable
         if index.column() == 0:
             return flags | Qt.ItemFlag.ItemIsUserCheckable
-        if index.column() == 5 and self.range_status(index.row()) == "越限，需核对":
+        if index.column() == 5 and self.inline_range_confirmation() and self.range_status(index.row()) == "越限，需核对":
             return flags | Qt.ItemFlag.ItemIsUserCheckable
         return flags | Qt.ItemFlag.ItemIsEditable if index.column() == 3 else flags
 
@@ -288,7 +291,7 @@ class CandidatesModel(QAbstractTableModel):
             self.dataChanged.emit(index, self.index(index.row(), 5))
             return True
         if index.column() == 5 and role == Qt.ItemDataRole.CheckStateRole:
-            if self.range_status(index.row()) != "越限，需核对":
+            if not self.inline_range_confirmation() or self.range_status(index.row()) != "越限，需核对":
                 return False
             if value in (Qt.CheckState.Checked.value, Qt.CheckState.Checked):
                 self.range_confirmations[index.row()] = self.range_signature(index.row())
@@ -355,6 +358,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self._frame_budget_pressure = False
         self._last_preview_pressure_at = -math.inf
         self._pending_display_id = None
+        self._range_dialog = None
         self._statistics_pool = None
         self._statistics_job = None
         # Preview never waits for field detection. The controller still checks
@@ -471,6 +475,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.measurement_feedback.dismissed.connect(self._measurement_feedback_dismissed)
         self.controller.candidatesChanged.connect(self._candidates_changed)
         self.controller.changed.connect(self._changed)
+        self.controller.changed.connect(self._sync_range_dialog)
         self._refresh_timer = QTimer(self)
         self._refresh_timer.setInterval(80)
         self._refresh_timer.timeout.connect(self._refresh_summary)
@@ -553,7 +558,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.workflow_tabs.currentChanged.connect(lambda _: self._view_preferences_timer.start())
         self.body_splitter.splitterMoved.connect(lambda *_: self._view_preferences_timer.start())
         hub = getattr(self.host, "_acquisition_workbench", None)
-        if self.embedded and hub is not None:
+        if self.embedded and hub is not None and self.session.workspace_options["mode"] != "content":
             hub.register_splitter(self.body_splitter)
 
     def _persist_view_preferences(self):
@@ -569,9 +574,11 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
                 preferences = {}
             preferences[self.session.workspace_options["mode"]] = {
                 "tab": self.workflow_tabs.currentIndex(),
-                "sidebar_width": max(390, min(520, self.trial_sidebar.width())),
                 "metadata_expanded": self.sample_details_toggle.isChecked(),
             }
+            if (not self.embedded or self.session.workspace_options["mode"] != "content"
+                    or not hasattr(getattr(self.host, "_acquisition_workbench", None), "trial_sidebar")):
+                preferences[self.session.workspace_options["mode"]]["sidebar_width"] = max(390, min(520, self.trial_sidebar.width()))
             # Keep legacy shared preferences until (and harmlessly after) the
             # migrated application settings are saved; layout-only navigation
             # must not delete the sole persistent copy during first upgrade.
@@ -637,6 +644,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 
     def _confirm_trial_navigation(self):
         controller = self.controller
+        if controller.has_range_decisions:
+            self._show_pending_range_choice()
+            return False
         if controller.hold_measurement_results:
             self.statusBar().showMessage("请先完成或取消当前换样。", 5000)
             return False
@@ -1403,11 +1413,11 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self._guard(lambda: self.session.set_weights(*values))
             self._changed()
 
-    def _materials(self, *, suggested_id=None):
+    def _materials(self, *, suggested_id=None, parent=None):
         from fdm.ui.material_catalog import TrialMaterialsDialog
         operator_id, direction = self.session._owner(None, None)
         in_use = lambda: self.controller.materials_in_use(operator_id=operator_id, direction=direction)
-        dialog = TrialMaterialsDialog(self.session, self, in_use=in_use, suggested_id=suggested_id)
+        dialog = TrialMaterialsDialog(self.session, parent or self, in_use=in_use, suggested_id=suggested_id)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         materials = dialog.materials()
@@ -1571,7 +1581,8 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.measurement_outcome.setText("已计入")
         self.latest_value.setText(f"{record.diameter_um:.3f} μm")
         self.statusBar().showMessage(f"本次有效测量 {record.diameter_um:.3f} μm 已计入记录。", 8000)
-        self.current_model.append(record.id)
+        if record.field_id == self.controller.field_id:
+            self.current_model.append(record.id)
         self.history_model.append(record.id)
         self.current_table.follow_latest()
         self._record_model_revision = self.session.revision
@@ -1585,7 +1596,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self.latest_value.setText(f"{records[-1].diameter_um:.3f} μm")
             self.statusBar().showMessage(f"已接受 {len(records)} 条有效测量并计入记录。", 8000)
         ids = [record.id for record in records]
-        self.current_model.append_many(ids)
+        self.current_model.append_many([record.id for record in records if record.field_id == self.controller.field_id])
         self.history_model.append_many(ids)
         self.current_table.follow_latest()
         self._queue_records_notification([("measurement", record.id) for record in records])
@@ -1621,7 +1632,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             raise ValueError("仍有勾选候选未赋类；请逐条选择类别或批量设置后确认。")
         out_of_range = {index for index, _ in selections if self.candidate_model.range_status(index) == "越限，需核对"}
         confirmed = {index for index in out_of_range if self.candidate_model.range_confirmed(index)}
-        if out_of_range != confirmed:
+        if self.session.workspace_options["mode"] != "content" and out_of_range != confirmed:
             raise ValueError("请核对表中越限候选的直径和范围，勾选确认保留，或改类／取消接受。")
         duplicates = self.controller.possible_duplicate_candidates([index for index, _ in selections])
         if duplicates and QMessageBox.question(self, "核对可能重复的候选",
@@ -1635,6 +1646,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         if self._closed and self.session not in self.host.project.live_experiments:
             # Queued results belonging to a removed sample cannot register it again.
             return
+        self.controller.refresh_range_rules()
         state = (self.session.revision, self.session.active_operator_id, self.session.active_direction)
         if id(self.host.project) == self.project_identity and state != self._last_dirty_state:
             registered = any(session is self.session for session in self.host.project.live_experiments)
@@ -1680,6 +1692,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         if id(self.host.project) != self.project_identity:
             self.close()
             return
+        self.controller.refresh_range_rules()
         frame, calibration = self.controller.latest_frame, self.controller.calibration
         self._refresh_measurement_readiness()
         self._refresh_persistence_state()
@@ -1694,6 +1707,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
                  f"X {calibration.x_um:.6g} / Y {calibration.y_um:.6g} μm/px")
         show_state = self._applied_trial_preferences.show_stability_status or self.controller.state == "unavailable"
         self.live_state_label.setText(" · ".join([source, *([state] if show_state else []), ruler]))
+        self._sync_range_dialog()
         pending = self.controller.pending_classification
         previous_pending_id = self._pending_display_id
         self._pending_display_id = pending[0][0].id if pending else None
@@ -1783,6 +1797,101 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         self.controller.resolve_pending(intent_id=self._pending_display_id, **kwargs)
         self._refresh_summary()
 
+    def _sync_range_dialog(self):
+        """A field refresh never rejects an already verified result."""
+        decision = self.controller.pending_range_decision
+        dialog = self._range_dialog
+        if decision is None:
+            if dialog is not None:
+                self._range_dialog = None
+                dialog.finish()
+            return
+        if dialog is None:
+            from fdm.ui.trial_range_dialog import TrialRangeDialog
+            dialog = self._range_dialog = TrialRangeDialog(self.window())
+            dialog.choice.connect(self._resolve_range_choice)
+            dialog.configureRequested.connect(self._configure_range_category)
+        if getattr(self, "_suggestion_catalog", None) is None:
+            from fdm.live_experiment.material_catalog import MaterialCatalog
+            try:
+                self._suggestion_catalog = MaterialCatalog.load()
+            except (OSError, ValueError):
+                pass
+        try:
+            suggestion = self.controller.pending_suggestion(decision.intent, decision.result,
+                catalog=getattr(self, "_suggestion_catalog", None))
+        except ValueError:
+            suggestion = None  # Keep the explicit discard action available.
+        dialog.update_decision(decision, self.session, suggestion)
+        if not dialog.isVisible():
+            focus = QApplication.focusWidget()
+            dialog.show_centered(focus if focus is not None else self)
+
+    def _show_pending_range_choice(self):
+        self._sync_range_dialog()
+        if self._range_dialog is not None:
+            self._range_dialog.raise_()
+            self._range_dialog.activateWindow()
+        self.statusBar().showMessage("请先选择保留、改类或放弃本条越限测量。", 6000)
+
+    def _resolve_range_choice(self, action, material_id, remember):
+        dialog = self._range_dialog
+        if dialog is None:
+            return
+        try:
+            self.controller.resolve_range_decision(action=action, material_id=material_id,
+                remember=remember, intent_id=dialog.intent_id)
+            dialog.error.clear()
+        except (ValueError, RuntimeError) as exc:
+            dialog.error.setText(str(exc))
+        self._sync_range_dialog()
+
+    def _configure_range_category(self, suggested_id):
+        # Parent the nested editor to the modal choice so its inputs remain
+        # usable while all other application windows stay blocked.
+        self._guard(lambda: self._materials(suggested_id=suggested_id, parent=self._range_dialog))
+        self._sync_range_dialog()
+
+    def _show_range_rules(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("本次越限规则")
+        layout = QVBoxLayout(dialog)
+        note = QLabel("仅在本次打开期间对本试验有效；正常范围内的测量及下一条当前选类不变。", dialog)
+        note.setWordWrap(True)
+        layout.addWidget(note)
+        table = QTableWidget(0, 3, dialog)
+        table.setHorizontalHeaderLabels(["原类别", "条件", "处理"])
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        layout.addWidget(table)
+        rules = []
+        def refresh():
+            from PySide6.QtWidgets import QTableWidgetItem
+            rules[:] = self.controller.range_rules.list_rules(self.session.id)
+            table.setRowCount(len(rules))
+            names = {m.id: m.name for op in self.session.operators.values() for group in op.materials.values() for m in group}
+            for row, rule in enumerate(rules):
+                key = rule["key"]
+                action = {"keep": "保留原类别", "discard": "放弃本条", "reclassify": "改为 " + names.get(rule.get("target_material_id"), "类别不可用")}[rule["action"]]
+                for col, value in enumerate((names.get(key[0], key[0]), "高于上限" if key[1] == "above" else "低于下限", action)):
+                    table.setItem(row, col, QTableWidgetItem(value))
+            table.resizeColumnsToContents()
+        row = QHBoxLayout()
+        def remove():
+            for index in sorted({index.row() for index in table.selectedIndexes()}, reverse=True):
+                self.controller.range_rules.remove(self.session.id, rules[index]["key"])
+            refresh()
+        def clear():
+            self.controller.range_rules.clear(self.session.id)
+            refresh()
+        self._button("删除所选规则", remove, row)
+        self._button("清空规则", clear, row)
+        self._button("关闭", dialog.accept, row)
+        layout.addLayout(row)
+        refresh()
+        dialog.resize(620, 330)
+        dialog.exec()
+
     def _history_action(self, action):
         if self._statistics_job is not None:
             raise ValueError("组距重算尚未结束，未改动撤销历史；请等待或取消后再撤销／重做。")
@@ -1790,7 +1899,7 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         if (controller.draft is not None
                 or any(controller._valid(intent) for intent, _ in controller._jobs)
                 or controller.pending_classification
-                or controller.candidate_pending_count or controller._confirmation):
+                or controller.candidate_pending_count or controller._confirmation or controller.has_range_decisions):
             raise ValueError("手工测量尚未完成，未撤销之前记录；请取消草稿，或等待计算／核验完成并处理待确认项后，再撤销或重做。")
         self.controller.cancel_draft()
         before = (self.session.active_operator_id, self.session.active_direction,
@@ -2067,6 +2176,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 
     def _finish_content_trial(self):
         controller = self.controller
+        if controller.has_range_decisions:
+            self._show_pending_range_choice()
+            return
         if not self._current_content_trial() or controller.hold_measurement_results:
             return
         controller.hold_measurement_results = True
@@ -2096,6 +2208,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             self._replace_experiment(target)
 
     def _replace_experiment(self, target, *, remove_current=False):
+        if self.controller.has_range_decisions:
+            self._show_pending_range_choice()
+            return
         mode = target.workspace_options["mode"]
         project = self.host.project
         hub = self.host._acquisition_workbench if self.embedded else None
@@ -2145,11 +2260,13 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             window._sample_removal_unsaved = project.remove_live_trial(self.session)
             from fdm.live_experiment.evidence_resources import get_evidence_resources
             get_evidence_resources().discard_session(self.session)
+            self.controller.range_rules.clear(self.session.id)
         self.host._live_experiment_workspace = window
         self.host._live_experiment_workspaces[mode] = window
         if hub is not None:
             hub.pages.removeWidget(self)
             hub.pages.setCurrentWidget(window)
+            hub.trial_sidebar.bind(window)
         if remove_current:
             window.workflow_tabs.setCurrentIndex(0)
             window._refresh_persistence_state()
@@ -2218,7 +2335,10 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
         hub = getattr(self.host, "_acquisition_workbench", None)
         if self.embedded and (hub is None or hub.pages.currentWidget() is not self):
             return False
-        return (not self._closed and self.isVisible() and QApplication.activeWindow() is self.window()
+        sidebar = getattr(hub, "trial_sidebar", None)
+        owns_active = QApplication.activeWindow() is self.window() or bool(sidebar is not None
+            and sidebar.workspace is self and sidebar.owns_window(QApplication.activeWindow()))
+        return (not self._closed and not self.controller.has_range_decisions and self.isVisible() and owns_active
             and QApplication.activePopupWidget() is None
             and QApplication.activeModalWidget() is None
             and not isinstance(focus, (QLineEdit, QAbstractSpinBox, QPlainTextEdit, QTextEdit))
@@ -2258,7 +2378,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
                 parent = watched.parent()
                 while parent is not None and parent is not self:
                     parent = parent.parent()
-                if parent is self:
+                hub = getattr(self.host, "_acquisition_workbench", None)
+                sidebar = getattr(hub, "trial_sidebar", None)
+                if parent is self or (sidebar is not None and sidebar.workspace is self and sidebar.contains_focus(watched)):
                     from fdm.ui.widgets import _redirect_wheel_to_inspector_scroll
                     _redirect_wheel_to_inspector_scroll(watched, event)
                     self._bare_ctrl_pending = False
@@ -2292,6 +2414,9 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
 
     def prepare_close(self):
         """Quiesce producers and editors without discarding the visible page."""
+        if self.controller.has_range_decisions:
+            self._show_pending_range_choice()
+            return False
         if self.controller.hold_measurement_results and not getattr(self, "_gallery_rebinding", False):
             self.statusBar().showMessage("请先完成或取消当前换样。", 5000)
             return False
@@ -2331,6 +2456,10 @@ class LiveExperimentWorkspace(TrialAssistanceMixin, QWidget):
             event.ignore()
             return
         self._closed = True
+        hub = getattr(self.host, "_acquisition_workbench", None)
+        sidebar = getattr(hub, "trial_sidebar", None)
+        if sidebar is not None:
+            sidebar.detach(self)
         if self._view_preferences_timer.isActive():
             self._persist_view_preferences()
         self._view_preferences_timer.stop()

@@ -52,6 +52,9 @@ def workspace():
     assert view.controller.presented is not None and view.controller.state == "ready"
     yield view
     view.controller.poll()
+    while view.controller.has_range_decisions:
+        view.controller.resolve_range_decision("discard")
+    view._sync_range_dialog()
     view.close()
     host.close()
     QApplication.processEvents()
@@ -409,6 +412,10 @@ def test_first_live_source_requires_stability_even_if_calibrated_before_arrival(
 
 
 def pending_overrange(controller):
+    # These legacy second-confirmation motion gates remain diameter-only.
+    from fdm.live_experiment.models import DiameterRangePolicy
+    controller.session.workspace_options["mode"] = "diameter"
+    controller.session.diameter_range_policy = DiameterRangePolicy(upper_limit_um=30)
     ready_result(controller)
     intent, future = controller._jobs[0]
     intent.material_id = "cashmere"
@@ -644,39 +651,29 @@ def test_confirming_candidates_explicitly_excludes_unchecked_unassigned_rows(wor
     assert accepted == [[(0, "wool")]]
 
 
-def test_candidate_range_consent_is_visible_nonmodal_and_reset_by_category_or_bounds(workspace, monkeypatch):
+def test_selected_content_candidate_is_sent_to_modal_decision_flow(workspace, monkeypatch):
     model = show_candidates(workspace)
     model.setData(model.index(0, 0), Qt.CheckState.Unchecked, Qt.ItemDataRole.CheckStateRole)
     model.setData(model.index(1, 3), "cashmere", Qt.ItemDataRole.EditRole)
     assert "30" in model.data(model.index(1, 4)) and "40" in model.data(model.index(1, 2))
     accepted = []
     monkeypatch.setattr(workspace.controller, "accept_candidates", lambda selections, **kwargs: accepted.append((selections, kwargs)))
-    monkeypatch.setattr(QMessageBox, "question", lambda *_: pytest.fail("越限确认不应弹出模态窗口"))
-    with pytest.raises(ValueError, match="越限"):
-        workspace._accept_candidates()
-    model.setData(model.index(1, 5), Qt.CheckState.Checked, Qt.ItemDataRole.CheckStateRole)
     workspace._accept_candidates()
-    assert accepted == [([(1, "cashmere")], {"confirmed_out_of_range": {1}})]
-    model.setData(model.index(1, 3), "wool", Qt.ItemDataRole.EditRole)
-    model.setData(model.index(1, 3), "cashmere", Qt.ItemDataRole.EditRole)
-    assert not model.range_confirmed(1)
-    model.setData(model.index(1, 5), Qt.CheckState.Checked, Qt.ItemDataRole.CheckStateRole)
-    model.materials = tuple(replace(m, upper_limit=35) if m.id == "cashmere" else m for m in model.materials)
-    assert not model.range_confirmed(1)
+    assert accepted == [([(1, "cashmere")], {"confirmed_out_of_range": set()})]
 
 
-def test_candidate_out_of_range_override_is_explicit_snapshotted_and_auditable(tmp_path):
+def test_candidate_out_of_range_decision_is_explicit_snapshotted_and_auditable(tmp_path):
     controller = LiveExperimentController(make_session(), evidence_directory=tmp_path)
     try:
         candidates_ready(controller)
         controller.candidates[0]["width_px"] = 40
         present(controller, 10)
-        with pytest.raises(ValueError, match="确认保留"):
-            controller.accept_candidates([(0, "cashmere")])
-        assert controller._confirmation is None and not controller.session.measurements
-        controller.accept_candidates([(0, "cashmere")], confirmed_out_of_range={0})
+        controller.accept_candidates([(0, "cashmere")])
+        assert controller._confirmation and not controller.pending_range_decision
         controller._motion_sequence = 10
         controller.poll()
+        assert not controller.session.measurements and controller.pending_range_decision
+        controller.resolve_range_decision("keep")
         record = next(iter(controller.session.measurements.values()))
         assert record.provenance["range_confirmation"] == {"material_id": "cashmere", "material_name": "山羊绒",
             "lower_limit_um": None, "upper_limit_um": 30.0, "diameter_um": 40.0}
@@ -684,20 +681,21 @@ def test_candidate_out_of_range_override_is_explicit_snapshotted_and_auditable(t
         controller.close()
 
 
-def test_changed_material_bounds_invalidate_queued_range_consent(tmp_path):
+def test_changed_material_bounds_are_checked_before_pinning_selected_candidates(tmp_path):
     controller = LiveExperimentController(make_session(), evidence_directory=tmp_path)
     try:
         candidates_ready(controller)
         controller.candidates[0]["width_px"] = 40
         present(controller, 10)
-        controller.accept_candidates([(0, "cashmere")], confirmed_out_of_range={0})
+        controller.accept_candidates([(0, "cashmere")])
         materials = controller.session.operators[controller.session.active_operator_id].materials["warp"]
         controller.session.set_materials([replace(m, upper_limit=50) if m.id == "cashmere" else m for m in materials])
-        rejected = QSignalSpy(controller.resultRejected)
         controller._motion_sequence = 10
         controller.poll()
-        assert not controller.session.measurements and rejected.count() == 1
-        assert "范围已变化" in rejected.at(0)[0]
+        record = next(iter(controller.session.measurements.values()))
+        assert record.provenance["range_confirmation"] is None
+        assert record.provenance["measurement_range"]["upper_limit_um"] == 50
+        assert not controller.pending_range_decision
     finally:
         controller.close()
 

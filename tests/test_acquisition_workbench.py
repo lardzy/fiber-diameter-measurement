@@ -52,8 +52,13 @@ def test_real_workspace_action_reentry_and_trial_switch_preserve_data_and_ruler(
         for _ in range(20):
             window.acquisition_workspace_action.trigger()
             QApplication.processEvents()
+            assert hub.pages.currentWidget() is hub.capture_page
+            assert record.id in session.measurements
+            window.live_experiment_action.trigger()
+            QApplication.processEvents()
+            page._receive_frame(frame)
             assert hub.pages.currentWidget() is page
-            assert page.controller.current_records == [record.id]
+            assert page.controller.current_records == []
             assert page.controller.calibration == value
             assert not window.statusBar().isVisible()
             assert not window._microview_preview_host.isVisible()

@@ -46,7 +46,7 @@ def test_postselection_input_targets_computing_gesture_not_previous_record(works
     assert session.measurements[previous.id].material_id == "wool"
 
 
-@pytest.mark.parametrize("phase", ["motion_gate", "pending", "confirmation"])
+@pytest.mark.parametrize("phase", ["motion_gate", "pending"])
 def test_postselection_follows_latest_intent_across_publication_states(tmp_path, phase):
     controller = LiveExperimentController(make_session(), evidence_directory=tmp_path)
     try:
@@ -54,27 +54,27 @@ def test_postselection_follows_latest_intent_across_publication_states(tmp_path,
         previous = controller.session.add_measurement(21, "cashmere", field_id=controller.field_id)
         controller.current_records.append(previous.id)
         intent, future = controller._jobs[0]
-        if phase != "motion_gate":
+        if phase == "pending":
             intent.material_id = "cashmere"
             done = Future()
             done.set_result(dict(future.result(), width_px=40, diameter_um=40))
             controller._jobs[0] = (intent, done)
             controller._motion_sequence = 1
             controller.poll()
-            assert controller.pending_classification
+            assert controller.pending_range_decision
         present(controller, 10)
-        if phase == "confirmation":
-            controller.resolve_pending(intent_id=intent.id)
-            assert controller._confirmation
-        controller.reclassify_latest("wool")
-        assert intent.material_id == "wool"
+        if phase == "pending":
+            with pytest.raises(ValueError, match="确认窗口"):
+                controller.reclassify_latest("wool")
+            controller.resolve_range_decision("reclassify", material_id="wool", intent_id=intent.id)
+        else:
+            controller.reclassify_latest("wool")
         assert controller.session.measurements[previous.id].material_id == "cashmere"
         controller._motion_sequence = 10
-        if phase == "pending":
-            controller.resolve_pending(intent_id=intent.id)
         controller.poll()
         accepted = controller.session.measurements[controller.current_records[-1]]
         assert accepted.material_id == "wool" and accepted.id != previous.id
+        assert accepted.provenance["measurement_operation_id"] == intent.id
     finally:
         controller.close()
 
@@ -104,7 +104,7 @@ def test_postselection_after_failed_or_cancelled_latest_gesture_never_falls_back
             controller._jobs[0] = (intent, done)
             controller._motion_sequence = 1
             controller.poll()
-            controller.resolve_pending(discard=True, intent_id=intent.id)
+            controller.resolve_range_decision("discard", intent_id=intent.id)
         else:
             controller.start((35, 35))
             controller.cancel_draft()
@@ -114,7 +114,7 @@ def test_postselection_after_failed_or_cancelled_latest_gesture_never_falls_back
         controller.close()
 
 
-def test_reclassification_during_confirmation_requires_new_overrange_consent(tmp_path):
+def test_reclassification_of_pinned_result_requires_new_overrange_consent(tmp_path):
     controller = LiveExperimentController(make_session(), evidence_directory=tmp_path)
     try:
         ready_result(controller)
@@ -126,15 +126,15 @@ def test_reclassification_during_confirmation_requires_new_overrange_consent(tmp
         controller._motion_sequence = 1
         controller.poll()
         present(controller, 10)
-        controller.resolve_pending(intent_id=intent.id)
-        assert controller._confirmation and intent.range_confirmation
-        controller.reclassify_latest("cashmere")
+        assert not controller.resolve_range_decision("reclassify", material_id="cashmere", intent_id=intent.id)
         assert controller._confirmation is None
-        assert controller.pending_classification[0][0] is intent
-        assert intent.range_confirmation is None
+        assert controller.pending_range_decision.intent.id == intent.id
+        assert controller.pending_range_decision.intent.range_confirmation is None
         controller._motion_sequence = 10
         controller.poll()
         assert not controller.session.measurements
+        controller.resolve_range_decision("keep", intent_id=intent.id)
+        assert next(iter(controller.session.measurements.values())).provenance["range_confirmation"]
     finally:
         controller.close()
 

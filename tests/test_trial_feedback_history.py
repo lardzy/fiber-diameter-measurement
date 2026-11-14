@@ -50,7 +50,7 @@ def accept(page, diameter):
 
 
 def history_click(page, text):
-    button = next(button for button in page.findChildren(QPushButton) if button.accessibleName() == text)
+    button = next(button for button in page.trial_sidebar.findChildren(QPushButton) if button.accessibleName() == text)
     QTest.mouseClick(button, Qt.MouseButton.LeftButton)
     QTest.qWait(90)  # Visible per-category progress refreshes on the 80 ms UI timer.
     workflow.settle()

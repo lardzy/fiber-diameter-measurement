@@ -92,7 +92,7 @@ def test_movement_cancels_computing_result_but_preserves_accepted_history(tmp_pa
         controller.close()
 
 
-def test_pending_classification_invalidated_on_move(tmp_path):
+def test_verified_content_range_decision_survives_move(tmp_path):
     value = session()
     value.set_materials([replace(default_materials()[0], upper_limit=15)])
     controller = LiveExperimentController(value, evidence_directory=tmp_path)
@@ -101,10 +101,12 @@ def test_pending_classification_invalidated_on_move(tmp_path):
         present(controller, frame())
         controller.start((10, 10)); controller.finish((10, 30), "wool", method="free")
         drain(controller)
-        assert len(controller.pending_classification) == 1
+        original_field = controller.field_id
+        assert controller.pending_range_decision
         controller.end_field()
-        controller.resolve_pending()
-        assert not value.measurements
+        controller.resolve_range_decision("keep")
+        assert next(iter(value.measurements.values())).field_id == original_field
+        assert not controller.current_records
         assert controller.budget.used_bytes == controller.latest_frame.nbytes
     finally:
         controller.close()

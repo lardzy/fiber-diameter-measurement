@@ -24,6 +24,7 @@ class OfflineExcel(QObject):
     resync = ensure
     show = ensure
     stop = ensure
+    cancel_presentation = ensure
 
     def status(self, session):
         return {"state": "idle", "message": "测试不连接 Excel", "active": False, "pending": False}
@@ -56,27 +57,28 @@ def _pending(workspace, diameter=40):
         controller.poll()
         QApplication.processEvents()
         time.sleep(.001)
-    assert controller.pending_classification
+    assert controller.has_range_decisions
     workspace._refresh_summary()
-    return controller.pending_classification[0][0]
+    return controller.pending_range_decision.intent
 
 
 def test_pending_suggestion_names_missing_target_then_adds_without_losing_measurement(workspace, monkeypatch):
     intent = _pending(workspace)
-    assert "山羊毛" in workspace.pending_suggestion.text()
-    assert "先配置" in workspace.pending_suggestion.text()
+    dialog = workspace._range_dialog
+    assert "山羊毛" in dialog.suggestion.text()
+    assert "先配置" in dialog.suggestion.text()
     from fdm.ui.material_catalog import TrialMaterialsDialog
     def add_target(dialog):
         dialog.set_selected("goat_hair", True)
         return QDialog.DialogCode.Accepted
     monkeypatch.setattr(TrialMaterialsDialog, "exec", add_target)
-    workspace._materials()
-    assert workspace.controller.pending_classification[0][0] is intent
+    dialog.configure.click()
+    assert workspace.controller.pending_range_decision.intent is intent
     assert not workspace.session.measurements
     assert workspace.session.material("goat_hair").name == "山羊毛"
     workspace._refresh_summary()
-    assert workspace.pending_suggestion.text() == "改为“山羊毛”"
-    workspace._accept_suggested_material()
+    assert dialog.suggestion.text() == "建议类别：山羊毛"
+    dialog.reclassify.click()
     workspace.controller.poll()
     record = next(iter(workspace.session.measurements.values()))
     assert record.material_id == "goat_hair"
@@ -90,13 +92,14 @@ def test_reclassifying_to_still_outside_requires_second_explicit_confirmation(wo
     workspace.session.set_materials([*materials, target])
     workspace._refresh_materials()
     intent = _pending(workspace)
-    workspace._accept_suggested_material()
+    dialog = workspace._range_dialog
+    dialog.reclassify.click()
     assert not workspace.session.measurements
-    assert workspace.controller.pending_classification[0][0] is intent
+    assert workspace.controller.pending_range_decision.intent is intent
     assert intent.material_id == "goat_hair" and intent.range_confirmation is None
     workspace._refresh_summary()
-    assert "35" in workspace.pending_label.text()
-    workspace._resolve_displayed_pending()
+    assert "35" in dialog.details.text()
+    dialog.keep.click()
     workspace.controller.poll()
     record = next(iter(workspace.session.measurements.values()))
     assert record.material_id == "goat_hair"
@@ -111,7 +114,7 @@ def test_pending_material_cannot_be_removed_by_dialog_patch(workspace, monkeypat
     monkeypatch.setattr(TrialMaterialsDialog, "materials", lambda _: (workspace.session.material("wool"),))
     with pytest.raises(ValueError):
         workspace._materials()
-    assert workspace.controller.pending_classification[0][0] is intent
+    assert workspace.controller.pending_range_decision.intent is intent
     assert workspace.session.material("cashmere")
 
 

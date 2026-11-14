@@ -118,7 +118,7 @@ def test_calibrated_magnification_has_same_physical_scale_on_all_three_pages(har
 
 @pytest.mark.parametrize("mode,value", [("pixel", None), ("fit", None),
                                         ("percent", 143), ("magnification", 275)])
-def test_new_main_window_restores_last_trial_and_display_preference(tmp_path, mode, value):
+def test_new_main_window_opens_preview_and_restores_display_preference(tmp_path, mode, value):
     profile = tmp_path / "restart-profile"
     with workflow.WorkflowHarness(profile) as first:
         first.enter()
@@ -127,8 +127,11 @@ def test_new_main_window_restores_last_trial_and_display_preference(tmp_path, mo
         first.assert_clean()
     with workflow.WorkflowHarness(profile) as second:
         second.enter()
-        assert second.hub.navigation.currentIndex() == 2
-        page = second.hub.pages.currentWidget()
+        assert second.hub.navigation.currentIndex() == 0
+        assert second.hub.pages.currentWidget() is second.hub.capture_page
+        assert not getattr(second.window, "_live_experiment_workspaces", {})
+        assert second.window._preview_display_binding.store.preferences.mode == mode
+        page = second.select(2)
         assert page.display_binding.store.preferences.mode == mode
         assert page.display_choice.currentData() == mode
         assert page.canvas.display_mode == ("pixel" if mode == "magnification" else mode)
@@ -199,7 +202,8 @@ def test_fast_reentry_waits_for_async_stop_then_restarts_once(tmp_path):
         assert backend.starts == 2
         backend.tick()
         assert harness.window._capture_manager.current_capture_state() == "streaming"
-        assert harness.hub.pages.currentWidget().canvas.frame is not None
+        assert harness.hub.pages.currentWidget() is harness.hub.capture_page
+        assert not harness.window._latest_preview_frame.isNull()
         harness.assert_navigation()
         harness.assert_clean()
 

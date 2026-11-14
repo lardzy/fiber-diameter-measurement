@@ -17,8 +17,11 @@ def test_compact_client_keeps_metadata_save_and_scroll_controls_reachable(tmp_pa
         json.dumps({"version": 1, "page": restored_trial}), encoding="utf-8")
     with workflow.WorkflowHarness(profile, size=size) as h:
         h.enter()
+        assert h.hub.navigation.currentIndex() == 0
+        # Saved trial navigation must not change the main preview entry.
+        h.select(restored_trial)
         assert h.hub.navigation.currentIndex() == restored_trial
-        # Exercise restored construction, direct navigation and cached pages.
+        # Exercise explicit construction, direct navigation and cached pages.
         for route in (0, 1, 2, 0, restored_trial):
             h.select(route)
             workflow.settle()
@@ -37,6 +40,9 @@ def test_compact_client_keeps_metadata_save_and_scroll_controls_reachable(tmp_pa
                 assert page.image_scroll.viewport().height() >= 200
                 for control in (page.sample_summary, page.operator,
                                 page.ruler_choice, page.save_button, page.export_button):
+                    if route == 1:
+                        h.hub.trial_sidebar.scroll.ensureWidgetVisible(control)
+                        workflow.settle()
                     rectangle = QRect(control.mapTo(h.window, QPoint()), control.size())
                     assert control.isVisible()
                     assert h.window.rect().contains(rectangle)
@@ -44,6 +50,10 @@ def test_compact_client_keeps_metadata_save_and_scroll_controls_reachable(tmp_pa
             QTest.mouseClick(page.sample_details_toggle, Qt.MouseButton.LeftButton)
             workflow.settle()
             for editor in (page.sample, page.sample_number):
+                page.metadata_scroll.ensureWidgetVisible(editor)
+                if route == 1:
+                    h.hub.trial_sidebar.scroll.ensureWidgetVisible(editor)
+                workflow.settle()
                 assert editor.isVisible() and editor.visibleRegion().contains(editor.rect())
             QTest.mouseClick(page.sample_details_toggle, Qt.MouseButton.LeftButton)
             assert page.workflow_tabs.widget(0).widget().toolTip()

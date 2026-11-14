@@ -2711,14 +2711,22 @@ class MainWindow(QMainWindow):
         self.acquisition_workspace_action = QAction("采集与试验", self)
         self.acquisition_workspace_action.setIcon(themed_icon("acquisition"))
         self.acquisition_workspace_action.setCheckable(True)
-        self.acquisition_workspace_action.setToolTip("实时采集、含量试验与直径试验")
+        self.acquisition_workspace_action.setToolTip("进入预览与抓拍；下拉菜单可直达含量试验或直径试验")
         self.acquisition_workspace_action.triggered.connect(self._activate_acquisition_workspace)
         self._acquisition_workspace_selected = False
         self._acquisition_workbench = None
         self.live_preview_action = QAction("实时预览", self)
-        self.live_experiment_action = QAction("实时试验", self)
-        self.live_experiment_action.setToolTip("实时贴边测径、全图候选和含量试验")
+        self.capture_preview_action = QAction("预览与抓拍", self)
+        self.capture_preview_action.setToolTip("查看实时画面并抓拍，不创建试验")
+        self.capture_preview_action.triggered.connect(self._activate_acquisition_workspace)
+        self.live_experiment_action = QAction("含量试验", self)
+        self.live_experiment_action.setToolTip("进入含量试验，继续已有样品和记录")
         self.live_experiment_action.triggered.connect(self._open_live_experiment)
+        self.diameter_experiment_action = QAction("直径试验", self)
+        self.diameter_experiment_action.setToolTip("进入直径试验，继续已有样品和记录")
+        self.diameter_experiment_action.triggered.connect(lambda: self._navigate_acquisition_page(2))
+        self._acquisition_page_actions = (self.capture_preview_action, self.live_experiment_action,
+                                          self.diameter_experiment_action)
         self.trial_material_catalog_action = QAction("纤维类别库…", self)
         self.trial_material_catalog_action.setToolTip("管理含量试验与直径试验共用的纤维种类及默认参数")
         self.trial_material_catalog_action.triggered.connect(self._open_trial_material_catalog)
@@ -3526,7 +3534,8 @@ class MainWindow(QMainWindow):
         tool_menu.addAction(self.settings_action)
 
         experiment_menu = self.menuBar().addMenu("试验")
-        experiment_menu.addAction(self.live_experiment_action)
+        experiment_menu.addActions(self._acquisition_page_actions)
+        experiment_menu.addSeparator()
         experiment_menu.addAction(self.trial_material_catalog_action)
 
         view_menu = self.menuBar().addMenu("视图")
@@ -3561,46 +3570,57 @@ class MainWindow(QMainWindow):
         help_menu.addAction(self.shortcuts_help_action)
 
     def _activate_acquisition_workspace(self):
+        self._navigate_acquisition_page(0)
+
+    def _navigate_acquisition_page(self, index):
+        # Page selection is an explicit user intent, independent of the camera
+        # session and of the last page saved in an older application profile.
         if self._digital_slide_mode:
             self._toggle_digital_slide_mode(False)
             if self._digital_slide_mode:
                 return
-        self._open_acquisition_workbench()
+        self._open_acquisition_workbench(trial_index=index)
 
     def _open_acquisition_workbench(self, trial_index=None, *, select=True, auto_start=True):
         requested_at = perf_counter()
         already_visible = (self._acquisition_workbench is not None
                            and self._center_stack.currentWidget() is self._acquisition_workbench)
         created = self._acquisition_workbench is None
-        if self._acquisition_workbench is None:
+        if created:
             from fdm.ui.acquisition_workbench import AcquisitionWorkbench
             self._center_stack.removeWidget(self._preview_page)
             self._acquisition_workbench = AcquisitionWorkbench(self, self._preview_page)
             self._center_stack.addWidget(self._acquisition_workbench)
+        hub = self._acquisition_workbench
+        if created and trial_index is None:
+            trial_index = 0
+        if trial_index is not None and not hub.select_page(trial_index, requested_at=requested_at):
+            # In particular, a mandatory range decision must leave the page,
+            # workspace action and dock policy exactly as they were.
+            self.acquisition_workspace_action.blockSignals(True)
+            self.acquisition_workspace_action.setChecked(self._acquisition_workspace_selected)
+            self.acquisition_workspace_action.blockSignals(False)
+            return hub
         if select:
             self._acquisition_workspace_selected = True
-        if created and trial_index is None:
-            self._acquisition_workbench.restore_page(requested_at=requested_at)
         if already_visible and trial_index is None:
             self.acquisition_workspace_action.blockSignals(True)
             self.acquisition_workspace_action.setChecked(True)
             self.acquisition_workspace_action.blockSignals(False)
             if select:
-                self._acquisition_workbench.enter(auto_start=auto_start, requested_at=requested_at)
-            return self._acquisition_workbench
-        if trial_index is not None:
-            self._acquisition_workbench.select_page(trial_index, requested_at=requested_at)
+                hub.enter(auto_start=auto_start, requested_at=requested_at)
+            return hub
         # Remove measurement-only chrome before exposing the taller workbench.
         # Otherwise Qt can permanently enlarge the top-level window for one
         # transient layout combining both workspaces' minimum heights.
         self._sync_workspace_mode()
-        self._center_stack.setCurrentWidget(self._acquisition_workbench)
+        self._center_stack.setCurrentWidget(hub)
         if select:
-            self._acquisition_workbench.enter(auto_start=auto_start, requested_at=requested_at)
-        return self._acquisition_workbench
+            hub.enter(auto_start=auto_start, requested_at=requested_at)
+        return hub
 
     def _open_live_experiment(self) -> None:
-        self._open_acquisition_workbench(trial_index=1)
+        self._navigate_acquisition_page(1)
 
     def _open_trial_material_catalog(self) -> None:
         from fdm.ui.material_catalog import MaterialCatalogDialog
@@ -3632,6 +3652,17 @@ class MainWindow(QMainWindow):
             self._acquisition_workbench.clear_trial_pages()
             self._sync_workspace_mode()
         return detach_all_trial_excel(self)
+
+    def _clear_trial_range_rules(self) -> None:
+        """Release session-only choices at an accepted project boundary."""
+        sessions = list(self.project.live_experiments)
+        for workspace in getattr(self, "_live_experiment_workspaces", {}).values():
+            if workspace.project_identity == id(self.project) and workspace.session not in sessions:
+                sessions.append(workspace.session)
+        for session in sessions:
+            rules = getattr(session, "_range_rules", None)
+            if rules is not None:
+                rules.clear(session.id)
 
     def _prepare_live_experiment_close(self) -> bool:
         windows = list(getattr(self, "_live_experiment_workspaces", {}).values())
@@ -3679,6 +3710,13 @@ class MainWindow(QMainWindow):
                               (self.digital_slide_action, "数字切片")):
             button = action_button(action, self, text=label)
             button.setProperty("workspaceTab", True)
+            if action is self.acquisition_workspace_action:
+                button.setObjectName("acquisitionWorkspaceButton")
+                button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+                menu = QMenu(button)
+                menu.addActions(self._acquisition_page_actions)
+                button.setMenu(menu)
+                self._acquisition_workspace_button = button
             file_toolbar.addWidget(button)
             self._workspace_buttons.append(button)
         file_toolbar.addSeparator()
@@ -5972,6 +6010,9 @@ class MainWindow(QMainWindow):
             self.export_template_action: "原始记录 报表 导出模板",
             self.export_overlay_action: "叠加图 结果图片 导出图片",
             self.digital_slide_brightness_action: "亮度 gamma 曝光 EV 记住 变亮 变暗 数字切片 显示",
+            self.capture_preview_action: "实时 采集 相机 摄像头 预览 抓拍",
+            self.live_experiment_action: "采集 试验 含量 纤维",
+            self.diameter_experiment_action: "采集 试验 直径 测径",
         }
         def visit(menu, path):
             for action in menu.actions():
@@ -13779,6 +13820,7 @@ class MainWindow(QMainWindow):
             "undo_action": "undo", "redo_action": "redo", "settings_action": "settings",
             "measure_workspace_action": "measurement", "live_preview_action": "live_preview",
             "acquisition_workspace_action": "acquisition", "live_experiment_action": "content_trial",
+            "capture_preview_action": "live_preview", "diameter_experiment_action": "diameter_trial",
             "digital_slide_action": "digital_slide", "capture_frame_action": "capture_frame",
             "switch_capture_device_action": "capture_device", "toggle_project_panel_action": "open_project",
             "toggle_inspector_panel_action": "statistics", "toggle_results_panel_action": "results",
@@ -24425,6 +24467,7 @@ class MainWindow(QMainWindow):
         self._snapshot_controls.reset()
         from fdm.live_experiment.evidence_resources import get_evidence_resources
         get_evidence_resources().discard_project(self.project)
+        self._clear_trial_range_rules()
         self.project = ProjectState.empty()
         self._workspace_composite_undo.clear()
         self._workspace_composite_redo.clear()
@@ -24703,6 +24746,7 @@ class MainWindow(QMainWindow):
         self._snapshot_controls.reset()
         from fdm.live_experiment.evidence_resources import get_evidence_resources
         get_evidence_resources().discard_project(self.project)
+        self._clear_trial_range_rules()
         self.project = ProjectState.empty()
         self._construction_resolution_cache.clear()
         self._workspace_composite_undo.clear()
@@ -27280,10 +27324,11 @@ class MainWindow(QMainWindow):
 
     def _update_history_action_states(self) -> None:
         if self._active_trial_history_workspace() is not None:
-            dock = self._acquisition_workbench.records.dock
-            for action in (self.undo_action, self.redo_action):
-                if action not in dock.actions():
-                    dock.addAction(action)
+            hub = self._acquisition_workbench
+            for dock in (hub.records.dock, hub.trial_sidebar.dock):
+                for action in (self.undo_action, self.redo_action):
+                    if action not in dock.actions():
+                        dock.addAction(action)
             # Keep trial actions reachable while stopped or waiting for a
             # candidate check; the trial's history method explains its guard.
             self.undo_action.setEnabled(True)
@@ -29747,9 +29792,11 @@ class MainWindow(QMainWindow):
         self._preview_display_binding.close()
         if self._acquisition_workbench is not None:
             self._acquisition_workbench.records.shutdown()
+            self._acquisition_workbench.trial_sidebar.shutdown()
         binding = getattr(self, "_trial_preferences_binding", None)
         if binding is not None and binding._timer.isActive():
             binding.flush()
         from fdm.live_experiment.evidence_resources import get_evidence_resources
         get_evidence_resources().discard_project(self.project)
+        self._clear_trial_range_rules()
         event.accept()

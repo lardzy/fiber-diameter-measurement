@@ -24,6 +24,7 @@ from .feedback import feedback_for_reason
 from .selection_retention import FieldEndCause, SelectionRetention
 from .evidence_options import measurement_evidence_points
 from .performance import LivePerformanceDiagnostics
+from .range_decisions import RangeDecision, RangeRuleStore, range_side, limits_identity
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +76,11 @@ class MeasurementIntent:
     classification_generation: int = 0
     range_reclassifications: list = field(default_factory=list)
     evidence_options: dict | None = None
+    source_field_id: str | None = None
+    source_field_metadata: dict | None = None
+    source_verified: bool = False
+    range_decision_source: str | None = None
+    range_original_material_id: str | None = None
 
 
 @dataclass(slots=True)
@@ -139,6 +145,11 @@ class LiveExperimentController(QObject):
         self._evidence_records: dict[str, list[str]] = {}
         self.pending_classification: deque[tuple[MeasurementIntent, dict]] = deque()
         self._confirmation = None
+        self._range_batches = deque()
+        self._advancing_range_decisions = False
+        self.range_rules = getattr(session, "_range_rules", None) or RangeRuleStore()
+        session._range_rules = self.range_rules
+        self._range_limits_snapshot = self._range_limits_configuration()
         self._manual = manual_service
         self._manual_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-live-manual")
         self._motion_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fdm-live-motion")
@@ -447,6 +458,11 @@ class LiveExperimentController(QObject):
             and self.draft is not None and self._draft_context is not None
             and self._context_current(self.draft[0], *self._draft_context))
         previous_number = self._measurement_number
+        for batch in self._range_batches:
+            for decision in batch["decisions"]:
+                intent = decision.intent
+                if intent.source_field_id == self.field_id:
+                    intent.source_field_metadata.update(ended_at=datetime.now(timezone.utc).isoformat(), end_reason=reason)
         self.selection_retention.end_field(cause)
         if record_end and self.field_id in self.session.fields:
             self.session.update_field(self.field_id, ended_at=datetime.now(timezone.utc).isoformat(), end_reason=reason)
@@ -558,6 +574,8 @@ class LiveExperimentController(QObject):
     def start(self, point: tuple[float, float], *, token=None):
         if self._closed:
             raise RuntimeError("试验工作区已关闭。")
+        if self.has_range_decisions:
+            raise ValueError("请先处理本条越限测量。")
         if (self.state != "ready" or self.presented is None
                 or self.presented.field_epoch != self.field_epoch):
             raise ValueError("请等待图像来源和视场稳定。")
@@ -603,6 +621,8 @@ class LiveExperimentController(QObject):
     def finish(self, point, material_id, *, method="assisted"):
         if self._closed:
             raise RuntimeError("试验工作区已关闭。")
+        if self.has_range_decisions:
+            raise ValueError("请先处理本条越限测量。")
         if self.draft is None:
             raise ValueError("请先选择起点。")
         token, start = self.draft
@@ -687,6 +707,8 @@ class LiveExperimentController(QObject):
 
     def reclassify_latest(self, material_id):
         """Post-selection follows the latest gesture identity, never an older result."""
+        if self.has_range_decisions:
+            raise ValueError("请在越限确认窗口处理本条类别。")
         material = self.session.material(material_id)
         target = self._classification_target
         if target is not None:
@@ -764,6 +786,8 @@ class LiveExperimentController(QObject):
             intent.submission_barrier_sequence = sequence
 
     def _require_current_presented_verified(self, intent):
+        if intent.source_verified:
+            return
         if not self._valid(intent) or self.presented is None or self.presented.field_epoch != self.field_epoch:
             raise ValueError("视场已变化，旧结果不能入账。")
         if self.presented.frame.live:
@@ -924,6 +948,7 @@ class LiveExperimentController(QObject):
             self._polling = False
 
     def _poll_once(self):
+        self.refresh_range_rules()
         if self._motion_future and self._motion_future[1].done():
             epoch, future = self._motion_future
             self._motion_future = None
@@ -985,7 +1010,9 @@ class LiveExperimentController(QObject):
                 if not (math.isfinite(float(result.get("diameter_um", 0))) and result["diameter_um"] > 0):
                     self._reject("invalid_width", intent=intent)
                     continue
-                if self._out_of_range(intent, result):
+                if self._out_of_range(intent, result) and self.session.workspace_options["mode"] == "content":
+                    self._pin_range_batch("manual", [(intent, result)])
+                elif self._out_of_range(intent, result):
                     self.pending_classification.append((intent, result))
                     keep_lease = True
                     self.statusChanged.emit("测量超出本场允许范围，请保留或放弃。" if self.session.workspace_options["mode"] == "diameter"
@@ -1050,7 +1077,11 @@ class LiveExperimentController(QObject):
             pairs.extend(self._confirmation["intents"])
         for request in self._candidate_queue:
             pairs.extend(request["intents"])
-        return {intent.material_id for intent, _ in pairs
+        for batch in self._range_batches:
+            pairs.extend((item.intent, item.result) for item in batch["decisions"] if not item.discarded)
+        return {material_id for intent, _ in pairs
+                for material_id in (intent.material_id, intent.range_original_material_id)
+                if material_id
                 if (operator_id is None or intent.operator_id == operator_id)
                 and (direction is None or intent.direction == direction)}
 
@@ -1067,7 +1098,8 @@ class LiveExperimentController(QObject):
         evidence = self._reserve_evidence(intent, result)
         record = self.session.add_measurement(**self._entry(intent, result, evidence))
         self._ensure_field(intent, record.created_at)
-        self.current_records.append(record.id)
+        if record.field_id == self.field_id:
+            self.current_records.append(record.id)
         self._set_classification_state(intent, "accepted", record.id)
         if evidence.get("state") == "pending":
             self._evidence_records.setdefault(evidence.get("evidence_id", intent.token.frame.frame_id), []).append(record.id)
@@ -1099,9 +1131,15 @@ class LiveExperimentController(QObject):
         return dict(self.evidence.reserve(intent.token.frame, options=options, points=points))
 
     def _ensure_field(self, intent, created_at):
-        if self.field_id not in self.session.fields:
+        field_id = intent.source_field_id or self.field_id
+        if field_id not in self.session.fields:
+            if intent.source_field_metadata is not None:
+                metadata = deepcopy(intent.source_field_metadata)
+                metadata.setdefault("opened_at", created_at)
+                self.session.update_field(field_id, **metadata)
+                return
             frame = intent.token.frame
-            self.session.update_field(self.field_id, opened_at=created_at,
+            self.session.update_field(field_id, opened_at=created_at,
                 source_id=frame.source_id, source_generation=frame.generation,
                 first_frame_id=frame.frame_id, first_frame_received_at=frame.received_at,
                 operator_id=intent.operator_id, direction=intent.direction,
@@ -1111,7 +1149,7 @@ class LiveExperimentController(QObject):
     def _entry(self, intent, result, evidence):
         return dict(diameter_um=result["diameter_um"], material_id=intent.material_id,
             operator_id=intent.operator_id, direction=intent.direction,
-            field_id=self.field_id, frame_id=intent.token.frame.frame_id,
+            field_id=intent.source_field_id or self.field_id, frame_id=intent.token.frame.frame_id,
             endpoints=[list(result["start"]), list(result["end"])], evidence=evidence,
             measurement_method=intent.method, provenance={
                 "algorithm_revision": result.get("revision", "cu-manual-portable-v1" if intent.method == "assisted" else "free-v1"),
@@ -1132,7 +1170,199 @@ class LiveExperimentController(QObject):
                 "measurement_range": self._range_signature(intent, result),
                 "range_decision": "keep_outside" if intent.range_confirmation is not None else "reclassified" if intent.range_reclassifications else "within",
                 "range_reclassifications": deepcopy(intent.range_reclassifications),
+                "range_decision_source": intent.range_decision_source,
+                "range_original_material_id": intent.range_original_material_id,
                 "latency_ms": (time.perf_counter() - intent.submitted_at) * 1000})
+
+    def _range_limits_configuration(self):
+        return {(operator_id, direction, item.id): (item.lower_limit, item.upper_limit)
+                for operator_id, operator in self.session.operators.items()
+                for direction, materials in operator.materials.items() for item in materials}
+
+    def refresh_range_rules(self):
+        """Invalidate at configuration time, including a later undo of limits.
+
+        Existing rules are independent of labels/density/order and are never
+        restored by undo: only a new explicit decision may remember them again.
+        """
+        current = self._range_limits_configuration()
+        affected = {key[2] for key, bounds in self._range_limits_snapshot.items()
+                    if key not in current or current[key] != bounds}
+        self._range_limits_snapshot = current
+        return self.range_rules.invalidate_materials(self.session.id, affected)
+
+    @property
+    def has_range_decisions(self):
+        return bool(self._range_batches)
+
+    @property
+    def pending_range_decision(self):
+        return next((decision for batch in self._range_batches for decision in batch["decisions"]
+                     if not decision.resolved), None)
+
+    @property
+    def range_decision_count(self):
+        return sum(not item.resolved for batch in self._range_batches for item in batch["decisions"])
+
+    def _pin_range_batch(self, kind, intents, *, context=None, candidates=None):
+        """Transfer verified results out of the live-field publication lifecycle."""
+        self.refresh_range_rules()
+        batch_id = uuid.uuid4().hex
+        # Copy metadata before admitting leases; allocation/configuration errors
+        # must not leave an unowned reference outside the cleanup list.
+        frozen_context = dict(context) if context is not None else None
+        if frozen_context is not None:
+            frozen_context["diagnostics"] = deepcopy(context.get("diagnostics", {}))
+            frozen_context["analysis_config"] = deepcopy(context.get("analysis_config", {}))
+        frozen_candidates = deepcopy(candidates)
+        decisions, leases = [], []
+        try:
+            for original, result in intents:
+                self._require_current_presented_verified(original)
+                if result.get("_candidate_point_selection"):
+                    index = next((i for i, item in enumerate(self.candidates)
+                        if item.get("candidate_id") == result.get("candidate_id")), None)
+                    if index is None or self.possible_duplicate_candidates([index]):
+                        raise ValueError("该候选可能与刚入账的记录重复，请在审核页核对后确认。")
+                limits = self.session.measurement_range(original.material_id,
+                    operator_id=original.operator_id, direction=original.direction)
+                frame = original.token.frame
+                metadata = deepcopy(self.session.fields.get(self.field_id, {})) or dict(
+                    source_id=frame.source_id, source_generation=frame.generation,
+                    first_frame_id=frame.frame_id, first_frame_received_at=frame.received_at,
+                    operator_id=original.operator_id, direction=original.direction,
+                    calibration=dict(x_um=original.calibration.x_um, y_um=original.calibration.y_um,
+                                     revision=original.calibration.revision, source=original.calibration.source))
+                # The first result can be adjudicated after this field ended.
+                # Its opening time belongs to verification, not later acceptance.
+                metadata.setdefault("opened_at", datetime.now(timezone.utc).isoformat())
+                lease = self._acquire_intent_frame(frame)
+                leases.append(lease)
+                intent = replace(original, lease=lease,
+                    range_reclassifications=deepcopy(original.range_reclassifications),
+                    evidence_options=deepcopy(original.evidence_options), source_verified=True,
+                    source_field_id=self.field_id, source_field_metadata=metadata,
+                    range_confirmation=None, range_original_material_id=original.material_id)
+                side = range_side(result["diameter_um"], limits)
+                decisions.append(RangeDecision(intent, deepcopy(result), intent.material_id,
+                    side, deepcopy(limits), batch_id, resolved=side is None))
+        except Exception:
+            for lease in leases:
+                self.budget.release(lease)
+            raise
+        self._range_batches.append(dict(id=batch_id, kind=kind, decisions=decisions,
+            context=frozen_context, candidates=frozen_candidates))
+        self._advance_range_decisions()
+
+    def _advance_range_decisions(self):
+        # Ledger signals invoke UI slots synchronously; nested refresh/selection
+        # must never submit the same ready batch a second time.
+        if self._advancing_range_decisions:
+            return
+        self._advancing_range_decisions = True
+        try:
+            self._drain_range_decisions()
+        finally:
+            self._advancing_range_decisions = False
+
+    def _drain_range_decisions(self):
+        while self._range_batches:
+            batch = self._range_batches[0]
+            for decision in batch["decisions"]:
+                if decision.resolved:
+                    continue
+                rule = None if decision.requires_explicit_keep else self.range_rules.matching(self.session, decision)
+                if rule is None:
+                    self.statusChanged.emit("测量超出类别范围，请保留、改类或放弃本条结果。")
+                    self.changed.emit()
+                    return
+                self._apply_range_choice(decision, rule["action"], rule["target_material_id"], source="remembered_rule")
+            # Validate all choices again before the single batch transaction.
+            accepted = [item for item in batch["decisions"] if not item.discarded]
+            for item in accepted:
+                try:
+                    self._validate_range_confirmation(item.intent, item.result)
+                except ValueError:
+                    item.resolved = False
+                    item.intent.range_confirmation = None
+                    item.requires_explicit_keep = True
+                    self.statusChanged.emit("类别或范围已变化，请重新核对本批越限结果。")
+                    self.changed.emit()
+                    return
+            if accepted:
+                try:
+                    if batch["kind"] == "manual":
+                        self._accept(accepted[0].intent, accepted[0].result)
+                    else:
+                        originals = [original for item, original in zip(batch["decisions"], batch["candidates"])
+                                     if not item.discarded]
+                        self._commit_candidates(batch["context"], [(item.intent, item.result) for item in accepted], originals)
+                except Exception:
+                    # Keep the owned source frame and offer a deliberate retry
+                    # or discard if evidence/ledger admission failed.
+                    accepted[0].resolved = False
+                    accepted[0].requires_explicit_keep = True
+                    self.changed.emit()
+                    raise
+            self._range_batches.popleft()
+            for item in batch["decisions"]:
+                if item.discarded:
+                    self._set_classification_state(item.intent, "cancelled")
+                self.budget.release(item.intent.lease)
+            self._release_candidate_request(batch)
+            self.changed.emit()
+            for item in accepted:
+                if item.intent.range_decision_source == "remembered_rule" and item.intent.material_id != item.original_material_id:
+                    target = self.session.material(item.intent.material_id, operator_id=item.intent.operator_id, direction=item.intent.direction)
+                    self.statusChanged.emit(f"本条直径 {item.result['diameter_um']:g} μm，已由 {item.source_range['material_name']} 改为 {target.name}")
+
+    def _apply_range_choice(self, decision, action, material_id=None, *, source="manual"):
+        intent, result = decision.intent, decision.result
+        if action not in {"keep", "reclassify", "discard"}:
+            raise ValueError("未知的越限处理方式。")
+        if action == "reclassify":
+            before = self._range_signature(intent, result)
+            target = self.session.material(material_id, operator_id=intent.operator_id, direction=intent.direction)
+            if intent.material_id != material_id:
+                intent.range_reclassifications.append({"from": before, "to_material_id": material_id})
+            intent.material_id = material_id
+            intent.range_confirmation = None
+            if self._out_of_range(intent, result):
+                decision.requires_explicit_keep = True
+                self.statusChanged.emit("仍超出新类别范围，请再次明确选择保留、改类或放弃。")
+                return False
+        elif action == "keep":
+            intent.range_confirmation = self._range_signature(intent, result) if self._out_of_range(intent, result) else None
+        else:
+            decision.discarded = True
+        intent.range_decision_source = source
+        decision.resolved = True
+        return True
+
+    def resolve_range_decision(self, action="keep", *, material_id=None, remember=False, intent_id=None):
+        decision = self.pending_range_decision
+        if decision is None or (intent_id is not None and intent_id != decision.intent.id):
+            raise ValueError("待确认项已变化，本次操作未应用。")
+        intent = decision.intent
+        current = (self.session.measurement_range(decision.original_material_id,
+            operator_id=intent.operator_id, direction=intent.direction) if action != "discard" else decision.source_range)
+        if action != "discard" and limits_identity(current) != limits_identity(decision.source_range):
+            decision.source_range = deepcopy(current)
+            decision.direction = range_side(decision.result["diameter_um"], current)
+            decision.requires_explicit_keep = True
+            self.statusChanged.emit("原类别范围已变化，请按当前范围再次确认。")
+            self.changed.emit()
+            return False
+        completed = self._apply_range_choice(decision, action, material_id)
+        if completed and remember and decision.direction is not None and not decision.requires_explicit_keep:
+            target = (self.session.measurement_range(intent.material_id,
+                operator_id=intent.operator_id, direction=intent.direction) if action == "reclassify" else None)
+            self.range_rules.remember(self.session.id, decision, action, target_range=target)
+        if completed:
+            self._advance_range_decisions()
+        else:
+            self.changed.emit()
+        return completed
 
     def resolve_pending(self, *, material_id=None, discard=False, intent_id=None):
         if self._confirmation is not None:
@@ -1240,6 +1470,14 @@ class LiveExperimentController(QObject):
                         keep_pending = True
                 if not keep_pending:
                     self._accept(intent, result)
+            elif self.session.workspace_options["mode"] == "content":
+                try:
+                    self._pin_range_batch("automatic", request["intents"], context=request["context"],
+                                          candidates=request["candidates"])
+                finally:
+                    identities = {intent.id for intent, _ in request["intents"]}
+                    request["pinned"] = any(item.intent.id in identities
+                        for batch in self._range_batches for item in batch["decisions"])
             else:
                 self._commit_candidates(request["context"], request["intents"], request["candidates"])
         except Exception as exc:
@@ -1250,7 +1488,7 @@ class LiveExperimentController(QObject):
             if request["kind"] == "manual" and not keep_pending:
                 for intent, _ in request["intents"]:
                     self.budget.release(intent.lease)
-            elif request["kind"] != "manual":
+            elif request["kind"] != "manual" and not request.get("pinned"):
                 self._release_candidate_request(request)
             self.changed.emit()
 
@@ -1472,7 +1710,7 @@ class LiveExperimentController(QObject):
                 or not self.presented.frame.live
                 or not self.calibration.isotropic or self._automatic_stable_since is None
                 or time.perf_counter() - self._automatic_stable_since < .3
-                or self._jobs or self.draft or self.pending_classification or self._confirmation):
+                or self._jobs or self.draft or self.pending_classification or self._confirmation or self.has_range_decisions):
             return
         self._automatic_cycle_done = True
         self.candidate_metrics["stable_wait_ms"].append((time.perf_counter() - self._automatic_stable_since) * 1000)
@@ -1650,7 +1888,7 @@ class LiveExperimentController(QObject):
             self.candidateStateChanged.emit()
 
     def _advance_candidate_queue(self):
-        if self._confirmation is not None or not self._candidate_queue:
+        if self._confirmation is not None or self.has_range_decisions or not self._candidate_queue:
             return
         request = self._candidate_queue.popleft()
         if request["context"] is not self._automatic_context:
@@ -1660,6 +1898,8 @@ class LiveExperimentController(QObject):
                                  candidates=request["candidates"])
 
     def accept_candidates(self, selections: list[tuple[int, str]], *, confirmed_out_of_range=(), _queue=False):
+        if self.has_range_decisions:
+            raise ValueError("请先处理本条越限测量。")
         if self._confirmation is not None and (not _queue or self._confirmation["kind"] != "automatic"):
             raise ValueError("正在核验上次确认时的视场，请等待结果。")
         context = self._automatic_context
@@ -1704,7 +1944,7 @@ class LiveExperimentController(QObject):
                 evidence_options=self.effective_evidence_options)
             if not self._valid(intent):
                 raise ValueError("存在未赋类、越限或已失效候选，请先处理。")
-            if self._out_of_range(intent, result):
+            if self._out_of_range(intent, result) and self.session.workspace_options["mode"] != "content":
                 if index not in confirmed:
                     raise ValueError("存在尚未确认保留的越限候选；请改类、排除或明确确认保留。")
                 intent.range_confirmation = self._range_signature(intent, result)
@@ -1725,12 +1965,13 @@ class LiveExperimentController(QObject):
         for intent, result in intents:
             self._require_current_presented_verified(intent)
             self._validate_range_confirmation(intent, result)
-            if result.get("_candidate_point_selection"):
+            if result.get("_candidate_point_selection") and not intent.source_verified:
                 index = next((i for i, candidate in enumerate(self.candidates)
                     if candidate.get("candidate_id") == result.get("candidate_id")), None)
                 if index is None or self.possible_duplicate_candidates([index]):
                     raise ValueError("该候选可能与刚入账的记录重复，请在审核页核对后确认。")
-        if not self.candidate_overlay_ready:
+        pinned = all(intent.source_verified for intent, _ in intents)
+        if not pinned and not self.candidate_overlay_ready:
             raise ValueError("候选所属视场已失效，本次结果未入账。")
         evidence_entries = [self._reserve_evidence(intent, result) for intent, result in intents]
         for intent, _ in intents:
@@ -1754,12 +1995,12 @@ class LiveExperimentController(QObject):
                 entry["provenance"]["conflicts_with"] = deepcopy(original.get("conflicts_with", []))
         records = self.session.add_measurements_batch(entries, provenance={
             "source_frame": context["token"].frame.frame_id, "algorithm": context["algorithm"],
-            "field_id": self.field_id, "diagnostics": context.get("diagnostics", {}),
+            "field_id": intents[0][0].source_field_id or self.field_id, "diagnostics": context.get("diagnostics", {}),
             "original_candidates": [{key: value for key, value in candidate.items()
                 if key not in {"candidate_id", "ordinal", "state", "record_id"}}
                 for candidate in original_candidates]})
         self._ensure_field(intents[0][0], records[0].created_at)
-        self.current_records.extend(record.id for record in records)
+        self.current_records.extend(record.id for record in records if record.field_id == self.field_id)
         for record, original, evidence in zip(records, original_candidates, evidence_entries):
             self.candidate_metrics["click_to_accept_ms"].append(record.provenance["latency_ms"])
             candidate = next((c for c in self.candidates if c.get("candidate_id") == original["candidate_id"]), None)
@@ -1768,7 +2009,7 @@ class LiveExperimentController(QObject):
             if evidence.get("state") == "pending":
                 self._evidence_records.setdefault(evidence.get("evidence_id", context["token"].frame.frame_id), []).append(record.id)
         for record, (_, result) in zip(records, intents):
-            if result.get("_candidate_point_selection"):
+            if result.get("_candidate_point_selection") and record.field_id == self.field_id:
                 self.selection_retention.remember(record)
         # Domain transaction completes before any synchronous UI callback runs.
         self.recordsAccepted.emit(records)
@@ -1822,7 +2063,7 @@ class LiveExperimentController(QObject):
 
     @property
     def busy(self):
-        return bool(self._jobs or self.pending_classification or self._confirmation or self._candidate_queue
+        return bool(self.has_range_decisions or self._jobs or self.pending_classification or self._confirmation or self._candidate_queue
                     or self._automatic_context and (not self._automatic_context.get("completed")
                         or any(c.get("state", "available") in {"available", "confirming"} for c in self.candidates))
                     or self.evidence.pending)
@@ -1831,6 +2072,10 @@ class LiveExperimentController(QObject):
         if self._closed:
             return
         self._timer.stop()
+        for batch in self._range_batches:
+            for decision in batch["decisions"]:
+                self.budget.release(decision.intent.lease)
+        self._range_batches.clear()
         self._performance.stop()
         self.end_field("试验工作区已关闭", record_end=record_end)
         self._closed = True

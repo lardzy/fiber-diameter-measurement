@@ -45,24 +45,41 @@ def test_shared_sidebar_width_survives_pages_and_new_window(tmp_path):
     profile = tmp_path / "profile"
     with workflow.WorkflowHarness(profile) as h:
         h.enter()
-        page = h.select(1)
+        page = h.select(2)
         handle = page.body_splitter.handle(1)
         origin = handle.rect().center()
         QTest.mousePress(handle, Qt.MouseButton.LeftButton, pos=origin)
         QTest.mouseMove(handle, origin - QPoint(35, 0))
         QTest.mouseRelease(handle, Qt.MouseButton.LeftButton, pos=origin - QPoint(35, 0))
         workflow.settle()
-        expected = page.body_splitter.sizes()[1]
+        shared_width = page.body_splitter.sizes()[1]
+        content = h.select(1)
+        sidebar = h.hub.trial_sidebar
+        assert content.body_splitter.count() == 1
+        h.hub.body_host.resizeDocks([sidebar.dock], [510], Qt.Orientation.Horizontal)
+        workflow.settle()
+        content_width = sidebar.dock.width()
+        assert content_width != shared_width
+        sidebar.flush_preferences()
+        assert sidebar.preferences["width"] == content_width
         for index in (2, 0, 1):
             page = h.select(index)
-            splitter = page.body_splitter if index else h.window._preview_body_splitter
-            assert splitter.sizes()[1] == expected
+            if index == 1:
+                assert sidebar.dock.width() == content_width
+                assert page.body_splitter.count() == 1
+            else:
+                splitter = page.body_splitter if index else h.window._preview_body_splitter
+                assert splitter.sizes()[1] == shared_width
     with workflow.WorkflowHarness(profile) as h:
         h.enter()
         for index in (0, 2, 1):
             page = h.select(index)
-            splitter = page.body_splitter if index else h.window._preview_body_splitter
-            assert splitter.sizes()[1] == expected
+            if index == 1:
+                assert h.hub.trial_sidebar.dock.width() == content_width
+                assert page.body_splitter.count() == 1
+            else:
+                splitter = page.body_splitter if index else h.window._preview_body_splitter
+                assert splitter.sizes()[1] == shared_width
         h.assert_clean()
 
 

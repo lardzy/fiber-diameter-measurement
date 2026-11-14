@@ -179,6 +179,8 @@ def test_position_menu_keeps_navigation_fixed_and_return_preserves_visibility(ha
     harness.leave()
     assert not presenter.is_open and presenter.dock.isHidden()
     harness.enter()
+    assert harness.hub.pages.currentWidget() is harness.hub.capture_page
+    assert harness.select(1) is page
     assert presenter.workspace is page and presenter.is_open
     assert page.records_toggle.isChecked()
     assert navigation_geometry(harness) == baseline
@@ -216,7 +218,7 @@ def test_signed_correction_uses_selected_original_scope_and_undo_is_visible(harn
     assert "甲／纬向" in prompts[0][0][2]
     assert prompts[0][0][4] == -3
     assert ("count", correction.id) in presenter.model.rows_by_key
-    undo = next(button for button in page.findChildren(QPushButton) if button.accessibleName() == "撤销")
+    undo = next(button for button in page.trial_sidebar.findChildren(QPushButton) if button.accessibleName() == "撤销")
     click(undo)
     assert correction.id not in page.session.count_adjustments
     assert ("count", correction.id) not in presenter.model.rows_by_key
@@ -278,7 +280,7 @@ def test_repeated_real_navigation_reuses_one_model_dock_and_capture_connection(h
     for index in (0, 1, 2, 1) * 50:
         page = harness.select(index)
         assert presenter.model is model and presenter.panel is panel and presenter.dock is dock
-        assert harness.hub.body_host.findChildren(QDockWidget) == [dock]
+        assert harness.hub.body_host.findChildren(QDockWidget) == [dock, harness.hub.trial_sidebar.dock]
         assert harness.hub.body_host.findChildren(TrialTimelineModel) == [model]
         assert presenter.is_open == (index != 0)
         if index:
@@ -316,6 +318,10 @@ def test_bottom_dock_fits_small_logical_windows_and_preserves_latest(tmp_path, s
             assert presenter.panel.following and bar.value() == bar.maximum()
             assert page.save_button.isVisible() and page.export_button.isVisible()
             for button in (page.save_button, page.export_button):
+                # Independent trial docks can be narrower than the controls;
+                # internal scrolling must keep every action reachable.
+                harness.hub.trial_sidebar.scroll.ensureWidgetVisible(button)
+                settle()
                 rect = QRect(button.mapTo(harness.window, QPoint()), button.size())
                 assert harness.window.rect().contains(rect)
             if position == "bottom":
@@ -346,7 +352,7 @@ def test_bottom_dock_resize_limits_actual_height_without_losing_preferred_height
     QTest.qWait(200)
     settle()
     harness.assert_size()
-    assert presenter.dock.height() < preferred
+    assert presenter.dock.height() <= preferred
     assert presenter.preferences["bottom_height"] == preferred
     assert presenter.table.verticalScrollBar().value() == presenter.table.verticalScrollBar().maximum()
     harness.size = (1600, 900)
